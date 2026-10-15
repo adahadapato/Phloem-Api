@@ -1,4 +1,6 @@
-﻿namespace Phloem.Domain.Shared;
+﻿using Phloem.Domain.Shared.Errors;
+
+namespace Phloem.Domain.Shared.Results;
 
 /// <summary>
 /// Represents the result of an operation that returns a value.

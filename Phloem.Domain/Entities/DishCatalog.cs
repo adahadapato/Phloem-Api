@@ -1,10 +1,17 @@
 ﻿using Phloem.Domain.Enums;
+using Phloem.Domain.Errors;
+using Phloem.Domain.Shared;
+using Phloem.Domain.Shared.Results;
 
 namespace Phloem.Domain.Entities;
 
 /// <summary>
 /// A name in the fixed dish list sellers pick from ("Jollof Rice", "Waakye"…), so there are no typos.
 /// Sellers can suggest a missing name; an admin approves or rejects it.
+///
+/// Errors: business-rule failures are RETURNED as a Result (see DishCatalogErrors);
+/// a blank name (the validator checks first) still THROWS.
+/// Duplicate names are checked by the Application layer with IDishCatalogRepository.NameExistsAsync.
 /// </summary>
 public class DishCatalog : Entity<Guid>
 {
@@ -45,17 +52,23 @@ public class DishCatalog : Entity<Guid>
         return new(Guid.CreateVersion7(), name.Trim(), category, group, DishCatalogStatus.Suggested, suggestedByUserId);
     }
 
-    public void Approve(DateTime utcNow)
+    /// <summary>Admin approves a suggestion: it joins the list every seller picks from.</summary>
+    public Result Approve(DateTime utcNow)
     {
-        if (Status != DishCatalogStatus.Suggested) throw new InvalidOperationException("Only suggested names can be approved.");
+        if (Status != DishCatalogStatus.Suggested) return DishCatalogErrors.AlreadyReviewed;
+
         Status = DishCatalogStatus.Approved;
         ReviewedAtUtc = utcNow;
+        return Result.Success();
     }
 
-    public void Reject(DateTime utcNow)
+    /// <summary>Admin rejects a suggestion. It can be suggested again later.</summary>
+    public Result Reject(DateTime utcNow)
     {
-        if (Status != DishCatalogStatus.Suggested) throw new InvalidOperationException("Only suggested names can be rejected.");
+        if (Status != DishCatalogStatus.Suggested) return DishCatalogErrors.AlreadyReviewed;
+
         Status = DishCatalogStatus.Rejected;
         ReviewedAtUtc = utcNow;
+        return Result.Success();
     }
 }

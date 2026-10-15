@@ -1,5 +1,5 @@
 ﻿using Phloem.Domain.Entities;
-using Phloem.Domain.Shared;
+using Phloem.Domain.Shared.Results;
 
 namespace Phloem.Domain.Interfaces;
 

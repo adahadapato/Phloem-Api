@@ -1,4 +1,8 @@
 ﻿using Phloem.Domain.Enums;
+using Phloem.Domain.Errors;
+using Phloem.Domain.Shared;
+using Phloem.Domain.Shared.Errors;
+using Phloem.Domain.Shared.Results;
 
 namespace Phloem.Domain.Entities;
 
@@ -7,6 +11,9 @@ namespace Phloem.Domain.Entities;
 /// notification switches. It has the SAME Id as the login account (ApplicationUser in
 /// Persistence), which owns email, phone, password and roles.
 /// "Member since" = CreatedAt (from the base Entity).
+///
+/// Errors: business-rule failures are RETURNED as a Result (see UserProfileErrors);
+/// programmer mistakes (blank names / addresses the validator should have caught) still THROW.
 /// </summary>
 public class UserProfile : Entity<Guid>
 {
@@ -45,6 +52,7 @@ public class UserProfile : Entity<Guid>
     /// <summary>
     /// Called right after the Identity account is created, with the SAME Id,
     /// so the login account and the profile always match one-to-one.
+    /// Can't fail for business reasons, so it returns the profile directly.
     /// </summary>
     public static UserProfile Create(Guid identityUserId, string fullName, Country country)
     {
@@ -53,60 +61,90 @@ public class UserProfile : Entity<Guid>
     }
 
     /// <summary>Edit profile page (name and country; phone lives on the login account).</summary>
-    public void UpdateProfile(string fullName, Country country)
+    public Result UpdateProfile(string fullName, Country country)
     {
-        EnsureNotDeleted();
         ArgumentException.ThrowIfNullOrWhiteSpace(fullName);
+        if (IsDeleted) return UserProfileErrors.AccountDeleted;
+
         FullName = fullName.Trim();
         Country = country;
+        return Result.Success();
     }
 
-    public void ChangePhoto(string? photoUrl)
+    /// <summary>Set or clear the profile photo (null / blank = remove).</summary>
+    public Result ChangePhoto(string? photoUrl)
     {
-        EnsureNotDeleted();
+        if (IsDeleted) return UserProfileErrors.AccountDeleted;
+
         PhotoUrl = string.IsNullOrWhiteSpace(photoUrl) ? null : photoUrl.Trim();
+        return Result.Success();
     }
 
-    public void UpdateNotifications(bool orderUpdates, bool shipmentUpdates, bool offers,
-                                    bool newDishes, bool shopOrders)
+    public Result UpdateNotifications(bool orderUpdates, bool shipmentUpdates, bool offers,
+                                      bool newDishes, bool shopOrders)
     {
+        if (IsDeleted) return UserProfileErrors.AccountDeleted;
+
         NotifyOrderUpdates = orderUpdates;
         NotifyShipmentUpdates = shipmentUpdates;
         NotifyOffers = offers;
         NotifyNewDishes = newDishes;
         NotifyShopOrders = shopOrders;
+        return Result.Success();
     }
 
     // ---------- Addresses ----------
 
     /// <summary>Add a delivery address. The first one becomes the default automatically.</summary>
-    public DeliveryAddress AddAddress(string label, string fullAddress, Country country, bool makeDefault = false)
+    public Result<DeliveryAddress> AddAddress(string label, string fullAddress, Country country, bool makeDefault = false)
     {
-        EnsureNotDeleted();
+        if (IsDeleted) return UserProfileErrors.AccountDeleted;
+
         var address = new DeliveryAddress(Id, label, fullAddress, country);
         _addresses.Add(address);
 
         if (makeDefault || _addresses.Count == 1)
-            SetDefaultAddress(address.Id);
+            MakeDefault(address);
 
         return address;
     }
 
-    public void RemoveAddress(Guid addressId)
+    /// <summary>
+    /// NEW: edit a saved address. Goes through the profile (not DeliveryAddress directly)
+    /// so nobody can change another account's address or a deleted account's address.
+    /// </summary>
+    public Result UpdateAddress(Guid addressId, string label, string fullAddress, Country country)
+    {
+        if (IsDeleted) return UserProfileErrors.AccountDeleted;
+
+        var address = FindAddress(addressId);
+        if (address is null) return UserProfileErrors.AddressNotFound;
+
+        address.Update(label, fullAddress, country);
+        return Result.Success();
+    }
+
+    public Result RemoveAddress(Guid addressId)
     {
         var address = FindAddress(addressId);
+        if (address is null) return UserProfileErrors.AddressNotFound;
+
         _addresses.Remove(address);
 
         // Keep exactly one default while any address is left
         if (address.IsDefault && _addresses.Count > 0)
             _addresses[0].MarkDefault();
+
+        return Result.Success();
     }
 
-    public void SetDefaultAddress(Guid addressId)
+    public Result SetDefaultAddress(Guid addressId)
     {
-        var chosen = FindAddress(addressId);
-        foreach (var a in _addresses) a.ClearDefault();
-        chosen.MarkDefault();
+        var address = FindAddress(addressId);
+        if (address is null) return UserProfileErrors.AddressNotFound;
+
+        MakeDefault(address);
+        return Result.Success();
     }
 
     // ---------- Delete account ----------
@@ -114,7 +152,7 @@ public class UserProfile : Entity<Guid>
     /// <summary>
     /// Soft delete: personal details are wiped, but the row stays so past orders still
     /// point at a valid customer. The Application layer also deletes / anonymises the
-    /// Identity login and closes the user's shop.
+    /// Identity login and closes the user's shop. Deleting twice is fine.
     /// </summary>
     public void Delete(DateTime utcNow)
     {
@@ -127,12 +165,14 @@ public class UserProfile : Entity<Guid>
         SoftDelete(utcNow);   // base Entity: sets IsDeleted + DeletedAt
     }
 
-    private DeliveryAddress FindAddress(Guid addressId) =>
-        _addresses.FirstOrDefault(a => a.Id == addressId)
-        ?? throw new InvalidOperationException("That address wasn't found on this account.");
+    // ---------- Helpers ----------
 
-    private void EnsureNotDeleted()
+    private DeliveryAddress? FindAddress(Guid addressId) =>
+        _addresses.FirstOrDefault(a => a.Id == addressId);
+
+    private void MakeDefault(DeliveryAddress chosen)
     {
-        if (IsDeleted) throw new InvalidOperationException("This account has been deleted.");
+        foreach (var a in _addresses) a.ClearDefault();
+        chosen.MarkDefault();
     }
 }

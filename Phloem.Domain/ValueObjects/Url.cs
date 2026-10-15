@@ -1,4 +1,4 @@
-﻿using Phloem.Domain.Shared;
+﻿using Phloem.Domain.Shared.Results;
 
 namespace Phloem.Domain.ValueObjects;
 

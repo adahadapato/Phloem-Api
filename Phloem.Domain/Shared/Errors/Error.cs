@@ -1,6 +1,6 @@
 ﻿using Phloem.Domain.ValueObjects;
 
-namespace Phloem.Domain.Shared;
+namespace Phloem.Domain.Shared.Errors;
 
 /// <summary>
 /// Represents a concrete domain error.

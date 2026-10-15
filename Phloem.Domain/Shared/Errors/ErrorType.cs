@@ -1,4 +1,4 @@
-﻿namespace Phloem.Domain.Shared;
+﻿namespace Phloem.Domain.Shared.Errors;
 
 /// <summary>
 /// What kind of failure an Error is. The API maps it to an HTTP status code.

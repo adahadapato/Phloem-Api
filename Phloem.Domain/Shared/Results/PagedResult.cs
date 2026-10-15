@@ -1,4 +1,4 @@
-﻿namespace Phloem.Domain.Shared;
+﻿namespace Phloem.Domain.Shared.Results;
 
 /// <summary>
 /// One page of a list, plus what the app needs to show "Page 2 of 5" and Next / Previous.

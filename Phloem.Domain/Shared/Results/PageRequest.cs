@@ -1,4 +1,4 @@
-﻿namespace Phloem.Domain.Shared;
+﻿namespace Phloem.Domain.Shared.Results;
 
 /// <summary>
 /// What the app asks for: which page, and how many items per page.

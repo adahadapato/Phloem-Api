@@ -1,5 +1,8 @@
 ﻿using Phloem.Domain.Constants;
 using Phloem.Domain.Enums;
+using Phloem.Domain.Errors;
+using Phloem.Domain.Shared;
+using Phloem.Domain.Shared.Results;
 using Phloem.Domain.ValueObjects;
 
 namespace Phloem.Domain.Entities;
@@ -7,6 +10,9 @@ namespace Phloem.Domain.Entities;
 /// <summary>
 /// A dish a shop sells. Its name always starts with an approved DishCatalog name,
 /// optionally followed by a detail: "Jollof Rice" + "& Chicken" = "Jollof Rice & Chicken".
+///
+/// Errors: business-rule failures are RETURNED as a Result (see DishErrors);
+/// programmer mistakes (nulls, a price ≤ 0 that skipped validation, an unprocessed photo) still THROW.
 /// </summary>
 public class Dish : Entity<Guid>
 {
@@ -22,10 +28,8 @@ public class Dish : Entity<Guid>
         : base(id)
     {
         VendorId = vendor.Id;
-        DishCatalogId = dishCatalog.Id;
         Country = vendor.Country;
         Currency = vendor.Currency;
-        Category = dishCatalog.Category;
         IsAvailable = true;
         Apply(dishCatalog, detail, price, description);
     }
@@ -58,61 +62,73 @@ public class Dish : Entity<Guid>
     /// <summary>The photo on dish cards; null until the seller adds one.</summary>
     public DishPhoto? PrimaryPhoto => _photos.FirstOrDefault(p => p.IsPrimary);
 
+    /// <summary>Can a buyer order it right now?</summary>
+    public bool CanBeOrdered => IsAvailable && Vendor is { IsVisibleToBuyers: true };
+
     // =====================================================================
     // Behaviour
     // =====================================================================
 
-    public static Dish Create(Vendor vendor, DishCatalog dishCatalog, string? detail, decimal price,
-                              string? description)
+    /// <summary>Add dish page.</summary>
+    public static Result<Dish> Create(Vendor vendor, DishCatalog dishCatalog, string? detail, decimal price,
+                                      string? description)
     {
         ArgumentNullException.ThrowIfNull(vendor);
-        if (vendor.Status == VendorStatus.Blocked)
-            throw new InvalidOperationException("This shop is blocked and can't add dishes.");
+        ArgumentNullException.ThrowIfNull(dishCatalog);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(price);   // the validator catches this first
+
+        if (vendor.Status == VendorStatus.Blocked) return DishErrors.ShopBlocked;
+        if (!dishCatalog.CanBeUsed) return DishErrors.NameNotApproved;
 
         return new Dish(Guid.CreateVersion7(), vendor, dishCatalog, detail, price, description);
     }
 
     /// <summary>Edit dish page.</summary>
-    public void Update(DishCatalog dishCatalog, string? detail, decimal price, string? description)
+    public Result Update(DishCatalog dishCatalog, string? detail, decimal price, string? description)
     {
+        ArgumentNullException.ThrowIfNull(dishCatalog);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(price);
+
+        if (Vendor is { Status: VendorStatus.Blocked }) return DishErrors.ShopBlocked;
+        if (!dishCatalog.CanBeUsed) return DishErrors.NameNotApproved;
+
         Apply(dishCatalog, detail, price, description);
-        DishCatalogId = dishCatalog.Id;
-        Category = dishCatalog.Category;
+        return Result.Success();
     }
 
     public void SetAvailability(bool isAvailable) => IsAvailable = isAvailable;
 
+    /// <summary>Stars are checked by the validator first, so out-of-range is a bug.</summary>
     public void AddRating(int stars)
     {
-        if (stars is < 1 or > 5) throw new ArgumentOutOfRangeException(nameof(stars), "Rating must be 1 to 5 stars.");
+        ArgumentOutOfRangeException.ThrowIfLessThan(stars, 1);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(stars, 5);
+
         Rating = Math.Round((Rating * RatingCount + stars) / (RatingCount + 1), 2);
         RatingCount++;
     }
-
-    /// <summary>Can a buyer order it right now?</summary>
-    public bool CanBeOrdered => IsAvailable && Vendor is { IsVisibleToBuyers: true };
 
     // ---------- Photos ----------
 
     /// <summary>
     /// Add a photo after the image pipeline has processed and stored it.
     /// Only standard-size photos with a thumbnail are accepted (see DishPhotoStandard), so every
-    /// dish card looks the same. The first photo becomes the main one; duplicates are refused.
+    /// dish card looks the same. The first photo becomes the main one.
     /// </summary>
-    public DishPhoto AddPhoto(ImageFile file, string? altText = null)
+    public Result<DishPhoto> AddPhoto(ImageFile file, string? altText = null)
     {
         ArgumentNullException.ThrowIfNull(file);
 
+        // The pipeline was skipped → a bug, not a user mistake
         if (file.Dimensions != DishPhotoStandard.FullSize)
             throw new InvalidOperationException(
                 $"Dish photos must be processed to {DishPhotoStandard.FullSize} before they are added.");
         if (file.ThumbnailPath is null)
             throw new InvalidOperationException("Dish photos need a thumbnail.");
 
-        if (_photos.Count >= MaxPhotos)
-            throw new InvalidOperationException($"A dish can have at most {MaxPhotos} photos.");
-        if (_photos.Any(p => p.File.Hash == file.Hash))
-            throw new InvalidOperationException("You've already added this photo.");
+        // Things a seller can actually do → errors
+        if (_photos.Count >= MaxPhotos) return DishErrors.TooManyPhotos;
+        if (_photos.Any(p => p.File.Hash == file.Hash)) return DishErrors.DuplicatePhoto;
 
         var photo = new DishPhoto(Id, file, TrimOrNull(altText) ?? Name, _photos.Count);
         _photos.Add(photo);
@@ -124,46 +140,61 @@ public class Dish : Entity<Guid>
     }
 
     /// <summary>
-    /// Remove a photo. The caller (Application layer) deletes the file from storage afterwards.
+    /// Remove a photo. On success the caller (Application layer) deletes the file from storage.
     /// If it was the main photo, the next one takes over.
     /// </summary>
-    public void RemovePhoto(Guid photoId)
+    public Result RemovePhoto(Guid photoId)
     {
         var photo = FindPhoto(photoId);
-        _photos.Remove(photo);
+        if (photo is null) return DishErrors.PhotoNotFound;
 
+        _photos.Remove(photo);
         Renumber(_photos.OrderBy(p => p.DisplayOrder).ToList());
 
         if (photo.IsPrimary && _photos.Count > 0)
             _photos.OrderBy(p => p.DisplayOrder).First().MarkPrimary();
+
+        return Result.Success();
     }
 
-    public void SetPrimaryPhoto(Guid photoId)
+    public Result SetPrimaryPhoto(Guid photoId)
     {
         var chosen = FindPhoto(photoId);
+        if (chosen is null) return DishErrors.PhotoNotFound;
+
         foreach (var p in _photos) p.ClearPrimary();
         chosen.MarkPrimary();
+        return Result.Success();
     }
 
     /// <summary>Drag-to-reorder on the Edit dish page: pass every photo Id in the new order.</summary>
-    public void ReorderPhotos(IReadOnlyList<Guid> photoIdsInOrder)
+    public Result ReorderPhotos(IReadOnlyList<Guid> photoIdsInOrder)
     {
         ArgumentNullException.ThrowIfNull(photoIdsInOrder);
-        if (photoIdsInOrder.Count != _photos.Count || photoIdsInOrder.Distinct().Count() != _photos.Count)
-            throw new ArgumentException("Send every photo exactly once.", nameof(photoIdsInOrder));
 
-        Renumber(photoIdsInOrder.Select(FindPhoto).ToList());
+        var sameSet = photoIdsInOrder.Count == _photos.Count
+                      && photoIdsInOrder.Distinct().Count() == _photos.Count
+                      && photoIdsInOrder.All(id => _photos.Any(p => p.Id == id));
+        if (!sameSet) return DishErrors.PhotoOrderMismatch;
+
+        Renumber(photoIdsInOrder.Select(id => _photos.First(p => p.Id == id)).ToList());
+        return Result.Success();
     }
 
-    public void UpdatePhotoAltText(Guid photoId, string altText)
+    public Result UpdatePhotoAltText(Guid photoId, string altText)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(altText);
-        FindPhoto(photoId).UpdateAltText(altText.Trim());
+
+        var photo = FindPhoto(photoId);
+        if (photo is null) return DishErrors.PhotoNotFound;
+
+        photo.UpdateAltText(altText.Trim());
+        return Result.Success();
     }
 
-    private DishPhoto FindPhoto(Guid photoId) =>
-        _photos.FirstOrDefault(p => p.Id == photoId)
-        ?? throw new InvalidOperationException("That photo wasn't found on this dish.");
+    // ---------- Helpers ----------
+
+    private DishPhoto? FindPhoto(Guid photoId) => _photos.FirstOrDefault(p => p.Id == photoId);
 
     private static void Renumber(IList<DishPhoto> ordered)
     {
@@ -171,14 +202,11 @@ public class Dish : Entity<Guid>
             ordered[i].SetDisplayOrder(i);
     }
 
+    /// <summary>Sets name, category, price and description. Callers have already checked the rules.</summary>
     private void Apply(DishCatalog dishCatalog, string? detail, decimal price, string? description)
     {
-        ArgumentNullException.ThrowIfNull(dishCatalog);
-        if (!dishCatalog.CanBeUsed)
-            throw new InvalidOperationException("Please choose a dish name from the approved list.");
-        if (price <= 0)
-            throw new ArgumentOutOfRangeException(nameof(price), "Price must be more than zero.");
-
+        DishCatalogId = dishCatalog.Id;
+        Category = dishCatalog.Category;
         Detail = TrimOrNull(detail);
         Name = Detail is null ? dishCatalog.Name : $"{dishCatalog.Name} {Detail}";
         Price = decimal.Round(price, 2, MidpointRounding.AwayFromZero);

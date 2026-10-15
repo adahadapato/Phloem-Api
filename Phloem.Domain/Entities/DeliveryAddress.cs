@@ -23,7 +23,9 @@ public class DeliveryAddress : Entity<Guid>
     public Country Country { get; private set; }
     public bool IsDefault { get; private set; }
 
-    public void Update(string label, string fullAddress, Country country) => Set(label, fullAddress, country);
+    
+    /// <summary>Internal: change addresses through UserProfile.UpdateAddress, so its rules always apply.</summary>
+    internal void Update(string label, string fullAddress, Country country) => Set(label, fullAddress, country);
 
     internal void MarkDefault() => IsDefault = true;
     internal void ClearDefault() => IsDefault = false;

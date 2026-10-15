@@ -1,10 +1,17 @@
 ﻿using Phloem.Domain.Enums;
+using Phloem.Domain.Errors;
+using Phloem.Domain.Shared;
+using Phloem.Domain.Shared.Errors;
+using Phloem.Domain.Shared.Results;
 using Phloem.Domain.ValueObjects;
 
 namespace Phloem.Domain.Entities;
 
 /// <summary>
 /// "Send food to the UK": a parcel from Ghana or Nigeria to someone in the UK.
+///
+/// Errors: business-rule failures are RETURNED as a Result (see ShipmentErrors);
+/// programmer mistakes (nulls, blank text the validator should have caught, a negative fee) still THROW.
 /// </summary>
 public class Shipment : Entity<Guid>
 {
@@ -57,18 +64,21 @@ public class Shipment : Entity<Guid>
     // =====================================================================
 
     /// <summary>The fee is worked out by the Application layer from speed / weight.</summary>
-    public static Shipment Create(string trackingNumber, UserProfile sender, string recipientName, PhoneNumber? recipientPhone,
-                                  string ukAddress, string itemDescription, DeliverySpeed speed,
-                                  decimal fee)
+    public static Result<Shipment> Create(string trackingNumber, UserProfile sender, string recipientName,
+                                          PhoneNumber? recipientPhone, string ukAddress, string itemDescription,
+                                          DeliverySpeed speed, decimal fee)
     {
+        // Programmer mistakes → throw
         ArgumentNullException.ThrowIfNull(sender);
         ArgumentException.ThrowIfNullOrWhiteSpace(trackingNumber);
         ArgumentException.ThrowIfNullOrWhiteSpace(recipientName);
         ArgumentException.ThrowIfNullOrWhiteSpace(ukAddress);
         ArgumentException.ThrowIfNullOrWhiteSpace(itemDescription);
-        if (sender.Country == Country.UnitedKingdom)
-            throw new InvalidOperationException("Shipments are sent from Ghana or Nigeria to the UK.");
-        if (fee < 0) throw new ArgumentOutOfRangeException(nameof(fee), "Fee can't be negative.");
+        ArgumentOutOfRangeException.ThrowIfNegative(fee);   // the Application layer calculates it
+
+        // Business rules → return an error
+        if (sender.IsDeleted) return ShipmentErrors.AccountDeleted;
+        if (sender.Country == Country.UnitedKingdom) return ShipmentErrors.NotFromUk;
 
         return new Shipment(Guid.CreateVersion7(), trackingNumber.Trim(),
             sender.Id, sender.FullName,
@@ -78,25 +88,34 @@ public class Shipment : Entity<Guid>
             speed, decimal.Round(fee, 2, MidpointRounding.AwayFromZero), sender.Country.ToCurrency());
     }
 
-    public void MarkInTransit()
+    /// <summary>ShipmentManager: the parcel has left.</summary>
+    public Result MarkInTransit()
     {
         if (Status != ShipmentStatus.Processing)
-            throw new InvalidOperationException($"A shipment that is {Status} can't go in transit.");
+            return ShipmentErrors.InvalidStatusChange(Status, ShipmentStatus.InTransit);
+
         Status = ShipmentStatus.InTransit;
+        return Result.Success();
     }
 
-    public void MarkDelivered(DateTime utcNow)
+    /// <summary>ShipmentManager: the parcel has arrived.</summary>
+    public Result MarkDelivered(DateTime utcNow)
     {
         if (Status != ShipmentStatus.InTransit)
-            throw new InvalidOperationException($"A shipment that is {Status} can't be delivered.");
+            return ShipmentErrors.InvalidStatusChange(Status, ShipmentStatus.Delivered);
+
         Status = ShipmentStatus.Delivered;
         DeliveredAtUtc = utcNow;
+        return Result.Success();
     }
 
-    public void Cancel()
+    /// <summary>Sender cancels before the parcel leaves. Cancelling twice is fine.</summary>
+    public Result Cancel()
     {
-        if (Status != ShipmentStatus.Processing)
-            throw new InvalidOperationException("Only shipments that haven't left yet can be cancelled.");
+        if (Status == ShipmentStatus.Cancelled) return Result.Success();
+        if (Status != ShipmentStatus.Processing) return ShipmentErrors.CannotCancel;
+
         Status = ShipmentStatus.Cancelled;
+        return Result.Success();
     }
 }

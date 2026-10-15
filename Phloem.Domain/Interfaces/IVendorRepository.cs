@@ -1,6 +1,6 @@
 ﻿using Phloem.Domain.Entities;
 using Phloem.Domain.Enums;
-using Phloem.Domain.Shared;
+using Phloem.Domain.Shared.Results;
 
 namespace Phloem.Domain.Interfaces;
 
