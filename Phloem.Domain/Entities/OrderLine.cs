@@ -17,7 +17,8 @@ public class OrderLine : Entity<Guid>
         OrderId = orderId;
         DishId = dish.Id;
         DishName = dish.Name;
-        DishImageUrl = dish.ImageUrl;
+        // Small picture for the order history: thumbnail if there is one, else the full photo
+        DishImagePath = dish.PrimaryPhoto?.File.ThumbnailPath ?? dish.PrimaryPhoto?.File.Path;
         VendorId = dish.VendorId;
         VendorName = dish.Vendor.Name;
         UnitPrice = dish.Price;
@@ -31,7 +32,7 @@ public class OrderLine : Entity<Guid>
 
     // ---------- Snapshot at ordering time ----------
     public string DishName { get; private set; } = string.Empty;
-    public string? DishImageUrl { get; private set; }
+    public string? DishImagePath { get; private set; }
     public Guid VendorId { get; private set; }
     public string VendorName { get; private set; } = string.Empty;
     public decimal UnitPrice { get; private set; }

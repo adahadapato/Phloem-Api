@@ -1,5 +1,5 @@
-﻿using Phloem.Domain.Constants;
-using Phloem.Domain.Enums;
+﻿using Phloem.Domain.Enums;
+using Phloem.Domain.ValueObjects;
 
 namespace Phloem.Domain.Entities;
 
@@ -11,8 +11,8 @@ public class Vendor : Entity<Guid>
 {
     protected Vendor() { }
 
-    private Vendor(Guid id, Guid ownerId, string name, string businessEmail,
-                   string? businessPhone, Country country, DateTime createdAtUtc)
+    private Vendor(Guid id, Guid ownerId, string name, EmailAddress businessEmail,
+                   PhoneNumber? businessPhone, Country country)
         : base(id)
     {
         OwnerId = ownerId;
@@ -21,7 +21,6 @@ public class Vendor : Entity<Guid>
         BusinessPhone = businessPhone;
         Country = country;
         Status = VendorStatus.PendingApproval;
-        CreatedAtUtc = createdAtUtc;
     }
 
     // ---------- Owner ----------
@@ -30,8 +29,8 @@ public class Vendor : Entity<Guid>
 
     // ---------- Business details (Shop settings page) ----------
     public string Name { get; private set; } = string.Empty;       // unique
-    public string BusinessEmail { get; private set; } = string.Empty;
-    public string? BusinessPhone { get; private set; }
+    public EmailAddress BusinessEmail { get; private set; } = null!;
+    public PhoneNumber? BusinessPhone { get; private set; }
     public Country Country { get; private set; }
     public Currency Currency => Country.ToCurrency();
 
@@ -45,8 +44,7 @@ public class Vendor : Entity<Guid>
     public int RatingCount { get; private set; }
     public decimal Balance { get; private set; }                    // in this shop's Currency
 
-    // ---------- Dates ----------
-    public DateTime CreatedAtUtc { get; private set; }
+    // ---------- Dates (CreatedAt / UpdatedAt come from the base Entity) ----------
     public DateTime? ApprovedAtUtc { get; private set; }
 
     // =====================================================================
@@ -58,24 +56,26 @@ public class Vendor : Entity<Guid>
     /// If the seller leaves business email / phone blank, the Application layer passes in
     /// the login account's email / phone (they live in Identity, not in UserProfile).
     /// </summary>
-    public static Vendor Open(UserProfile owner, string name, string businessEmail, string? businessPhone, DateTime utcNow)
+    public static Vendor Open(UserProfile owner, string name, EmailAddress businessEmail, PhoneNumber? businessPhone)
     {
         ArgumentNullException.ThrowIfNull(owner);
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentNullException.ThrowIfNull(businessEmail);
         if (owner.IsDeleted) throw new InvalidOperationException("This account has been deleted.");
 
-        return new Vendor(Guid.CreateVersion7(), owner.Id,
-            Rules.Name(name, "Shop name", 80),
-            Rules.Email(businessEmail),
-            Rules.Phone(businessPhone),
-            owner.Country, utcNow);
+        return new Vendor(Guid.CreateVersion7(), owner.Id, name.Trim(),
+            businessEmail, businessPhone, owner.Country);
     }
 
     /// <summary>Shop settings page. Blank email / phone are filled in by the Application layer (as in Open).</summary>
-    public void UpdateDetails(string name, string businessEmail, string? businessPhone)
+    public void UpdateDetails(string name, EmailAddress businessEmail, PhoneNumber? businessPhone)
     {
-        Name = Rules.Name(name, "Shop name", 80);
-        BusinessEmail = Rules.Email(businessEmail);
-        BusinessPhone = Rules.Phone(businessPhone);
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentNullException.ThrowIfNull(businessEmail);
+
+        Name = name.Trim();
+        BusinessEmail = businessEmail;
+        BusinessPhone = businessPhone;
     }
 
     // ---------- Admin actions ----------

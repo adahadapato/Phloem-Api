@@ -5,7 +5,8 @@
 /// </summary>
 public abstract class ValueObject : IEquatable<ValueObject>
 {
-    public static bool operator ==(ValueObject a, ValueObject b)
+    // CHANGED: nullable parameters (ValueObject?) so <Nullable>enable</Nullable> doesn't warn.
+    public static bool operator ==(ValueObject? a, ValueObject? b)
     {
         if (a is null && b is null)
         {
@@ -20,38 +21,26 @@ public abstract class ValueObject : IEquatable<ValueObject>
         return a.Equals(b);
     }
 
-    public static bool operator !=(ValueObject a, ValueObject b) => !(a == b);
+    public static bool operator !=(ValueObject? a, ValueObject? b) => !(a == b);
 
     /// <inheritdoc />
-    public bool Equals(ValueObject other) => !(other is null) && GetAtomicValues().SequenceEqual(other.GetAtomicValues());
+    // CHANGED: also checks the type, like Equals(object) already did.
+    // Before, Email("x") and PhoneNumber("x") with the same text counted as equal.
+    public bool Equals(ValueObject? other) =>
+        other is not null &&
+        GetType() == other.GetType() &&
+        GetAtomicValues().SequenceEqual(other.GetAtomicValues());
 
     /// <inheritdoc />
-    public override bool Equals(object obj)
-    {
-        if (obj == null)
-        {
-            return false;
-        }
-
-        if (GetType() != obj.GetType())
-        {
-            return false;
-        }
-
-        if (!(obj is ValueObject valueObject))
-        {
-            return false;
-        }
-
-        return GetAtomicValues().SequenceEqual(valueObject.GetAtomicValues());
-    }
+    // CHANGED: simply reuses Equals(ValueObject) so the two can never disagree.
+    public override bool Equals(object? obj) => obj is ValueObject other && Equals(other);
 
     /// <inheritdoc />
     public override int GetHashCode()
     {
         HashCode hashCode = default;
 
-        foreach (object obj in GetAtomicValues())
+        foreach (object? obj in GetAtomicValues())
         {
             hashCode.Add(obj);
         }
@@ -63,5 +52,6 @@ public abstract class ValueObject : IEquatable<ValueObject>
     /// Gets the atomic values of the value object.
     /// </summary>
     /// <returns>The collection of objects representing the value object values.</returns>
-    protected abstract IEnumerable<object> GetAtomicValues();
+    // CHANGED: object? so a value object can have an optional part (e.g. a null middle name).
+    protected abstract IEnumerable<object?> GetAtomicValues();
 }

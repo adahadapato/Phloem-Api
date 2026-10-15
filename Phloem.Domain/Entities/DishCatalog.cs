@@ -1,5 +1,4 @@
-﻿using Phloem.Domain.Constants;
-using Phloem.Domain.Enums;
+﻿using Phloem.Domain.Enums;
 
 namespace Phloem.Domain.Entities;
 
@@ -12,7 +11,7 @@ public class DishCatalog : Entity<Guid>
     protected DishCatalog() { }
 
     private DishCatalog(Guid id, string name, DishCategory category, CatalogGroup group,
-                        DishCatalogStatus status, Guid? suggestedByUserId, DateTime createdAtUtc)
+                        DishCatalogStatus status, Guid? suggestedByUserId)
         : base(id)
     {
         Name = name;
@@ -20,7 +19,6 @@ public class DishCatalog : Entity<Guid>
         Group = group;
         Status = status;
         SuggestedByUserId = suggestedByUserId;
-        CreatedAtUtc = createdAtUtc;
     }
 
     public string Name { get; private set; } = string.Empty;      // unique (case-insensitive)
@@ -29,20 +27,23 @@ public class DishCatalog : Entity<Guid>
     public DishCatalogStatus Status { get; private set; }
 
     public Guid? SuggestedByUserId { get; private set; }            // null for the starter list
-    public DateTime CreatedAtUtc { get; private set; }
     public DateTime? ReviewedAtUtc { get; private set; }
 
     public bool CanBeUsed => Status == DishCatalogStatus.Approved;
 
     /// <summary>Starter list / admin-added names: approved straight away.</summary>
-    public static DishCatalog Create(string name, DishCategory category, CatalogGroup group, DateTime utcNow) =>
-        new(Guid.CreateVersion7(), Rules.Name(name, "Dish name", 80), category, group,
-            DishCatalogStatus.Approved, null, utcNow);
+    public static DishCatalog Create(string name, DishCategory category, CatalogGroup group)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        return new(Guid.CreateVersion7(), name.Trim(), category, group, DishCatalogStatus.Approved, null);
+    }
 
     /// <summary>"Can't find your dish?" — waits for an admin.</summary>
-    public static DishCatalog Suggest(string name, DishCategory category, CatalogGroup group, Guid suggestedByUserId, DateTime utcNow) =>
-        new(Guid.CreateVersion7(), Rules.Name(name, "Dish name", 80), category, group,
-            DishCatalogStatus.Suggested, suggestedByUserId, utcNow);
+    public static DishCatalog Suggest(string name, DishCategory category, CatalogGroup group, Guid suggestedByUserId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        return new(Guid.CreateVersion7(), name.Trim(), category, group, DishCatalogStatus.Suggested, suggestedByUserId);
+    }
 
     public void Approve(DateTime utcNow)
     {

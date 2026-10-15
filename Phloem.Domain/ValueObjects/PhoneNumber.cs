@@ -1,51 +1,46 @@
-﻿using Phloem.Domain.Shared;
-using System.Text.RegularExpressions;
-
-namespace Phloem.Domain.ValueObjects;
+﻿namespace Phloem.Domain.ValueObjects;
 
 /// <summary>
-/// Represents a valid international phone number (e.g., +44 7123 456789).
+/// A phone number, stored in one consistent shape: an optional leading "+" then digits only.
+/// "+233 24-555 (0192)" → "+233245550192". So the same number typed two ways is equal.
 /// </summary>
-public class PhoneNumber : ValueObject
+public sealed class PhoneNumber : ValueObject
 {
-    public const int MaxLength = 20;
+    /// <summary>The international standard (E.164) allows at most 15 digits.</summary>
+    public const int MaxDigits = 15;
+    public const int MinDigits = 7;
 
-    public string Value { get; private set; } = string.Empty;
+    private PhoneNumber(string value) => Value = value;
 
-    private PhoneNumber() { }
+    public string Value { get; }
 
-    private PhoneNumber(string value)
+    public static PhoneNumber Create(string? phoneNumber)
     {
-        Value = value.Trim();
+        if (string.IsNullOrWhiteSpace(phoneNumber))
+            throw new ArgumentException("Phone number is required.", nameof(phoneNumber));
+
+        var trimmed = phoneNumber.Trim();
+
+        // Allowed when typing: digits, spaces, dashes, brackets, and "+" only at the start
+        foreach (var (c, i) in trimmed.Select((c, i) => (c, i)))
+        {
+            var ok = char.IsAsciiDigit(c) || c is ' ' or '-' or '(' or ')' || (c == '+' && i == 0);
+            if (!ok)
+                throw new ArgumentException("That phone number doesn't look right.", nameof(phoneNumber));
+        }
+
+        var digits = new string(trimmed.Where(char.IsAsciiDigit).ToArray());
+        if (digits.Length is < MinDigits or > MaxDigits)
+            throw new ArgumentException("That phone number doesn't look right.", nameof(phoneNumber));
+
+        return new PhoneNumber(trimmed.StartsWith('+') ? "+" + digits : digits);
     }
 
-    /// <summary>
-    /// Creates a new phone number with validation.
-    /// </summary>
-    public static Result<PhoneNumber> Create(string phone)
-    {
-        if (string.IsNullOrWhiteSpace(phone))
-            return Result<PhoneNumber>.Failure(
-                new Error("PhoneNumber.Empty", "Phone number is required."));
+    /// <summary>For optional numbers: blank → null, otherwise a valid PhoneNumber.</summary>
+    public static PhoneNumber? CreateOptional(string? phoneNumber) =>
+        string.IsNullOrWhiteSpace(phoneNumber) ? null : Create(phoneNumber);
 
-        if (phone.Length > MaxLength)
-            return Result<PhoneNumber>.Failure(
-                new Error("PhoneNumber.TooLong", $"Phone number exceeds {MaxLength} characters."));
-
-        if (!IsValid(phone))
-            return Result<PhoneNumber>.Failure(
-                new Error("PhoneNumber.Invalid", "Phone number must start with '+' and contain only digits and spaces."));
-
-        return Result<PhoneNumber>.Success(new PhoneNumber(phone));
-    }
-
-    private static bool IsValid(string input)
-    {
-        var pattern = @"^\+\d{1,4}[\s\d]{6,15}$";
-        return Regex.IsMatch(input, pattern);
-    }
-
-    protected override IEnumerable<object> GetAtomicValues()
+    protected override IEnumerable<object?> GetAtomicValues()
     {
         yield return Value;
     }

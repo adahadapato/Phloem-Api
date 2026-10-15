@@ -66,6 +66,7 @@ public class Order : Entity<Guid>
     public static Order Place(string orderNumber, UserProfile customer, DeliveryAddress address,
                               IEnumerable<(Dish Dish, int Quantity)> items, decimal deliveryFee, DateTime utcNow)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(orderNumber);   // ← add as the first line
         ArgumentNullException.ThrowIfNull(customer);
         ArgumentNullException.ThrowIfNull(address);
         if (customer.IsDeleted) throw new InvalidOperationException("This account has been deleted.");

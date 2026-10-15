@@ -8,6 +8,12 @@ public class Result<T> : Result
 {
     private readonly T? _value;
 
+    protected internal Result(T? value, bool isSuccess, Error error)
+        : base(isSuccess, error)
+    {
+        _value = value;
+    }
+
     /// <summary>
     /// Gets the value, if the result is a success.
     /// Throws InvalidOperationException if the result is a failure.
@@ -16,42 +22,21 @@ public class Result<T> : Result
         ? _value!
         : throw new InvalidOperationException("Cannot access value of a failed result.");
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Result{T}"/> class.
-    /// </summary>
-    /// <param name="value">The value, if any.</param>
-    /// <param name="isSuccess">True if the operation succeeded.</param>
-    /// <param name="error">The error, if any.</param>
-    protected internal Result(T? value, bool isSuccess, Error error)
-        : base(isSuccess, error)
-    {
-        _value = value;
-    }
-
-    /// <summary>
-    /// Returns a successful result with the specified value.
-    /// </summary>
-    public new static Result<T> Success(T value)
+    /// <summary>Returns a successful result with the specified value.</summary>
+    // CHANGED: no "new": the base Success() has no parameter, so nothing is hidden (fixes CS0109).
+    public static Result<T> Success(T value)
         => value is null
-            ? Failure(Error.NullValue)  //No <T> needed
+            ? Failure(Error.NullValue)
             : new Result<T>(value, true, Error.None);
 
-    /// <summary>
-    /// Returns a failed result with the specified error.
-    /// </summary>
+    /// <summary>Returns a failed result with the specified error.</summary>
+    // "new" is correct here: the base Failure(Error) has the same signature.
     public new static Result<T> Failure(Error error) =>
-        new Result<T>(default!, false, error);
+        new(default, false, error);
 
-    /// <summary>
-    /// Creates a result from a nullable reference type.
-    /// </summary>
-    //public static Result<T> Create(T value, Error error) where T : class =>
-    //    value is null ? Failure<T>(error) : Success(value);
+    /// <summary>Lets a method returning Result&lt;T&gt; simply "return value;".</summary>
+    public static implicit operator Result<T>(T value) => Success(value);
 
-    /// <summary>
-    /// Converts a non-generic Result to a generic one (with no value).
-    /// </summary>
-    //public static Result<T> From(Result result, T? value = default) =>
-    //    result.IsSuccess ? Success(value!) : Failure<T>(result.Error);
-
+    /// <summary>Lets a method returning Result&lt;T&gt; simply "return SomeError;".</summary>
+    public static implicit operator Result<T>(Error error) => Failure(error);
 }

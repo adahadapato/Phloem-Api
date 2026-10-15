@@ -1,6 +1,5 @@
-﻿using Phloem.Domain.Constants;
-using Phloem.Domain.Enums;
-using System.Diagnostics.Metrics;
+﻿using Phloem.Domain.Enums;
+using Phloem.Domain.ValueObjects;
 
 namespace Phloem.Domain.Entities;
 
@@ -12,8 +11,8 @@ public class Shipment : Entity<Guid>
     protected Shipment() { }
 
     private Shipment(Guid id, string trackingNumber, Guid senderId, string senderName, string recipientName,
-                     string? recipientPhone, Country fromCountry, string ukAddress, string itemDescription,
-                     DeliverySpeed speed, decimal fee, Currency currency, DateTime createdAtUtc)
+                     PhoneNumber? recipientPhone, Country fromCountry, string ukAddress, string itemDescription,
+                     DeliverySpeed speed, decimal fee, Currency currency)
         : base(id)
     {
         TrackingNumber = trackingNumber;
@@ -28,20 +27,19 @@ public class Shipment : Entity<Guid>
         Fee = fee;
         Currency = currency;
         Status = ShipmentStatus.Processing;
-        CreatedAtUtc = createdAtUtc;
     }
 
     public string TrackingNumber { get; private set; } = string.Empty;
 
     // ---------- Sender ----------
     public Guid SenderId { get; private set; }
-    public virtual UserProfile Customer { get; protected set; } = null!;
+    public virtual UserProfile Sender { get; protected set; } = null!;
     public string SenderName { get; private set; } = string.Empty;
     public Country FromCountry { get; private set; }               // Ghana or Nigeria
 
     // ---------- Recipient (UK) ----------
     public string RecipientName { get; private set; } = string.Empty;
-    public string? RecipientPhone { get; private set; }
+    public PhoneNumber? RecipientPhone { get; private set; }
     public string UkAddress { get; private set; } = string.Empty;
 
     // ---------- Parcel ----------
@@ -52,7 +50,6 @@ public class Shipment : Entity<Guid>
 
     // ---------- Status ----------
     public ShipmentStatus Status { get; private set; }
-    public DateTime CreatedAtUtc { get; private set; }
     public DateTime? DeliveredAtUtc { get; private set; }
 
     // =====================================================================
@@ -60,21 +57,25 @@ public class Shipment : Entity<Guid>
     // =====================================================================
 
     /// <summary>The fee is worked out by the Application layer from speed / weight.</summary>
-    public static Shipment Create(string trackingNumber, UserProfile sender, string recipientName, string? recipientPhone,
+    public static Shipment Create(string trackingNumber, UserProfile sender, string recipientName, PhoneNumber? recipientPhone,
                                   string ukAddress, string itemDescription, DeliverySpeed speed,
-                                  decimal fee, DateTime utcNow)
+                                  decimal fee)
     {
         ArgumentNullException.ThrowIfNull(sender);
+        ArgumentException.ThrowIfNullOrWhiteSpace(trackingNumber);
+        ArgumentException.ThrowIfNullOrWhiteSpace(recipientName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(ukAddress);
+        ArgumentException.ThrowIfNullOrWhiteSpace(itemDescription);
         if (sender.Country == Country.UnitedKingdom)
             throw new InvalidOperationException("Shipments are sent from Ghana or Nigeria to the UK.");
         if (fee < 0) throw new ArgumentOutOfRangeException(nameof(fee), "Fee can't be negative.");
 
-        return new Shipment(Guid.CreateVersion7(), Rules.Name(trackingNumber, "Tracking number", 30),
+        return new Shipment(Guid.CreateVersion7(), trackingNumber.Trim(),
             sender.Id, sender.FullName,
-            Rules.Name(recipientName, "Recipient name"), Rules.Phone(recipientPhone),
-            sender.Country, Rules.Name(ukAddress, "UK address", 300),
-            Rules.Name(itemDescription, "Item description", 300),
-            speed, decimal.Round(fee, 2, MidpointRounding.AwayFromZero), sender.Country.ToCurrency(), utcNow);
+            recipientName.Trim(), recipientPhone,
+            sender.Country, ukAddress.Trim(),
+            itemDescription.Trim(),
+            speed, decimal.Round(fee, 2, MidpointRounding.AwayFromZero), sender.Country.ToCurrency());
     }
 
     public void MarkInTransit()

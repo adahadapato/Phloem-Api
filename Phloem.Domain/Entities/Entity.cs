@@ -69,4 +69,30 @@ public abstract class Entity<TId> : IEquatable<Entity<TId>>
         var type = obj.GetType();
         return type.Namespace == "Castle.Proxies" && type.BaseType is not null ? type.BaseType : type;
     }
+
+    // ---------- Audit ----------
+    // Set automatically by Persistence when the entity is saved (never by Domain code).
+
+    /// <summary>When the row was first saved (UTC).</summary>
+    public DateTime CreatedAt { get; private set; }
+
+    /// <summary>When the row was last changed (UTC); null if never changed since creation.</summary>
+    public DateTime? UpdatedAt { get; private set; }
+
+    // ---------- Soft delete ----------
+    // Deleted rows stay in the table (old orders still point at them) but are hidden from queries.
+
+    public bool IsDeleted { get; private set; }
+    public DateTime? DeletedAt { get; private set; }
+
+    /// <summary>
+    /// Only entities themselves call this, from a meaningful method
+    /// (e.g. UserProfile.Delete wipes personal data first). Not public on purpose.
+    /// </summary>
+    protected void SoftDelete(DateTime utcNow)
+    {
+        if (IsDeleted) return;
+        IsDeleted = true;
+        DeletedAt = utcNow;
+    }
 }

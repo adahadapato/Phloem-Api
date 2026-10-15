@@ -1,51 +1,42 @@
-﻿using Phloem.Domain.Shared;
-using System.Text.RegularExpressions;
+﻿using System.Net.Mail;
 
 namespace Phloem.Domain.ValueObjects;
 
 /// <summary>
-/// Represents a valid email address.
+/// A valid, normalised email address (trimmed, lower-case).
+/// If you hold an EmailAddress, it is valid: it can only be made through Create.
 /// </summary>
-public class EmailAddress : ValueObject
+public sealed class EmailAddress : ValueObject
 {
-    public const int MaxLength = 256;
+    public const int MaxLength = 254;
 
-    public string Value { get; private set; } = string.Empty;
+    private EmailAddress(string value) => Value = value;
 
-    private EmailAddress() { }
+    public string Value { get; }
 
-    private EmailAddress(string value)
-    {
-        Value = value.Trim().ToLowerInvariant();
-    }
-
-    /// <summary>
-    /// Creates a new email address with validation.
-    /// </summary>
-    public static Result<EmailAddress> Create(string email)
+    public static EmailAddress Create(string? email)
     {
         if (string.IsNullOrWhiteSpace(email))
-            return Result<EmailAddress>.Failure(
-                new Error("EmailAddress.Empty", "Email is required."));
+            throw new ArgumentException("Email is required.", nameof(email));
 
-        if (email.Length > MaxLength)
-            return Result<EmailAddress>.Failure(
-                new Error("EmailAddress.TooLong", $"Email exceeds {MaxLength} characters."));
+        var normalised = email.Trim().ToLowerInvariant();
 
-        if (!IsValid(email))
-            return Result<EmailAddress>.Failure(
-                new Error("EmailAddress.InvalidFormat", "Email format is invalid."));
+        if (normalised.Length > MaxLength)
+            throw new ArgumentException($"Email must be {MaxLength} characters or fewer.", nameof(email));
 
-        return Result<EmailAddress>.Success(new EmailAddress(email));
+        // MailAddress does the hard part of the format check. We also insist on a dot in the
+        // domain ("ama@gmail" is technically valid but never right for Phloem customers),
+        // and that it didn't need cleaning up ("Ama <ama@x.com>" is rejected).
+        if (!MailAddress.TryCreate(normalised, out var parsed) ||
+            parsed.Address != normalised ||
+            !parsed.Host.Contains('.') ||
+            parsed.Host.StartsWith('.') || parsed.Host.EndsWith('.'))
+            throw new ArgumentException("That email address doesn't look right.", nameof(email));
+
+        return new EmailAddress(normalised);
     }
 
-    private static bool IsValid(string email)
-    {
-        const string pattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
-        return Regex.IsMatch(email, pattern, RegexOptions.IgnoreCase);
-    }
-
-    protected override IEnumerable<object> GetAtomicValues()
+    protected override IEnumerable<object?> GetAtomicValues()
     {
         yield return Value;
     }

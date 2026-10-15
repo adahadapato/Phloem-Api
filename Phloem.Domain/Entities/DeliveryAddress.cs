@@ -1,5 +1,4 @@
-﻿using Phloem.Domain.Constants;
-using Phloem.Domain.Enums;
+﻿using Phloem.Domain.Enums;
 
 namespace Phloem.Domain.Entities;
 
@@ -15,9 +14,7 @@ public class DeliveryAddress : Entity<Guid>
         : base(Guid.CreateVersion7())
     {
         UserId = userId;
-        Label = Rules.Name(label, "Address label", 40);           // "Home", "Work", "Mum's house"
-        FullAddress = Rules.Name(fullAddress, "Address", 300);
-        Country = country;
+        Set(label, fullAddress, country);
     }
 
     public Guid UserId { get; private set; }
@@ -26,13 +23,18 @@ public class DeliveryAddress : Entity<Guid>
     public Country Country { get; private set; }
     public bool IsDefault { get; private set; }
 
-    public void Update(string label, string fullAddress, Country country)
-    {
-        Label = Rules.Name(label, "Address label", 40);
-        FullAddress = Rules.Name(fullAddress, "Address", 300);
-        Country = country;
-    }
+    public void Update(string label, string fullAddress, Country country) => Set(label, fullAddress, country);
 
     internal void MarkDefault() => IsDefault = true;
     internal void ClearDefault() => IsDefault = false;
+
+    private void Set(string label, string fullAddress, Country country)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(label);
+        ArgumentException.ThrowIfNullOrWhiteSpace(fullAddress);
+
+        Label = label.Trim();                 // "Home", "Work", "Mum's house"
+        FullAddress = fullAddress.Trim();
+        Country = country;
+    }
 }

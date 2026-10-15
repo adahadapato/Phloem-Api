@@ -1,6 +1,4 @@
-﻿
-
-using Phloem.Domain.ValueObjects;
+﻿using Phloem.Domain.ValueObjects;
 
 namespace Phloem.Domain.Shared;
 
@@ -9,44 +7,44 @@ namespace Phloem.Domain.Shared;
 /// </summary>
 public sealed class Error : ValueObject
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Error"/> class.
-    /// </summary>
-    /// <param name="code">The error code.</param>
-    /// <param name="message">The error message.</param>
-    public Error(string code, string message)
+    public Error(string code, string message, ErrorType type = ErrorType.Failure)
     {
         Code = code ?? throw new ArgumentNullException(nameof(code));
         Message = message ?? throw new ArgumentNullException(nameof(message));
+        Type = type;
     }
 
-    public static Error NullValue => new Error("Error.Null", "The value cannot be null.");
-
-    /// <summary>
-    /// Gets the error code.
-    /// </summary>
+    /// <summary>Gets the error code, e.g. "Order.CancelWindowPassed".</summary>
     public string Code { get; }
 
-    /// <summary>
-    /// Gets the error message.
-    /// </summary>
+    /// <summary>Gets the message shown to the user.</summary>
     public string Message { get; }
 
-    /// <summary>
-    /// Gets the empty error instance.
-    /// </summary>
-    internal static Error None { get; } = new Error(string.Empty, string.Empty);
+    /// <summary>Gets the kind of error (decides the HTTP status code).</summary>
+    public ErrorType Type { get; }
 
-    /// <summary>
-    /// Implicitly converts the error to its code.
-    /// </summary>
-    public static implicit operator string(Error error) => error?.Code ?? string.Empty;
+    /// <summary>Gets the empty error instance (used by successful results).</summary>
+    internal static Error None { get; } = new(string.Empty, string.Empty);
+
+    /// <summary>A success result was given a null value.</summary>
+    public static Error NullValue { get; } = new("Error.NullValue", "The value cannot be null.");
+
+    // ---------- Factory helpers ----------
+    public static Error Failure(string code, string message) => new(code, message, ErrorType.Failure);
+    public static Error Validation(string code, string message) => new(code, message, ErrorType.Validation);
+    public static Error NotFound(string code, string message) => new(code, message, ErrorType.NotFound);
+    public static Error Conflict(string code, string message) => new(code, message, ErrorType.Conflict);
+    public static Error Forbidden(string code, string message) => new(code, message, ErrorType.Forbidden);
+
+    /// <summary>Implicitly converts the error to its code.</summary>
+    public static implicit operator string(Error? error) => error?.Code ?? string.Empty;
 
     /// <inheritdoc />
-    protected override IEnumerable<object> GetAtomicValues()
+    protected override IEnumerable<object?> GetAtomicValues()
     {
         yield return Code;
         yield return Message;
+        yield return Type;
     }
 
     /// <inheritdoc />

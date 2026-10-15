@@ -6,6 +6,7 @@ namespace Phloem.Domain.Entities;
 /// The business side of a Phloem account: name, country, photo, delivery addresses,
 /// notification switches. It has the SAME Id as the login account (ApplicationUser in
 /// Persistence), which owns email, phone, password and roles.
+/// "Member since" = CreatedAt (from the base Entity).
 /// </summary>
 public class UserProfile : Entity<Guid>
 {
@@ -14,12 +15,11 @@ public class UserProfile : Entity<Guid>
     /// <summary>Required by EF Core.</summary>
     protected UserProfile() { }
 
-    private UserProfile(Guid id, string fullName, Country country, DateTime joinedAtUtc)
+    private UserProfile(Guid id, string fullName, Country country)
         : base(id)
     {
         FullName = fullName;
         Country = country;
-        JoinedAtUtc = joinedAtUtc;
     }
 
     // ---------- Profile ----------
@@ -34,11 +34,6 @@ public class UserProfile : Entity<Guid>
     public bool NotifyNewDishes { get; private set; } = true;
     public bool NotifyShopOrders { get; private set; } = true;
 
-    // ---------- Lifetime ----------
-    public DateTime JoinedAtUtc { get; private set; }
-    public bool IsDeleted { get; private set; }
-    public DateTime? DeletedAtUtc { get; private set; }
-
     // ---------- Navigation ----------
     public virtual IReadOnlyCollection<DeliveryAddress> Addresses => _addresses.AsReadOnly();
     public DeliveryAddress? DefaultAddress => _addresses.FirstOrDefault(a => a.IsDefault);
@@ -51,10 +46,10 @@ public class UserProfile : Entity<Guid>
     /// Called right after the Identity account is created, with the SAME Id,
     /// so the login account and the profile always match one-to-one.
     /// </summary>
-    public static UserProfile Create(Guid identityUserId, string fullName, Country country, DateTime utcNow)
+    public static UserProfile Create(Guid identityUserId, string fullName, Country country)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(fullName);
-        return new UserProfile(identityUserId, fullName.Trim(), country, utcNow);
+        return new UserProfile(identityUserId, fullName.Trim(), country);
     }
 
     /// <summary>Edit profile page (name and country; phone lives on the login account).</summary>
@@ -125,11 +120,11 @@ public class UserProfile : Entity<Guid>
     {
         if (IsDeleted) return;
 
-        IsDeleted = true;
-        DeletedAtUtc = utcNow;
         FullName = "Deleted user";
         PhotoUrl = null;
         _addresses.Clear();
+
+        SoftDelete(utcNow);   // base Entity: sets IsDeleted + DeletedAt
     }
 
     private DeliveryAddress FindAddress(Guid addressId) =>
