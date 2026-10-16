@@ -17,6 +17,9 @@ namespace Phloem.Domain.Entities;
 /// </summary>
 public class UserProfile : Entity<Guid>
 {
+    // ---------- Limits (used by validators in Application and column sizes in Persistence) ----------
+    public const int FullNameMaxLength = 100;
+
     private readonly List<DeliveryAddress> _addresses = new();
 
     /// <summary>Required by EF Core.</summary>
@@ -57,6 +60,8 @@ public class UserProfile : Entity<Guid>
     public static UserProfile Create(Guid identityUserId, string fullName, Country country)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(fullName);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(fullName.Trim().Length, FullNameMaxLength, nameof(fullName));
+
         return new UserProfile(identityUserId, fullName.Trim(), country);
     }
 
@@ -64,6 +69,7 @@ public class UserProfile : Entity<Guid>
     public Result UpdateProfile(string fullName, Country country)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(fullName);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(fullName.Trim().Length, FullNameMaxLength, nameof(fullName));
         if (IsDeleted) return UserProfileErrors.AccountDeleted;
 
         FullName = fullName.Trim();
@@ -110,7 +116,7 @@ public class UserProfile : Entity<Guid>
     }
 
     /// <summary>
-    /// NEW: edit a saved address. Goes through the profile (not DeliveryAddress directly)
+    /// Edit a saved address. Goes through the profile (not DeliveryAddress directly)
     /// so nobody can change another account's address or a deleted account's address.
     /// </summary>
     public Result UpdateAddress(Guid addressId, string label, string fullAddress, Country country)

@@ -19,7 +19,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="features\" />
+    <Folder Include="Features\Dishes\" />
+    <Folder Include="Features\Orders\" />
+    <Folder Include="Features\Vendors\" />
   </ItemGroup>
 
 </Project>

@@ -8,6 +8,10 @@ namespace Phloem.Domain.Entities;
 /// </summary>
 public class DeliveryAddress : Entity<Guid>
 {
+    // ---------- Limits (used by validators in Application and column sizes in Persistence) ----------
+    public const int LabelMaxLength = 40;          // "Home", "Work", "Mum's house"
+    public const int FullAddressMaxLength = 300;
+
     protected DeliveryAddress() { }
 
     internal DeliveryAddress(Guid userId, string label, string fullAddress, Country country)
@@ -23,7 +27,6 @@ public class DeliveryAddress : Entity<Guid>
     public Country Country { get; private set; }
     public bool IsDefault { get; private set; }
 
-    
     /// <summary>Internal: change addresses through UserProfile.UpdateAddress, so its rules always apply.</summary>
     internal void Update(string label, string fullAddress, Country country) => Set(label, fullAddress, country);
 
@@ -34,8 +37,10 @@ public class DeliveryAddress : Entity<Guid>
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(label);
         ArgumentException.ThrowIfNullOrWhiteSpace(fullAddress);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(label.Trim().Length, LabelMaxLength, nameof(label));
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(fullAddress.Trim().Length, FullAddressMaxLength, nameof(fullAddress));
 
-        Label = label.Trim();                 // "Home", "Work", "Mum's house"
+        Label = label.Trim();
         FullAddress = fullAddress.Trim();
         Country = country;
     }

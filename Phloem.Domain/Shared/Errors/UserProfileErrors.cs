@@ -5,6 +5,9 @@
 /// </summary>
 public static class UserProfileErrors
 {
+    public static readonly Error NotFound = Error.NotFound(
+        "UserProfile.NotFound", "We couldn't find your profile.");
+
     public static readonly Error AccountDeleted = Error.Forbidden(
         "UserProfile.AccountDeleted", "This account has been deleted.");
 
