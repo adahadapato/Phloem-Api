@@ -13,4 +13,11 @@ public interface IUserProfileRepository : IRepository<UserProfile>
     /// </summary>
     Task<PagedResult<UserProfile>> GetPagedAsync(
         string? search, PageRequest page, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Admin lists: people's names for a whole list in ONE query (Id → full name).
+    /// Ids not found are simply missing; callers show "Unknown user".
+    /// </summary>
+    Task<IReadOnlyDictionary<Guid, string>> GetFullNamesAsync(
+        IReadOnlyCollection<Guid> userIds, CancellationToken cancellationToken = default);
 }

@@ -19,9 +19,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Features\Dishes\" />
+    <Folder Include="Features\Admin\Commands\" />
+    <Folder Include="Features\Admin\Dtos\" />
+    <Folder Include="Features\Admin\Queries\" />
+    <Folder Include="Features\Admin\Validators\" />
+    <Folder Include="Features\Auth\Queries\" />
     <Folder Include="Features\Orders\" />
-    <Folder Include="Features\Vendors\" />
   </ItemGroup>
 
 </Project>

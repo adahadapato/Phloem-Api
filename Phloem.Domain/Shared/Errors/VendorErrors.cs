@@ -1,8 +1,7 @@
 ﻿using Phloem.Domain.Enums;
-using Phloem.Domain.Shared;
-using Phloem.Domain.Shared.Errors;
 
-namespace Phloem.Domain.Errors;
+
+namespace Phloem.Domain.Shared.Errors;
 
 /// <summary>
 /// Every business-rule failure a Vendor (shop) can return. Nothing here is thrown.
@@ -11,11 +10,28 @@ public static class VendorErrors
 {
     // ---------- The shop ----------
 
+    public static readonly Error NotFound = Error.NotFound(
+        "Vendor.NotFound", "That shop wasn't found.");
+
     public static readonly Error AccountDeleted = Error.Forbidden(
         "Vendor.AccountDeleted", "This account has been deleted.");
 
     public static readonly Error Blocked = Error.Forbidden(
         "Vendor.Blocked", "This shop is blocked. Please contact Phloem support.");
+
+    /// <summary>Seller setup when the user already owns a shop (one shop per account).</summary>
+    public static readonly Error AlreadyHasShop = Error.Conflict(
+        "Vendor.AlreadyHasShop", "You already have a shop on Phloem.");
+
+    /// <summary>Seller setup / Shop settings: names are unique (case-insensitive).</summary>
+    public static readonly Error NameTaken = Error.Conflict(
+        "Vendor.NameTaken", "Another shop already uses that name. Please choose a different one.");
+
+    // ---------- Approval ----------
+
+    /// <summary>PROPOSAL: Reject only makes sense while the shop is waiting for approval.</summary>
+    public static readonly Error NotPendingApproval = Error.Conflict(
+        "Vendor.NotPendingApproval", "This shop isn't waiting for approval.");
 
     // ---------- Verification (✓ badge) ----------
 

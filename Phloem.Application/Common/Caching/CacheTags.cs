@@ -6,4 +6,6 @@ public static class CacheTags
     public const string DishCatalog = "dish-catalog";
     public const string Dishes = "dishes";
     public const string Vendors = "vendors";
+    /// <summary>Delivery pricing per country (fee ranges and window charges).</summary>
+    public const string DeliveryPricing = "delivery-pricing";
 }

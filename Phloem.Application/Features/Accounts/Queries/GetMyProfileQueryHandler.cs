@@ -1,6 +1,5 @@
 ﻿using MediatR;
 using Phloem.Application.Features.Accounts.Dtos;
-using Phloem.Domain.Errors;
 using Phloem.Domain.Interfaces;
 using Phloem.Domain.Shared.Errors;
 using Phloem.Domain.Shared.Results;

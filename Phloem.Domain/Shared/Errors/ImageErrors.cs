@@ -1,7 +1,6 @@
 ﻿using Phloem.Domain.Constants;
-using Phloem.Domain.Shared.Errors;
 
-namespace Phloem.Domain.Errors;
+namespace Phloem.Domain.Shared.Errors;
 
 /// <summary>Photo problems the user can fix themselves, returned by IImageProcessor.</summary>
 public static class ImageErrors

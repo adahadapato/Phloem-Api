@@ -1,6 +1,5 @@
 ﻿using Phloem.Domain.Enums;
-using Phloem.Domain.Errors;
-using Phloem.Domain.Shared;
+using Phloem.Domain.Shared.Errors;
 using Phloem.Domain.Shared.Results;
 using Phloem.Domain.ValueObjects;
 
@@ -15,6 +14,10 @@ namespace Phloem.Domain.Entities;
 /// </summary>
 public class Vendor : Entity<Guid>
 {
+    // NEW ---------- Limits (validators in Application, column sizes in Persistence) ----------
+    public const int NameMaxLength = 80;
+    public const int RejectionReasonMaxLength = 500;
+
     /// <summary>
     /// Documents that must be Accepted (and not expired) before an admin can give the ✓ badge.
     /// A business decision: change this list if the requirements change.
@@ -48,6 +51,12 @@ public class Vendor : Entity<Guid>
     public PhoneNumber? BusinessPhone { get; private set; }
     public Country Country { get; private set; }
     public Currency Currency => Country.ToCurrency();
+    /// <summary>
+    /// The shop's own delivery fee, inside its country's range (<see cref="DeliveryPricing"/>).
+    /// Null = "use my country's minimum", so a new shop can take orders straight away and follows
+    /// the minimum if the admin changes it.
+    /// </summary>
+    public decimal? DeliveryFee { get; private set; }
 
     // ---------- Shop images (public container) ----------
     public ImageFile? Logo { get; private set; }                   // round picture on shop cards
@@ -57,6 +66,9 @@ public class Vendor : Entity<Guid>
     public VendorStatus Status { get; private set; }
     public bool IsVerified { get; private set; }                    // the ✓ badge
     public bool IsVisibleToBuyers => Status == VendorStatus.Approved;
+
+    /// <summary>NEW (proposal): why an admin rejected the shop; shown on Shop settings.</summary>
+    public string? RejectionReason { get; private set; }
 
     // ---------- Reputation & money ----------
     public decimal Rating { get; private set; }                     // average stars, 0–5
@@ -82,6 +94,7 @@ public class Vendor : Entity<Guid>
     {
         ArgumentNullException.ThrowIfNull(owner);
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(name.Trim().Length, NameMaxLength, nameof(name));   // NEW
         ArgumentNullException.ThrowIfNull(businessEmail);
 
         if (owner.IsDeleted) return VendorErrors.AccountDeleted;
@@ -90,10 +103,14 @@ public class Vendor : Entity<Guid>
             businessEmail, businessPhone, owner.Country);
     }
 
-    /// <summary>Shop settings page. Blank email / phone are filled in by the Application layer (as in Open).</summary>
+    /// <summary>
+    /// Shop settings page. Blank email / phone are filled in by the Application layer (as in Open).
+    /// A REJECTED shop goes back to "waiting for approval" once the seller fixes its details.
+    /// </summary>
     public Result UpdateDetails(string name, EmailAddress businessEmail, PhoneNumber? businessPhone)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(name.Trim().Length, NameMaxLength, nameof(name));   // NEW
         ArgumentNullException.ThrowIfNull(businessEmail);
 
         if (Status == VendorStatus.Blocked) return VendorErrors.Blocked;
@@ -101,7 +118,60 @@ public class Vendor : Entity<Guid>
         Name = name.Trim();
         BusinessEmail = businessEmail;
         BusinessPhone = businessPhone;
+
+        // NEW (proposal): resubmit for approval after a rejection
+        if (Status == VendorStatus.Rejected)
+        {
+            Status = VendorStatus.PendingApproval;
+            RejectionReason = null;
+        }
+
         return Result.Success();
+    }
+
+    /// <summary>Shop settings → Delivery fee. Must be inside the country's range (inclusive).</summary>
+    /// <param name="fee">The new fee; 0 or more.</param>
+    /// <param name="pricing">This shop's country's delivery pricing.</param>
+    /// <returns>Success; or <see cref="VendorErrors.Blocked"/>, <see cref="DeliveryPricingErrors.ShopFeeOutOfRange"/>.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Negative fee (the validator checks first).</exception>
+    /// <exception cref="InvalidOperationException">Pricing for a different country (a bug).</exception>
+    public Result SetDeliveryFee(decimal fee, DeliveryPricing pricing)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(fee);
+        ArgumentNullException.ThrowIfNull(pricing);
+        if (pricing.Country != Country)
+            throw new InvalidOperationException($"This shop is in {Country}, not {pricing.Country}.");
+
+        if (Status == VendorStatus.Blocked) return VendorErrors.Blocked;
+
+        var rounded = decimal.Round(fee, 2, MidpointRounding.AwayFromZero);
+        if (!pricing.ContainsShopFee(rounded)) return DeliveryPricingErrors.ShopFeeOutOfRange(pricing);
+
+        DeliveryFee = rounded;
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Admin changed the country's fee range: moves this shop's fee to the nearest limit if it's
+    /// now outside. The shop is never blocked.
+    /// </summary>
+    /// <param name="pricing">The country's new pricing.</param>
+    /// <returns>What changed (for the seller's email), or null if nothing changed
+    /// (fee already inside, or the shop uses the country minimum).</returns>
+    /// <exception cref="InvalidOperationException">Pricing for a different country (a bug).</exception>
+    public DeliveryFeeAdjustment? ApplyDeliveryFeeRange(DeliveryPricing pricing)
+    {
+        ArgumentNullException.ThrowIfNull(pricing);
+        if (pricing.Country != Country)
+            throw new InvalidOperationException($"This shop is in {Country}, not {pricing.Country}.");
+
+        if (DeliveryFee is not { } current) return null;
+
+        var adjusted = pricing.ClampShopFee(current);
+        if (adjusted == current) return null;
+
+        DeliveryFee = adjusted;
+        return new DeliveryFeeAdjustment(current, adjusted, Currency);
     }
 
     // ---------- Admin actions ----------
@@ -112,7 +182,24 @@ public class Vendor : Entity<Guid>
         if (Status == VendorStatus.Blocked) return VendorErrors.Blocked;
 
         Status = VendorStatus.Approved;
+        RejectionReason = null;
         ApprovedAtUtc ??= utcNow;
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// NEW (proposal): admin rejects a shop that's waiting for approval, with a reason the seller sees.
+    /// The shop is kept, not deleted, so the seller can fix it and it comes back for review.
+    /// </summary>
+    public Result Reject(string reason)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(reason);   // the validator asks for a reason first
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(reason.Trim().Length, RejectionReasonMaxLength, nameof(reason));
+
+        if (Status != VendorStatus.PendingApproval) return VendorErrors.NotPendingApproval;
+
+        Status = VendorStatus.Rejected;
+        RejectionReason = reason.Trim();
         return Result.Success();
     }
 
@@ -123,6 +210,20 @@ public class Vendor : Entity<Guid>
         if (Status != VendorStatus.Blocked) return;
         // Back to Approved only if it had been approved before; otherwise it still needs review
         Status = ApprovedAtUtc is null ? VendorStatus.PendingApproval : VendorStatus.Approved;
+    }
+
+    /// <summary>
+    /// NEW (proposal): the owner deleted their account. The shop is hidden from everyone
+    /// (soft delete) but the row stays, so past orders still point at a valid shop.
+    /// Closing twice is fine.
+    /// </summary>
+    public void Close(DateTime utcNow)
+    {
+        if (Status == VendorStatus.Closed) return;
+
+        Status = VendorStatus.Closed;
+        IsVerified = false;
+        SoftDelete(utcNow);   // base Entity: IsDeleted + DeletedAt
     }
 
     // ---------- Verification (✓ badge) ----------

@@ -1,7 +1,6 @@
 ﻿using Phloem.Domain.Constants;
 using Phloem.Domain.Enums;
-using Phloem.Domain.Errors;
-using Phloem.Domain.Shared;
+using Phloem.Domain.Shared.Errors;
 using Phloem.Domain.Shared.Results;
 using Phloem.Domain.ValueObjects;
 
@@ -10,6 +9,7 @@ namespace Phloem.Domain.Entities;
 /// <summary>
 /// A dish a shop sells. Its name always starts with an approved DishCatalog name,
 /// optionally followed by a detail: "Jollof Rice" + "& Chicken" = "Jollof Rice & Chicken".
+/// Its price must sit inside the admin's range for that dish in the shop's country (inclusive).
 ///
 /// Errors: business-rule failures are RETURNED as a Result (see DishErrors);
 /// programmer mistakes (nulls, a price ≤ 0 that skipped validation, an unprocessed photo) still THROW.
@@ -18,6 +18,10 @@ public class Dish : Entity<Guid>
 {
     /// <summary>Most photos a seller can add to one dish.</summary>
     public const int MaxPhotos = 5;
+
+    // NEW ---------- Limits (validators in Application, column sizes in Persistence) ----------
+    public const int DetailMaxLength = 40;          // "& Chicken", "Spicy"
+    public const int DescriptionMaxLength = 500;
 
     private readonly List<DishPhoto> _photos = new();
 
@@ -52,6 +56,12 @@ public class Dish : Entity<Guid>
     public string? Description { get; private set; }
     public bool IsAvailable { get; private set; }                   // "Available today" switch
 
+    /// <summary>
+    /// An admin changed the price range and this dish's price is now outside it.
+    /// The dish can't be ordered until the seller sets a price inside the range.
+    /// </summary>
+    public bool NeedsPriceUpdate { get; private set; }
+
     // ---------- Reputation ----------
     public decimal Rating { get; private set; }
     public int RatingCount { get; private set; }
@@ -63,7 +73,7 @@ public class Dish : Entity<Guid>
     public DishPhoto? PrimaryPhoto => _photos.FirstOrDefault(p => p.IsPrimary);
 
     /// <summary>Can a buyer order it right now?</summary>
-    public bool CanBeOrdered => IsAvailable && Vendor is { IsVisibleToBuyers: true };
+    public bool CanBeOrdered => !IsDeleted && IsAvailable && !NeedsPriceUpdate && Vendor is { IsVisibleToBuyers: true };
 
     // =====================================================================
     // Behaviour
@@ -80,10 +90,13 @@ public class Dish : Entity<Guid>
         if (vendor.Status == VendorStatus.Blocked) return DishErrors.ShopBlocked;
         if (!dishCatalog.CanBeUsed) return DishErrors.NameNotApproved;
 
+        var priceCheck = CheckPrice(dishCatalog, vendor.Country, price);
+        if (priceCheck.IsFailure) return priceCheck.Error;
+
         return new Dish(Guid.CreateVersion7(), vendor, dishCatalog, detail, price, description);
     }
 
-    /// <summary>Edit dish page.</summary>
+    /// <summary>Edit dish page. A valid price here also clears NeedsPriceUpdate.</summary>
     public Result Update(DishCatalog dishCatalog, string? detail, decimal price, string? description)
     {
         ArgumentNullException.ThrowIfNull(dishCatalog);
@@ -92,11 +105,62 @@ public class Dish : Entity<Guid>
         if (Vendor is { Status: VendorStatus.Blocked }) return DishErrors.ShopBlocked;
         if (!dishCatalog.CanBeUsed) return DishErrors.NameNotApproved;
 
+        var priceCheck = CheckPrice(dishCatalog, Country, price);
+        if (priceCheck.IsFailure) return priceCheck;
+
         Apply(dishCatalog, detail, price, description);
+        NeedsPriceUpdate = false;
         return Result.Success();
     }
 
+    /// <summary>
+    /// Seller dashboard +/− buttons: change only the price.
+    /// Uses this dish's own DishCatalog (loaded with the dish) for the range.
+    /// </summary>
+    public Result ChangePrice(decimal price)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(price);
+
+        if (Vendor is { Status: VendorStatus.Blocked }) return DishErrors.ShopBlocked;
+
+        var priceCheck = CheckPrice(DishCatalog, Country, price);
+        if (priceCheck.IsFailure) return priceCheck;
+
+        Price = RoundPrice(price);
+        NeedsPriceUpdate = false;
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Called for each dish when an admin changes the range for its name + country.
+    /// Price now outside → flagged (can't be ordered). Price inside again (range widened) → un-flagged.
+    /// Returns true only if the dish was NEWLY flagged, so the seller is emailed once, not every time.
+    /// </summary>
+    public bool ApplyPriceRange(DishPriceRange range)
+    {
+        ArgumentNullException.ThrowIfNull(range);
+        if (range.DishCatalogId != DishCatalogId || range.Country != Country)
+            throw new InvalidOperationException("This price range is for a different dish name or country.");
+
+        var outside = !range.Contains(Price);
+        var newlyFlagged = outside && !NeedsPriceUpdate;
+
+        NeedsPriceUpdate = outside;
+        return newlyFlagged;
+    }
+
     public void SetAvailability(bool isAvailable) => IsAvailable = isAvailable;
+
+    /// <summary>
+    /// NEW: Dish editor → Delete. Soft delete: hidden everywhere, but the row stays so past
+    /// orders still point at it. Photo FILES are kept too (order history shows them).
+    /// Deleting twice is fine.
+    /// </summary>
+    public void Delete(DateTime utcNow)
+    {
+        IsAvailable = false;
+        SoftDelete(utcNow);
+    }
 
     /// <summary>Stars are checked by the validator first, so out-of-range is a bug.</summary>
     public void AddRating(int stars)
@@ -140,7 +204,7 @@ public class Dish : Entity<Guid>
     }
 
     /// <summary>
-    /// Remove a photo. On success the caller (Application layer) deletes the file from storage.
+    /// Remove a photo. The FILE stays in storage (past orders may show it).
     /// If it was the main photo, the next one takes over.
     /// </summary>
     public Result RemovePhoto(Guid photoId)
@@ -194,6 +258,20 @@ public class Dish : Entity<Guid>
 
     // ---------- Helpers ----------
 
+    /// <summary>The one place the price rule lives (range must exist, price inside it, inclusive).</summary>
+    private static Result CheckPrice(DishCatalog dishCatalog, Country country, decimal price)
+    {
+        var range = dishCatalog.PriceRangeFor(country);
+        if (range is null) return DishErrors.PriceNotSet;
+
+        return range.Contains(RoundPrice(price))
+            ? Result.Success()
+            : DishErrors.PriceOutOfRange(range);
+    }
+
+    private static decimal RoundPrice(decimal price) =>
+        decimal.Round(price, 2, MidpointRounding.AwayFromZero);
+
     private DishPhoto? FindPhoto(Guid photoId) => _photos.FirstOrDefault(p => p.Id == photoId);
 
     private static void Renumber(IList<DishPhoto> ordered)
@@ -205,12 +283,21 @@ public class Dish : Entity<Guid>
     /// <summary>Sets name, category, price and description. Callers have already checked the rules.</summary>
     private void Apply(DishCatalog dishCatalog, string? detail, decimal price, string? description)
     {
+        var cleanDetail = TrimOrNull(detail);
+        var cleanDescription = TrimOrNull(description);
+
+        // NEW: the validator checks these first, so getting here too long is a bug
+        if (cleanDetail is not null)
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(cleanDetail.Length, DetailMaxLength, nameof(detail));
+        if (cleanDescription is not null)
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(cleanDescription.Length, DescriptionMaxLength, nameof(description));
+
         DishCatalogId = dishCatalog.Id;
         Category = dishCatalog.Category;
-        Detail = TrimOrNull(detail);
+        Detail = cleanDetail;
         Name = Detail is null ? dishCatalog.Name : $"{dishCatalog.Name} {Detail}";
-        Price = decimal.Round(price, 2, MidpointRounding.AwayFromZero);
-        Description = TrimOrNull(description);
+        Price = RoundPrice(price);
+        Description = cleanDescription;
     }
 
     /// <summary>Blank text → null, otherwise trimmed.</summary>

@@ -1,6 +1,5 @@
 ﻿using Phloem.Domain.Enums;
-using Phloem.Domain.Errors;
-using Phloem.Domain.Shared;
+using Phloem.Domain.Shared.Errors;
 using Phloem.Domain.Shared.Results;
 
 namespace Phloem.Domain.Entities;
@@ -8,13 +7,18 @@ namespace Phloem.Domain.Entities;
 /// <summary>
 /// A name in the fixed dish list sellers pick from ("Jollof Rice", "Waakye"…), so there are no typos.
 /// Sellers can suggest a missing name; an admin approves or rejects it.
+/// Admins also set the allowed PRICE RANGE per country; sellers price their dish inside it.
 ///
 /// Errors: business-rule failures are RETURNED as a Result (see DishCatalogErrors);
-/// a blank name (the validator checks first) still THROWS.
+/// a blank name or an invalid range (the validator checks first) still THROWS.
 /// Duplicate names are checked by the Application layer with IDishCatalogRepository.NameExistsAsync.
 /// </summary>
 public class DishCatalog : Entity<Guid>
 {
+    public const int NameMaxLength = 60;
+
+    private readonly List<DishPriceRange> _priceRanges = new();
+
     protected DishCatalog() { }
 
     private DishCatalog(Guid id, string name, DishCategory category, CatalogGroup group,
@@ -38,10 +42,18 @@ public class DishCatalog : Entity<Guid>
 
     public bool CanBeUsed => Status == DishCatalogStatus.Approved;
 
+    // NEW ---------- Price ranges (one per country) ----------
+    public virtual IReadOnlyCollection<DishPriceRange> PriceRanges => _priceRanges.AsReadOnly();
+
+    /// <summary>The range for one country, or null if an admin hasn't set one (→ can't be sold there).</summary>
+    public DishPriceRange? PriceRangeFor(Country country) =>
+        _priceRanges.FirstOrDefault(r => r.Country == country);
+
     /// <summary>Starter list / admin-added names: approved straight away.</summary>
     public static DishCatalog Create(string name, DishCategory category, CatalogGroup group)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(name.Trim().Length, NameMaxLength, nameof(name));
         return new(Guid.CreateVersion7(), name.Trim(), category, group, DishCatalogStatus.Approved, null);
     }
 
@@ -49,6 +61,7 @@ public class DishCatalog : Entity<Guid>
     public static DishCatalog Suggest(string name, DishCategory category, CatalogGroup group, Guid suggestedByUserId)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(name.Trim().Length, NameMaxLength, nameof(name));
         return new(Guid.CreateVersion7(), name.Trim(), category, group, DishCatalogStatus.Suggested, suggestedByUserId);
     }
 
@@ -70,5 +83,28 @@ public class DishCatalog : Entity<Guid>
         Status = DishCatalogStatus.Rejected;
         ReviewedAtUtc = utcNow;
         return Result.Success();
+    }
+
+    /// <summary>
+    /// NEW: admin sets (or changes) the allowed price range for one country.
+    /// Returns the range so the Application layer can re-check that country's dishes
+    /// (Dish.ApplyPriceRange) and email the sellers whose dishes became unsellable.
+    /// </summary>
+    public Result<DishPriceRange> SetPriceRange(Country country, decimal minPrice, decimal maxPrice)
+    {
+        if (!CanBeUsed) return DishCatalogErrors.NotApproved;
+
+        var range = PriceRangeFor(country);
+        if (range is null)
+        {
+            range = new DishPriceRange(Id, country, minPrice, maxPrice);
+            _priceRanges.Add(range);
+        }
+        else
+        {
+            range.Update(minPrice, maxPrice);
+        }
+
+        return range;
     }
 }

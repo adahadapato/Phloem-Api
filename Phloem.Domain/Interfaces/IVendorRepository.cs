@@ -33,4 +33,22 @@ public interface IVendorRepository : IRepository<Vendor>
     /// <summary>Home page → "Top sellers": best-rated approved shops, optionally in one country.</summary>
     Task<IReadOnlyList<Vendor>> GetTopRatedAsync(
         Country? country, int count, CancellationToken cancellationToken = default);
+
+    /// <summary>Admin dashboard totals: how many shops in each status (closed shops excluded).</summary>
+    Task<IReadOnlyDictionary<VendorStatus, int>> CountByStatusAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Admin lists: shop names for a whole list of owners in ONE query (owner Id → shop name).
+    /// Owners without a shop are simply missing.
+    /// </summary>
+    Task<IReadOnlyDictionary<Guid, string>> GetNamesByOwnerIdsAsync(
+        IReadOnlyCollection<Guid> ownerIds, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Admin changed a country's delivery fee range: every shop in that country (not closed),
+    /// so each fee can be moved into the new range.
+    /// </summary>
+    /// <param name="country">The country.</param>
+    /// <param name="cancellationToken">Cancels the database call.</param>
+    Task<IReadOnlyList<Vendor>> GetByCountryAsync(Country country, CancellationToken cancellationToken = default);
 }
