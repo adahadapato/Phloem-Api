@@ -4,8 +4,8 @@ using Phloem.Domain.ValueObjects;
 namespace Phloem.Domain.Interfaces;
 
 /// <summary>
-/// The image pipeline (Infrastructure, ImageSharp). Does NOT store anything:
-/// it returns processed bytes, and the use case saves them with IFileStorage.
+/// The image pipeline (Infrastructure, Magick.NET). Does NOT store anything: it returns processed bytes, and the
+/// use case saves them with IFileStorage. Accepts JPEG, PNG, WebP and HEIC (iPhone); always outputs WebP.
 /// </summary>
 public interface IImageProcessor
 {

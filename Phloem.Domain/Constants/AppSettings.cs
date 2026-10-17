@@ -1,4 +1,4 @@
-﻿namespace Phloem.Application.Common.Settings;
+﻿namespace Phloem.Application.Common;
 
 /// <summary>
 /// Every configuration key Phloem reads (appsettings.json, User Secrets, environment variables),
@@ -91,6 +91,36 @@ public static class AppSettings
             /// <summary>Key that signs private-file links. SECRET: User Secrets / environment variables only.</summary>
             public const string SigningKey = "Storage:Local:SigningKey";
         }
+    }
+
+    // ==================== Images ====================
+
+    /// <summary>
+    /// Photo pipeline tuning (limits and quality). Bound to <c>Phloem.Infrastructure.Settings.Images.ImageSettings</c>.
+    /// Output sizes are Domain rules (<see cref="DishPhotoStandard"/>), not settings.
+    /// </summary>
+    public static class Images
+    {
+        /// <summary>The whole section.</summary>
+        public const string Section = "Images";
+
+        /// <summary>Largest dish-photo upload in bytes.</summary>
+        public const string MaxDishPhotoBytes = "Images:MaxDishPhotoBytes";
+
+        /// <summary>Largest profile-photo / logo upload in bytes.</summary>
+        public const string MaxSimpleImageBytes = "Images:MaxSimpleImageBytes";
+
+        /// <summary>Longest side for profile photos / logos, in pixels.</summary>
+        public const string SimpleImageMaxSide = "Images:SimpleImageMaxSide";
+
+        /// <summary>WebP quality, 1–100.</summary>
+        public const string WebpQuality = "Images:WebpQuality";
+
+        /// <summary>Minimum sharpness for dish photos.</summary>
+        public const string BlurThreshold = "Images:BlurThreshold";
+
+        /// <summary>Light sharpen on dish photos (true/false).</summary>
+        public const string EnhanceDishPhotos = "Images:EnhanceDishPhotos";
     }
 
     // ==================== Email ====================

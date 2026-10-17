@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Phloem.Application.Common.Settings;
+using Phloem.Application.Common;
 using Phloem.Domain.Interfaces;
 
 namespace Phloem.Infrastructure.Settings.Storage;

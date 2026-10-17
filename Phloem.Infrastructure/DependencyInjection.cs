@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Phloem.Infrastructure.Settings.Application;
 using Phloem.Infrastructure.Settings.Email;
+using Phloem.Infrastructure.Settings.Images;
 using Phloem.Infrastructure.Settings.Storage;
 
 namespace Phloem.Infrastructure
@@ -13,7 +14,7 @@ namespace Phloem.Infrastructure
             services.AddApplicationSettings(configuration);
             services.AddEmail(configuration);
             services.AddStorage(configuration);
-            // services.AddImages();                       next
+            services.AddImages(configuration);                     
             // services.AddPhloemIdentity(configuration);  after Persistence
 
             // Add infrastructure layer services here

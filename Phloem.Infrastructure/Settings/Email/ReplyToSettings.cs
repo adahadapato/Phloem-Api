@@ -1,5 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using Phloem.Application.Common.Settings;
+using Phloem.Application.Common;
 using Phloem.Domain.Enums;
 
 namespace Phloem.Infrastructure.Settings.Email;

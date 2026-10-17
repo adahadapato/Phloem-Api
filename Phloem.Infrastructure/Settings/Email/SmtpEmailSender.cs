@@ -71,7 +71,7 @@ internal sealed class SmtpEmailSender(IOptions<EmailSettings> options, ILogger<S
             await client.ConnectAsync(settings.Host, settings.Port, settings.Security, cancellationToken);
 
             if (!string.IsNullOrWhiteSpace(settings.Username))
-                await client.AuthenticateAsync(settings.Username, settings.Password, cancellationToken);
+                await client.AuthenticateAsync(settings.Username, settings.Password ?? string.Empty, cancellationToken);
 
             await client.SendAsync(message, cancellationToken);
             logger.LogInformation("Email sent: {Subject}", subject);

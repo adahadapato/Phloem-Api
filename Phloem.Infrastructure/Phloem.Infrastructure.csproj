@@ -10,6 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="15.0.0" />
     <PackageReference Include="MailKit" Version="4.18.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.13" />
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
@@ -17,7 +18,6 @@
 
   <ItemGroup>
     <Folder Include="Common\" />
-    <Folder Include="Settings\Images\" />
     <Folder Include="Settings\Identity\" />
   </ItemGroup>
 

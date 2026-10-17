@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using MailKit.Security;
-using Phloem.Application.Common.Settings;
+using Phloem.Application.Common;
 
 namespace Phloem.Infrastructure.Settings.Email;
 
