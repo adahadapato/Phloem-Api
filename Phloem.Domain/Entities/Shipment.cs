@@ -135,6 +135,29 @@ public class Shipment : Entity<Guid>
     /// <summary>Price from the weighed weight: what the sender pays. Null until weighed.</summary>
     public decimal? FinalPrice { get; private set; }
 
+    /// <summary>Fewest transit days for this parcel (copied from the rate when weighed). Null until weighed.</summary>
+    public int? TransitDaysMin { get; private set; }
+
+    /// <summary>Most transit days for this parcel (copied from the rate when weighed). Null until weighed.</summary>
+    public int? TransitDaysMax { get; private set; }
+
+    /// <summary>
+    /// "Expected 22–24 Oct": the day it left + the transit days. Null until it's in transit
+    /// (or if no transit days are known). Once delivered, the app shows the delivery date instead.
+    /// </summary>
+    public (DateOnly From, DateOnly To)? EstimatedArrival
+    {
+        get
+        {
+            var left = _timeline.FirstOrDefault(e => e.Status == ShipmentStatus.InTransit);
+            if (left is null || TransitDaysMin is null || TransitDaysMax is null) return null;
+
+            var day = DateOnly.FromDateTime(left.OccurredAtUtc);
+            return (day.AddDays(TransitDaysMin.Value), day.AddDays(TransitDaysMax.Value));
+        }
+    }
+
+
     /// <summary>The payment provider's reference; null until paid.</summary>
     public string? PaymentReference { get; private set; }
 
@@ -279,6 +302,8 @@ public class Shipment : Entity<Guid>
         WeighedWeightKg = weighedWeightKg;
         FinalPrice = decimal.Round(rate.BaseCharge + rate.PricePerKg * ShipmentRoute.ChargeableWeight(weighedWeightKg),
                                    2, MidpointRounding.AwayFromZero);
+        TransitDaysMin = rate.MinTransitDays;
+        TransitDaysMax = rate.MaxTransitDays;
         Status = ShipmentStatus.ReceivedAtHub;
         AddEvent(Status, utcNow, $"Weighed: {weighedWeightKg:0.00} kg");
         return Result.Success();

@@ -91,16 +91,18 @@ public class ShipmentRoute : Entity<Guid>
     /// <exception cref="ArgumentOutOfRangeException">Text too long.</exception>
     public void UpdateDropOff(string dropOffAddress, string dropOffHours) => SetDropOff(dropOffAddress, dropOffHours);
 
-    /// <summary>Sets (or changes) the price for one speed.</summary>
+    /// <summary>Sets (or changes) the price and transit time for one speed.</summary>
     /// <param name="speed">The speed.</param>
     /// <param name="baseCharge">Fixed amount per parcel; 0 or more.</param>
     /// <param name="pricePerKg">Amount per chargeable kg; 0 or more.</param>
-    /// <exception cref="ArgumentOutOfRangeException">A negative amount.</exception>
-    public void SetRate(DeliverySpeed speed, decimal baseCharge, decimal pricePerKg)
+    /// <param name="minTransitDays">Fewest days in transit; at least 1.</param>
+    /// <param name="maxTransitDays">Most days in transit; at least the minimum, at most 90.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Bad amounts or days (the validator checks first).</exception>
+    public void SetRate(DeliverySpeed speed, decimal baseCharge, decimal pricePerKg, int minTransitDays, int maxTransitDays)
     {
         var existing = _rates.FirstOrDefault(r => r.Speed == speed);
-        if (existing is null) _rates.Add(new ShipmentRate(Id, speed, baseCharge, pricePerKg));
-        else existing.Update(baseCharge, pricePerKg);
+        if (existing is null) _rates.Add(new ShipmentRate(Id, speed, baseCharge, pricePerKg, minTransitDays, maxTransitDays));
+        else existing.Update(baseCharge, pricePerKg, minTransitDays, maxTransitDays);
     }
 
     /// <summary>Stops offering a speed on this route. Removing one that isn't offered is fine.</summary>

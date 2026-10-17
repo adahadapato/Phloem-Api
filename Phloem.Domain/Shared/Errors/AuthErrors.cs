@@ -27,4 +27,8 @@ public static class AuthErrors
 
     public static readonly Error UserNotFound = Error.NotFound(
         "Auth.UserNotFound", "That account wasn't found.");
+
+    /// <summary>Admins must keep two-factor sign-in switched on.</summary>
+    public static readonly Error TwoFactorRequired = Error.Forbidden(
+        "Auth.TwoFactorRequired", "Two-factor sign-in is required for admin accounts and can't be switched off.");
 }
