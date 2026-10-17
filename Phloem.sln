@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Phloem.Persistence", "Phloe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Phloem.Presentation", "Phloem.Presentation\Phloem.Presentation.csproj", "{76477E69-98D4-4679-8713-BFFD2845E7FA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Phloem.Worker", "Phloem.Worker\Phloem.Worker.csproj", "{3F962325-5D9F-4A29-8B1B-3C701D839A13}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{76477E69-98D4-4679-8713-BFFD2845E7FA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{76477E69-98D4-4679-8713-BFFD2845E7FA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{76477E69-98D4-4679-8713-BFFD2845E7FA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3F962325-5D9F-4A29-8B1B-3C701D839A13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3F962325-5D9F-4A29-8B1B-3C701D839A13}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3F962325-5D9F-4A29-8B1B-3C701D839A13}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3F962325-5D9F-4A29-8B1B-3C701D839A13}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

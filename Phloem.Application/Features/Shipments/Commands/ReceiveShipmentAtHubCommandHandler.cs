@@ -1,10 +1,11 @@
-using System.Net;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Phloem.Domain.Entities;
+using Phloem.Domain.Enums;
 using Phloem.Domain.Interfaces;
 using Phloem.Domain.Shared.Errors;
 using Phloem.Domain.Shared.Results;
+using System.Net;
 
 namespace Phloem.Application.Features.Shipments.Commands;
 
@@ -64,7 +65,7 @@ public sealed class ReceiveShipmentAtHubCommandHandler(
                 $"<p>The final price is <strong>{shipment.FinalPrice:0.00} {shipment.Currency}</strong>. " +
                 "Please pay in the Phloem app (My shipments) so it can be sent.</p>";
 
-            await email.SendAsync(contact.Value.Email, $"Your parcel {shipment.TrackingNumber} is ready to pay", body, ct);
+            await email.SendAsync(contact.Value.Email, $"Your parcel {shipment.TrackingNumber} is ready to pay", body, EmailReplyTo.Shipping, ct);
         }
         catch (Exception ex)
         {

@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.Extensions.Logging;
 using Phloem.Domain.Entities;
+using Phloem.Domain.Enums;
 using Phloem.Domain.Interfaces;
 using Phloem.Domain.Shared.Errors;
 using Phloem.Domain.Shared.Results;
@@ -65,7 +66,7 @@ public sealed class SetDishPriceRangeCommandHandler(
 
         try
         {
-            await email.SendAsync(vendor.BusinessEmail.Value, subject, body, ct);
+            await email.SendAsync(vendor.BusinessEmail.Value, subject, body, EmailReplyTo.Sellers, ct);
         }
         catch (Exception ex)
         {

@@ -1,10 +1,11 @@
-﻿using System.Net;
-using MediatR;
+﻿using MediatR;
 using Microsoft.Extensions.Logging;
 using Phloem.Domain.Entities;
+using Phloem.Domain.Enums;
 using Phloem.Domain.Interfaces;
 using Phloem.Domain.Models;
 using Phloem.Domain.Shared.Results;
+using System.Net;
 
 namespace Phloem.Application.Features.DeliveryPricings.Commands;
 
@@ -71,7 +72,7 @@ public sealed class SetDeliveryPricingCommandHandler(
 
         try
         {
-            await email.SendAsync(shop.BusinessEmail.Value, "Your delivery fee has been updated", body, ct);
+            await email.SendAsync(shop.BusinessEmail.Value, "Your delivery fee has been updated", body, EmailReplyTo.Sellers, ct);
         }
         catch (Exception ex)
         {
