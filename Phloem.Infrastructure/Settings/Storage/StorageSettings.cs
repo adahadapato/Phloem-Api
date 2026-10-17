@@ -1,4 +1,4 @@
-﻿using Phloem.Application.Common;
+﻿using Phloem.Domain.Constants;
 
 namespace Phloem.Infrastructure.Settings.Storage;
 

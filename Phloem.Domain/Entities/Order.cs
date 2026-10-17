@@ -43,6 +43,12 @@ public class Order : Entity<Guid>
     /// <summary>Most of one dish in a single order (stops typos like 1000 plates).</summary>
     public const int MaxQuantityPerDish = 99;
 
+    /// <summary>Longest order number (column size). Real ones are 16 characters: "PH-yyMMdd-######".</summary>
+    public const int OrderNumberMaxLength = 20;
+
+    /// <summary>Longest payment-provider reference (column size); Paystack and Stripe references are far shorter.</summary>
+    public const int PaymentReferenceMaxLength = 100;
+
     private readonly List<OrderLine> _lines = new();
 
     /// <summary>Required by EF Core.</summary>

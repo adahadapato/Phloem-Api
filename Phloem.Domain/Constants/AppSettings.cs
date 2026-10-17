@@ -1,4 +1,4 @@
-﻿namespace Phloem.Application.Common;
+﻿namespace Phloem.Domain.Constants;
 
 /// <summary>
 /// Every configuration key Phloem reads (appsettings.json, User Secrets, environment variables),
@@ -10,8 +10,9 @@
 /// (e.g. <c>EmailSettings</c>). <b>Keys</b> are for reading one value directly
 /// (<c>configuration[AppSettings.Email.Host]</c>).</para>
 /// <para>Environment variables use a double underscore instead of a colon: <c>Email:Password</c> → <c>Email__Password</c>.</para>
-/// <para><b>Secrets</b> (passwords, keys, connection strings with passwords) never go in appsettings.json:
-/// User Secrets in development, environment variables / a key vault in production.</para>
+/// <para><b>Secrets</b> (passwords, keys, connection strings with passwords) appear in appsettings.json only as empty
+/// placeholders (<c>""</c>), so CI/CD can map them: User Secrets in development, GitHub Secrets / host environment
+/// variables in production.</para>
 /// </remarks>
 public static class AppSettings
 {
@@ -39,6 +40,54 @@ public static class AppSettings
         public const string WebsiteBaseUrl = "AppSettings:WebsiteBaseUrl";
     }
 
+
+    // ==================== OpenAPI / Swagger ====================
+
+    /// <summary>
+    /// The API description (<c>/openapi/v1.json</c>) and the Swagger page.
+    /// Bound to <c>Phloem.Presentation.Settings.OpenApi.OpenApiSettings</c>.
+    /// </summary>
+    /// <remarks>Off in appsettings.json (production), on in appsettings.Development.json.</remarks>
+    public static class OpenApi
+    {
+        /// <summary>The whole section.</summary>
+        public const string Section = "OpenApi";
+
+        /// <summary>Publish the document and the Swagger page (true/false).</summary>
+        public const string Enabled = "OpenApi:Enabled";
+
+        /// <summary>Title at the top of the page, e.g. "Phloem API".</summary>
+        public const string Title = "OpenApi:Title";
+
+        /// <summary>Document name and version, e.g. "v1" (also used in the document's URL).</summary>
+        public const string Version = "OpenApi:Version";
+
+        /// <summary>Text under the title.</summary>
+        public const string Description = "OpenApi:Description";
+
+        /// <summary>Where the JSON document is served; must contain "{documentName}".</summary>
+        public const string DocumentPath = "OpenApi:DocumentPath";
+
+        /// <summary>Address of the Swagger page, without slashes, e.g. "swagger" → /swagger.</summary>
+        public const string UiPath = "OpenApi:UiPath";
+
+        /// <summary>Who builds and looks after the API, shown under the title. Empty values are left out.</summary>
+        public static class Contact
+        {
+            /// <summary>The whole sub-section.</summary>
+            public const string Section = "OpenApi:Contact";
+
+            /// <summary>Developer's name.</summary>
+            public const string Name = "OpenApi:Contact:Name";
+
+            /// <summary>Developer's email.</summary>
+            public const string Email = "OpenApi:Contact:Email";
+
+            /// <summary>Developer's website or profile (absolute URL).</summary>
+            public const string Url = "OpenApi:Contact:Url";
+        }
+    }
+
     // ==================== Connection strings ====================
 
     /// <summary>
@@ -58,6 +107,130 @@ public static class AppSettings
 
         /// <summary>The main SQL Server database, as a full key.</summary>
         public const string Default = "ConnectionStrings:DefaultConnection";
+    }
+
+    // ==================== Seed data ====================
+
+    /// <summary>
+    /// What the database seeder needs on first start-up: the first Admin account.
+    /// Bound to <c>Phloem.Persistence.Seeding.SeedDataSettings</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>The admin is created only if no user with <see cref="AdminEmail"/> exists yet. Changing these values later
+    /// does NOT change an existing account (change it in the app instead).</para>
+    /// <para>If the email or password is empty, admin seeding is skipped with a warning in the log.</para>
+    /// <para>SECRET: <see cref="AdminEmail"/> and <see cref="AdminPassword"/> are empty in appsettings.json; User Secrets
+    /// in development, GitHub Secrets / host environment variables in production
+    /// (<c>SeedData__AdminEmail</c>, <c>SeedData__AdminPassword</c>).</para>
+    /// </remarks>
+    public static class SeedData
+    {
+        /// <summary>The whole section.</summary>
+        public const string Section = "SeedData";
+
+        /// <summary>The first Admin's email address (also their sign-in name). SECRET.</summary>
+        public const string AdminEmail = "SeedData:AdminEmail";
+
+        /// <summary>The first Admin's password; must meet the Identity password rules. SECRET.</summary>
+        public const string AdminPassword = "SeedData:AdminPassword";
+
+        /// <summary>The first Admin's first name on their profile, e.g. "Phloem".</summary>
+        public const string AdminFirstName = "SeedData:AdminFirstName";
+
+        /// <summary>The first Admin's last name on their profile, e.g. "Admin".</summary>
+        public const string AdminLastName = "SeedData:AdminLastName";
+
+        /// <summary>The first Admin's country, by enum name: "Ghana", "Nigeria" or "UnitedKingdom".</summary>
+        public const string AdminCountry = "SeedData:AdminCountry";
+    }
+
+    // ==================== Identity ====================
+
+    /// <summary>
+    /// Sign-in rules: password strength, lockout after wrong passwords, email confirmation.
+    /// Bound to <c>Phloem.Infrastructure.Settings.Identity.IdentitySettings</c>.
+    /// </summary>
+    /// <remarks>The only place password strength is defined: the Application validators only check "not empty" and
+    /// Identity's own message comes back as a Result.</remarks>
+    public static class Identity
+    {
+        /// <summary>The whole section.</summary>
+        public const string Section = "Identity";
+
+        /// <summary>Refuse sign-in until the email is confirmed (true/false).</summary>
+        public const string RequireConfirmedEmail = "Identity:RequireConfirmedEmail";
+
+        /// <summary>Password strength.</summary>
+        public static class Password
+        {
+            /// <summary>The whole sub-section.</summary>
+            public const string Section = "Identity:Password";
+
+            /// <summary>Minimum length.</summary>
+            public const string RequiredLength = "Identity:Password:RequiredLength";
+
+            /// <summary>Needs a digit 0–9 (true/false).</summary>
+            public const string RequireDigit = "Identity:Password:RequireDigit";
+
+            /// <summary>Needs a lowercase letter (true/false).</summary>
+            public const string RequireLowercase = "Identity:Password:RequireLowercase";
+
+            /// <summary>Needs an uppercase letter (true/false).</summary>
+            public const string RequireUppercase = "Identity:Password:RequireUppercase";
+
+            /// <summary>Needs a symbol such as ! or # (true/false).</summary>
+            public const string RequireNonAlphanumeric = "Identity:Password:RequireNonAlphanumeric";
+
+            /// <summary>Minimum number of different characters.</summary>
+            public const string RequiredUniqueChars = "Identity:Password:RequiredUniqueChars";
+        }
+
+        /// <summary>Temporary lockout after too many wrong passwords.</summary>
+        public static class Lockout
+        {
+            /// <summary>The whole sub-section.</summary>
+            public const string Section = "Identity:Lockout";
+
+            /// <summary>Wrong passwords allowed before the lockout.</summary>
+            public const string MaxFailedAccessAttempts = "Identity:Lockout:MaxFailedAccessAttempts";
+
+            /// <summary>How long the lockout lasts, in minutes.</summary>
+            public const string LockoutMinutes = "Identity:Lockout:LockoutMinutes";
+
+            /// <summary>Whether new accounts can be locked out at all (true/false).</summary>
+            public const string AllowedForNewUsers = "Identity:Lockout:AllowedForNewUsers";
+        }
+    }
+
+    // ==================== JWT ====================
+
+    /// <summary>
+    /// Sign-in tokens: the short-lived access token (JWT), the long-lived refresh token, and the 2FA challenge.
+    /// Bound to <c>Phloem.Infrastructure.Settings.Identity.JwtSettings</c>.
+    /// </summary>
+    public static class Jwt
+    {
+        /// <summary>The whole section.</summary>
+        public const string Section = "Jwt";
+
+        /// <summary>Key that signs every token (HS256, at least 32 characters).
+        /// SECRET: User Secrets / environment variables only (<c>Jwt__Key</c>).</summary>
+        public const string Key = "Jwt:Key";
+
+        /// <summary>Who signed the token, e.g. "Phloem-API".</summary>
+        public const string Issuer = "Jwt:Issuer";
+
+        /// <summary>Who the token is for, e.g. "Phloem-Client".</summary>
+        public const string Audience = "Jwt:Audience";
+
+        /// <summary>Access-token lifetime, in minutes.</summary>
+        public const string ExpiryMinutes = "Jwt:ExpiryMinutes";
+
+        /// <summary>Refresh-token lifetime ("stay signed in"), in days.</summary>
+        public const string RefreshTokenDays = "Jwt:RefreshTokenDays";
+
+        /// <summary>Time allowed to enter the 2FA code after the password, in minutes.</summary>
+        public const string TwoFactorChallengeMinutes = "Jwt:TwoFactorChallengeMinutes";
     }
 
     // ==================== Storage ====================
@@ -97,7 +270,7 @@ public static class AppSettings
 
     /// <summary>
     /// Photo pipeline tuning (limits and quality). Bound to <c>Phloem.Infrastructure.Settings.Images.ImageSettings</c>.
-    /// Output sizes are Domain rules (<see cref="DishPhotoStandard"/>), not settings.
+    /// Output sizes are Domain rules (<c>DishPhotoStandard</c>), not settings.
     /// </summary>
     public static class Images
     {

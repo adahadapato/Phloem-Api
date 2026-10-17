@@ -9,7 +9,8 @@ public sealed class RegisterCommandValidator : AbstractValidator<RegisterCommand
 {
     public RegisterCommandValidator()
     {
-        RuleFor(x => x.FullName).NotEmpty().MaximumLength(UserProfile.FullNameMaxLength);
+        RuleFor(x => x.FirstName).NotEmpty().MaximumLength(UserProfile.FirstNameMaxLength);
+        RuleFor(x => x.LastName).NotEmpty().MaximumLength(UserProfile.LastNameMaxLength);
 
         RuleFor(x => x.Email)
             .NotEmpty()

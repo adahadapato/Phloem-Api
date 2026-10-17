@@ -7,7 +7,8 @@ namespace Phloem.Application.Features.Auth.Commands;
 
 /// <summary>Register page. Address optional → first default delivery address. Signs straight in.</summary>
 public sealed record RegisterCommand(
-    string FullName,
+    string FirstName,
+    string LastName,
     string Email,
     string? PhoneNumber,
     string? Address,

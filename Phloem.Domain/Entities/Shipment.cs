@@ -54,6 +54,12 @@ public class Shipment : Entity<Guid>
     /// <summary>Longest region / postcode.</summary>
     public const int RegionOrPostcodeMaxLength = 50;
 
+    /// <summary>Longest tracking number (column size). Real ones are 17 characters: "PHS-yyMMdd-######".</summary>
+    public const int TrackingNumberMaxLength = 20;
+
+    /// <summary>Longest payment-provider reference (column size).</summary>
+    public const int PaymentReferenceMaxLength = 100;
+
     private readonly List<ShipmentItem> _items = new();
     private readonly List<ShipmentEvent> _timeline = new();
 
@@ -245,7 +251,7 @@ public class Shipment : Entity<Guid>
         {
             TrackingNumber = trackingNumber.Trim(),
             SenderId = sender.Id,
-            SenderName = sender.FullName,
+            SenderName = sender.GetFullName(),
             SenderPhone = senderPhone,
             ShipmentRouteId = route.Id,
             FromCountry = route.FromCountry,

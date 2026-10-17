@@ -32,7 +32,7 @@ public sealed class RegisterCommandHandler(
             if (registered.IsFailure) return registered.Error;   // no commit = rollback
 
             // 2. Profile with the SAME Id
-            profile = UserProfile.Create(registered.Value, command.FullName, command.Country);
+            profile = UserProfile.Create(registered.Value, command.FirstName, command.LastName, command.Country);
 
             if (!string.IsNullOrWhiteSpace(command.Address))
             {
@@ -53,6 +53,6 @@ public sealed class RegisterCommandHandler(
         var tokens = login.Value.Tokens
             ?? throw new InvalidOperationException("A new account should never require two-factor sign-in.");
 
-        return AuthTokensDto.SignedIn(tokens, profile.FullName, email);
+        return AuthTokensDto.SignedIn(tokens, profile.GetFullName(), email);
     }
 }

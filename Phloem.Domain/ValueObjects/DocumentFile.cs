@@ -4,7 +4,8 @@
 /// A document stored in the PRIVATE container exactly as uploaded (never resized or compressed:
 /// it's evidence). Only admins and the shop owner can open it, through a short-lived link.
 /// </summary>
-/// <remarks>EF Core builds it through the private constructor (every parameter matches a property).</remarks>
+/// <remarks>EF Core builds it through the private parameterless constructor and then fills the properties, the same
+/// way as <see cref="ImageFile"/>. Code always goes through <see cref="Create"/>.</remarks>
 public sealed class DocumentFile : ValueObject
 {
     /// <summary>Largest upload: 10 MB.</summary>
@@ -31,6 +32,18 @@ public sealed class DocumentFile : ValueObject
 
     /// <summary>Longest hash: SHA-256 written as hex is 64 characters.</summary>
     public const int HashMaxLength = 64;
+
+    /// <summary>
+    /// Required by EF Core, which can't bind an owned type's columns to constructor parameters.
+    /// EF fills the properties straight after; never call this from code.
+    /// </summary>
+    private DocumentFile()
+    {
+        Path = string.Empty;
+        OriginalFileName = string.Empty;
+        ContentType = string.Empty;
+        Hash = string.Empty;
+    }
 
     private DocumentFile(string path, string originalFileName, string contentType, long fileSizeBytes, string hash)
     {

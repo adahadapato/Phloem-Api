@@ -11,6 +11,8 @@ namespace Phloem.Application.Features.Accounts.Dtos;
 /// </summary>
 public sealed record ProfileDto(
     Guid Id,
+    string FirstName,
+    string LastName,
     string FullName,
     string Email,
     bool EmailConfirmed,
@@ -29,7 +31,9 @@ public sealed record ProfileDto(
 {
     public static ProfileDto From(UserProfile profile, AccountContact contact, string? photoUrl, bool hasShop) => new(
         profile.Id,
-        profile.FullName,
+        profile.FirstName,
+        profile.LastName,
+        profile.GetFullName(),
         contact.Email,
         contact.EmailConfirmed,
         contact.PhoneNumber,

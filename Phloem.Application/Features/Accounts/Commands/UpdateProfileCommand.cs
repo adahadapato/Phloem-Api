@@ -5,5 +5,5 @@ using Phloem.Domain.Shared.Results;
 namespace Phloem.Application.Features.Accounts.Commands;
 
 /// <summary>Edit profile page. Blank phone = remove the phone number.</summary>
-public sealed record UpdateProfileCommand(string FullName, Country Country, string? PhoneNumber)
+public sealed record UpdateProfileCommand(string FirstName, string LastName, Country Country, string? PhoneNumber)
     : IRequest<Result>;

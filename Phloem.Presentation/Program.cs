@@ -1,41 +1,43 @@
+using Phloem.Persistence.Seeding;
+using Phloem.Presentation;
+using Phloem.Presentation.Settings.OpenApi;
+using Phloem.Worker;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+// TEMPORARY: don't check every handler's services at start-up.
+// ICurrentUser, IAuthService, IAccountService and IUserRoleService aren't implemented yet; remove this block
+// once they are, so a missing registration is caught at start-up again instead of on the first request.
+builder.Host.UseDefaultServiceProvider(options =>
+{
+    options.ValidateScopes = builder.Environment.IsDevelopment();   // still catch scoped-in-singleton mistakes
+    options.ValidateOnBuild = false;
+});
+
+// ---------- Layers (each registers only its own services) ----------
+builder.Services
+     .AddPresentation(builder.Configuration)      // layers, OpenAPI; endpoints, auth, CurrentUser (to come)
+     .AddWorker(builder.Configuration);           // scheduled jobs (later)
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
+// ---------- Database: migrations, roles, first admin ----------
+await app.Services.SeedDatabaseAsync();
 
+// ---------- Pipeline ----------
 app.UseHttpsRedirection();
+app.UsePhloemOpenApi();          // /openapi/v1.json + /swagger (when OpenApi:Enabled)
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+// ==================== Endpoint Registration ====================
+var api = app.MapGroup("/api");
 
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast = Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+app.MapGet("/health",
+        () => Results.Ok(
+            new
+            {
+                status = "healthy",
+                timestamp = DateTime.UtcNow
+            }))
+    .ExcludeFromDescription();
 
 app.Run();
-
-internal record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}

@@ -29,6 +29,6 @@ public sealed class CompleteTwoFactorLoginCommandHandler(
         var contact = await accounts.GetContactAsync(tokens.UserId, ct);
         if (contact.IsFailure) return contact.Error;
 
-        return AuthTokensDto.SignedIn(tokens, profile.FullName, contact.Value.Email);
+        return AuthTokensDto.SignedIn(tokens, profile.GetFullName(), contact.Value.Email);
     }
 }

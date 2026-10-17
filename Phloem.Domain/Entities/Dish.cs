@@ -23,6 +23,9 @@ public class Dish : Entity<Guid>
     public const int DetailMaxLength = 40;          // "& Chicken", "Spicy"
     public const int DescriptionMaxLength = 500;
 
+    /// <summary>Longest full name: catalog name + space + detail (e.g. "Jollof Rice" + " " + "& Chicken").</summary>
+    public const int NameMaxLength = DishCatalog.NameMaxLength + 1 + DetailMaxLength;
+
     private readonly List<DishPhoto> _photos = new();
 
     protected Dish() { }

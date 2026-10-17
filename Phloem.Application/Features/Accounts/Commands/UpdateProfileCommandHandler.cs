@@ -23,7 +23,7 @@ public sealed class UpdateProfileCommandHandler(
         if (profile is null) return UserProfileErrors.NotFound;
 
         // 1. Business rules first (e.g. deleted account): nothing is changed if this fails
-        var updated = profile.UpdateProfile(command.FullName, command.Country);
+        var updated = profile.UpdateProfile(command.FirstName, command.LastName, command.Country);
         if (updated.IsFailure) return updated;
 
         // 2. Phone on the login account, normalised to "+digits" (null = remove)
