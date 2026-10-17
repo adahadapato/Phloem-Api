@@ -6,7 +6,7 @@
 # ===== Phloem API =====
 
 # Secrets: keep real keys in `dotnet user-secrets` (local)
-# and environment variables / Key Vault (production)
+# and environment variables / GitHub Secrets (production)
 appsettings.*.local.json
 appsettings.Production.json
 .env.*
@@ -17,9 +17,14 @@ secrets.json
 *.db-shm
 *.db-wal
 
-# Dish and profile photos uploaded while testing locally
+# Files uploaded while testing locally (photos are public, documents are PRIVATE: never commit either)
 wwwroot/uploads/
 uploads/
+wwwroot/private-uploads/
+private-uploads/
+
+# Keep the (otherwise empty) wwwroot folder in the repo so every clone and CI build has a web root
+!wwwroot/.gitkeep
 
 # dotenv files
 .env
