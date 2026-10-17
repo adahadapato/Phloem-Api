@@ -24,7 +24,6 @@
     <Folder Include="Features\Admin\Queries\" />
     <Folder Include="Features\Admin\Validators\" />
     <Folder Include="Features\Auth\Queries\" />
-    <Folder Include="Features\Orders\" />
   </ItemGroup>
 
 </Project>

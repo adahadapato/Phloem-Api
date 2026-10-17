@@ -34,6 +34,7 @@ public class OrderLine : Entity<Guid>
         : base(Guid.CreateVersion7())
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(quantity, 1);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(quantity, Order.MaxQuantityPerDish);
 
         OrderId = orderId;
         DishId = dish.Id;

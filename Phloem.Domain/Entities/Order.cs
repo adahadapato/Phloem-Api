@@ -39,6 +39,9 @@ public class Order : Entity<Guid>
     /// <summary>How long after PAYMENT the customer can still cancel (if the shop hasn't started).</summary>
     public static readonly TimeSpan CancelWindow = TimeSpan.FromMinutes(30);
 
+    /// <summary>Most of one dish in a single order (stops typos like 1000 plates).</summary>
+    public const int MaxQuantityPerDish = 99;
+
     private readonly List<OrderLine> _lines = new();
 
     /// <summary>Required by EF Core.</summary>
@@ -129,6 +132,18 @@ public class Order : Entity<Guid>
 
     /// <summary>When the order was delivered; null until then.</summary>
     public DateTime? DeliveredAtUtc { get; private set; }
+
+    /// <summary>
+    /// What Phloem kept from the dishes, worked out when the order was delivered (snapshot).
+    /// Null until delivered.
+    /// </summary>
+    public decimal? CommissionAmount { get; private set; }
+
+    /// <summary>
+    /// What was added to the seller's balance: <see cref="Total"/> − <see cref="CommissionAmount"/>
+    /// (the delivery fee always goes to the seller). Null until delivered.
+    /// </summary>
+    public decimal? SellerEarnings { get; private set; }
 
     /// <summary>True once payment has been confirmed.</summary>
     public bool IsPaid => PaidAtUtc is not null;
@@ -362,14 +377,27 @@ public class Order : Entity<Guid>
     /// <returns>Success; or <see cref="OrderErrors.InvalidStatusChange"/>.</returns>
     public Result SendOut() => MoveTo(OrderStatus.OutForDelivery, from: OrderStatus.Preparing);
 
-    /// <summary>The order arrived (OutForDelivery → Delivered).</summary>
+
+    /// <summary>
+    /// The order arrived (OutForDelivery → Delivered). Works out and stores the commission and the
+    /// seller's earnings; the Application layer then credits <see cref="SellerEarnings"/> to the shop.
+    /// </summary>
     /// <param name="utcNow">The current time.</param>
+    /// <param name="commission">The country's rate; null = no rate set (0%).</param>
     /// <returns>Success; or <see cref="OrderErrors.InvalidStatusChange"/>.</returns>
-    public Result MarkDelivered(DateTime utcNow)
+    /// <exception cref="InvalidOperationException">The rate is for a different country (a bug).</exception>
+    public Result MarkDelivered(DateTime utcNow, Commission? commission)
     {
+        if (commission is not null && commission.Country != DeliveryCountry)
+            throw new InvalidOperationException($"This commission is for {commission.Country}, not {DeliveryCountry}.");
+
         var moved = MoveTo(OrderStatus.Delivered, from: OrderStatus.OutForDelivery);
-        if (moved.IsSuccess) DeliveredAtUtc = utcNow;
-        return moved;
+        if (moved.IsFailure) return moved;
+
+        DeliveredAtUtc = utcNow;
+        CommissionAmount = commission?.AmountOn(Subtotal) ?? 0m;
+        SellerEarnings = Total - CommissionAmount;
+        return Result.Success();
     }
 
     // =====================================================================

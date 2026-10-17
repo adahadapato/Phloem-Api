@@ -14,6 +14,19 @@ namespace Phloem.Domain.Interfaces;
 /// </remarks>
 public interface IOrderRepository : IRepository<Order>
 {
+
+    /// <summary>
+    /// Seller dashboard → weekly sales chart: how many orders the shop was PAID for on each day
+    /// (by <see cref="Order.PaidAtUtc"/>, UTC date), cancelled orders excluded.
+    /// Days with no orders are simply missing from the result.
+    /// </summary>
+    /// <param name="vendorId">The seller's shop.</param>
+    /// <param name="fromDate">First day (inclusive).</param>
+    /// <param name="toDate">Last day (inclusive).</param>
+    /// <param name="cancellationToken">Cancels the database call.</param>
+    Task<IReadOnlyDictionary<DateOnly, int>> GetDailyPaidCountsForVendorAsync(
+        Guid vendorId, DateOnly fromDate, DateOnly toDate, CancellationToken cancellationToken = default);
+
     /// <summary>Order details when someone taps an order number (e.g. "PH-240518-4821").</summary>
     /// <param name="orderNumber">The order number, as shown in the app.</param>
     /// <param name="cancellationToken">Cancels the database call.</param>

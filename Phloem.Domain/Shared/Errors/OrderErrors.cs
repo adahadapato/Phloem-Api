@@ -68,4 +68,8 @@ public static class OrderErrors
     /// <param name="to">The status that was asked for.</param>
     public static Error InvalidStatusChange(OrderStatus from, OrderStatus to) => Error.Conflict(
         "Order.InvalidStatusChange", $"An order that is {from} can't move to {to}.");
+
+    /// <summary>The delivery address is in a different country from the shop.</summary>
+    public static readonly Error AddressInAnotherCountry = Error.Validation(
+        "Order.AddressInAnotherCountry", "This shop doesn't deliver to that country. Please choose another address.");
 }
