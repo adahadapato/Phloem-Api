@@ -1,4 +1,5 @@
 ﻿using Phloem.Domain.Enums;
+using Phloem.Domain.Models;
 using Phloem.Domain.Shared.Errors;
 using Phloem.Domain.Shared.Results;
 using Phloem.Domain.ValueObjects;

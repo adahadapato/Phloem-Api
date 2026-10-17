@@ -1,6 +1,7 @@
-﻿using Phloem.Domain.Enums;
+﻿using Phloem.Domain.Entities;
+using Phloem.Domain.Enums;
 
-namespace Phloem.Domain.Entities;
+namespace Phloem.Domain.Models;
 
 /// <summary>
 /// One price change in an unpaid order that the customer hasn't been told about yet.

@@ -1,6 +1,7 @@
-﻿using Phloem.Domain.Enums;
+﻿using Phloem.Domain.Entities;
+using Phloem.Domain.Enums;
 
-namespace Phloem.Domain.Entities;
+namespace Phloem.Domain.Models;
 
 /// <summary>
 /// A shop's delivery fee was moved into the admin's new range. Returned by

@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Phloem.Domain.Entities;
 using Phloem.Domain.Interfaces;
+using Phloem.Domain.Models;
 using Phloem.Domain.Shared.Results;
 
 namespace Phloem.Application.Features.DeliveryPricings.Commands;

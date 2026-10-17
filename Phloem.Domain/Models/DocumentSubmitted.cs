@@ -1,6 +1,7 @@
-﻿using Phloem.Domain.ValueObjects;
+﻿using Phloem.Domain.Entities;
+using Phloem.Domain.ValueObjects;
 
-namespace Phloem.Domain.Entities;
+namespace Phloem.Domain.Models;
 
 /// <summary>
 /// What Vendor.SubmitDocument gives back: the new document, plus the file it replaced (if any)
