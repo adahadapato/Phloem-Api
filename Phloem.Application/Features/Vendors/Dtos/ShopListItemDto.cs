@@ -1,11 +1,11 @@
-﻿using Phloem.Domain.Entities;
+using Phloem.Domain.Entities;
 using Phloem.Domain.Enums;
 using Phloem.Domain.Interfaces;
 
 namespace Phloem.Application.Features.Vendors.Dtos;
 
-/// <summary>One card on "Meet local vendors" and Home → Top sellers. The tagline is decided by the app.</summary>
-public sealed record VendorListItemDto(
+/// <summary>One card on "Meet local shops" and Home → Top shops. The tagline is decided by the app.</summary>
+public sealed record ShopListItemDto(
     Guid Id,
     string Name,
     Country Country,
@@ -16,7 +16,8 @@ public sealed record VendorListItemDto(
     string? LogoUrl,
     string? CoverPhotoUrl)
 {
-    public static VendorListItemDto From(Vendor v, int dishCount, IFileStorage storage) => new(
+    /// <summary>Builds the card; <paramref name="dishCount"/> comes from one grouped count for the whole page.</summary>
+    public static ShopListItemDto From(Vendor v, int dishCount, IFileStorage storage) => new(
         v.Id,
         v.Name,
         v.Country,

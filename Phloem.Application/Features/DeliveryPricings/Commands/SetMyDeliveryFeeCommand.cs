@@ -1,8 +1,11 @@
-﻿using MediatR;
+using MediatR;
+using Phloem.Application.Common.Caching;
 using Phloem.Domain.Shared.Results;
 
 namespace Phloem.Application.Features.DeliveryPricings.Commands;
 
 /// <summary>Shop settings → Delivery fee: the seller sets their own fee inside the country's range.</summary>
 /// <param name="Fee">The new fee; must be inside the admin's range (inclusive).</param>
+/// <remarks>Clears the shop cache: the fee is shown on the shop's page.</remarks>
+[InvalidatesCache(CacheTags.Vendors)]
 public sealed record SetMyDeliveryFeeCommand(decimal Fee) : IRequest<Result>;

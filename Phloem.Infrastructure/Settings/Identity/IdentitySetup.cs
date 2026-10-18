@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -17,9 +18,9 @@ namespace Phloem.Infrastructure.Settings.Identity;
 ///   <item><description><b>Identity:</b> UserManager, RoleManager, stores on <see cref="PhloemDbContext"/>, token
 ///   providers (email confirmation, password reset, 2FA).</description></item>
 ///   <item><description><b>Rules:</b> copies the settings into Identity's options.</description></item>
-///   <item><description><b>Data protection:</b> signs the email / reset tokens and the 2FA challenge.</description></item>
+///   <item><description><b>Data protection:</b> signs the email / reset tokens and the 2FA challenge; its keys are
+///   kept in <see cref="DataProtectionSettings.KeysPath"/> so they survive restarts.</description></item>
 ///   <item><description><b>JWT settings:</b> binds and checks <see cref="JwtSettings"/> at start-up.</description></item>
-///   <item><description><b>Sign-in:</b> token maker, 2FA challenge, <see cref="IAuthService"/>.</description></item>
 ///   <item><description><b>Sign-in and accounts:</b> token maker, 2FA challenge, <see cref="IAuthService"/>,
 ///   <see cref="IAccountService"/>, <see cref="IUserRoleService"/>.</description></item>
 /// </list>
@@ -36,6 +37,7 @@ internal static class IdentitySetup
     /// <param name="services">The service collection.</param>
     /// <param name="configuration">The app's configuration (appsettings, secrets, environment variables).</param>
     /// <returns>The same service collection, for chaining.</returns>
+    /// <exception cref="InvalidOperationException">The DataProtection section is missing a value.</exception>
     public static IServiceCollection AddPhloemIdentity(this IServiceCollection services, IConfiguration configuration)
     {
         // 1. Settings
@@ -56,8 +58,16 @@ internal static class IdentitySetup
         services.AddOptions<IdentityOptions>()
                 .Configure<IOptions<IdentitySettings>>((options, settings) => Apply(options, settings.Value));
 
-        // 4. Data protection
-        services.AddDataProtection();
+        // 4. Data protection: keys in a folder next to the app, so tokens already emailed still work after a restart
+        var protection = configuration.GetSection(DataProtectionSettings.SectionName).Get<DataProtectionSettings>()
+                         ?? new DataProtectionSettings();
+        if (!IsValid(protection))
+            throw new InvalidOperationException(
+                "DataProtection needs an ApplicationName and a KeysPath (e.g. \"App_Data/keys\").");
+
+        services.AddDataProtection()
+                .SetApplicationName(protection.ApplicationName)
+                .PersistKeysToFileSystem(new DirectoryInfo(protection.ResolveKeysPath()));
 
         // 5. JWT settings
         services.AddOptions<JwtSettings>()
@@ -65,7 +75,7 @@ internal static class IdentitySetup
                 .ValidateDataAnnotations()
                 .ValidateOnStart();
 
-      
+
         // 6. Sign-in and accounts
         services.AddSingleton<JwtTokenGenerator>();            // stateless: settings + clock
         services.AddSingleton<TwoFactorChallenge>();           // stateless: data protection + settings

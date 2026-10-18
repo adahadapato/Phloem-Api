@@ -2,22 +2,69 @@ using MediatR;
 using Phloem.Application.Features.Dishes.Commands;
 using Phloem.Application.Features.Dishes.Dtos;
 using Phloem.Application.Features.Dishes.Queries;
+using Phloem.Domain.Enums;
+using Phloem.Domain.Shared.Results;
 using Phloem.Presentation.Extensions;
 
 namespace Phloem.Presentation.Endpoints.Dishes;
 
 /// <summary>
-/// <c>/api/shops/mine/dishes</c>: the seller's own menu. "mine" comes from the token, never the URL, so nobody can
-/// change another shop's dishes. Dish names and their price ranges are in <c>DishCatalogEndpoints</c>.
+/// Every dish endpoint, in two groups:
+/// <list type="number">
+///   <item><description><b>Buyers</b> (<c>/api/dishes</c>, GET only): search dishes and open a dish's page. Open to
+///   anyone, so people can look before signing in.</description></item>
+///   <item><description><b>My dishes</b> (<c>/api/shops/mine/dishes</c>): the seller's own menu. "mine" comes from the
+///   token, never the URL, so nobody can change another shop's dishes.</description></item>
+/// </list>
+/// Dish names and their price ranges are in <c>DishCatalogEndpoints</c>.
 /// </summary>
-/// <remarks>Signed-in only, not the Seller role: a shop waiting for approval can prepare its menu. The Domain stops
-/// blocked shops and checks every price against the admin's range.</remarks>
+/// <remarks>"My dishes" needs sign-in, not the Seller role: a shop waiting for approval can prepare its menu. The
+/// Domain stops blocked shops and checks every price against the admin's range.</remarks>
 public static class DishEndpoints
 {
     /// <summary>Maps the dish endpoints under the given group.</summary>
     /// <param name="api">The <c>/api</c> group.</param>
     /// <returns>The same builder, for chaining.</returns>
     public static IEndpointRouteBuilder MapDishEndpoints(this IEndpointRouteBuilder api)
+    {
+        MapBuyers(api);
+        MapMyDishes(api);
+        return api;
+    }
+
+    // ═════════════════════════════ A. Buyers ═════════════════════════════
+
+    private static void MapBuyers(IEndpointRouteBuilder api)
+    {
+        var dishes = api.MapGroup("/dishes")
+                        .WithTags("Browse: Dishes");
+
+        // "shopId" in the URL is the Domain's VendorId: the API says shop, the Domain says vendor
+        dishes.MapGet("/", async (Country? country, DishCategory? category, string? search, Guid? shopId,
+                                  DishSort? sort, int? page, int? pageSize, ISender sender, CancellationToken ct) =>
+            {
+                var query = new SearchDishesQuery(country, category, search, shopId,
+                                                  sort ?? DishSort.Rating,
+                                                  page ?? 1,
+                                                  pageSize ?? PageRequest.DefaultPageSize);
+                return (await sender.Send(query, ct)).ToHttp();
+            })
+            .WithName("SearchDishes")
+            .WithSummary("Search dishes: by country, category, text, one shop (its menu), sorted by rating or price")
+            .Produces<PagedResult<DishCardDto>>()
+            .ProducesValidationProblem();
+
+        dishes.MapGet("/{dishId:guid}", async (Guid dishId, ISender sender, CancellationToken ct) =>
+                (await sender.Send(new GetDishQuery(dishId), ct)).ToHttp())
+            .WithName("GetDish")
+            .WithSummary("A dish's page: photos, description, shop, and whether it can be ordered now")
+            .Produces<DishDetailsDto>()
+            .ProducesProblem(StatusCodes.Status404NotFound);
+    }
+
+    // ═════════════════════════════ B. My dishes ═════════════════════════════
+
+    private static void MapMyDishes(IEndpointRouteBuilder api)
     {
         var dishes = api.MapGroup("/shops/mine/dishes")
                         .WithTags("My dishes")
@@ -90,9 +137,9 @@ public static class DishEndpoints
             .WithSummary("Remove a photo from a dish")
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status404NotFound);
-
-        return api;
     }
+
+    // ═════════════════════════════ Request bodies ═════════════════════════════
 
     /// <summary>Body of "change a dish" (the dish Id comes from the URL).</summary>
     public sealed record DishRequest(Guid DishCatalogId, string? Detail, decimal Price, string? Description,

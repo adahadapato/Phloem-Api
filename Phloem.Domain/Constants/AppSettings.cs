@@ -1,4 +1,4 @@
-﻿namespace Phloem.Domain.Constants;
+namespace Phloem.Domain.Constants;
 
 /// <summary>
 /// Every configuration key Phloem reads (appsettings.json, User Secrets, environment variables),
@@ -254,6 +254,26 @@ public static class AppSettings
 
         /// <summary>Time allowed to enter the 2FA code after the password, in minutes.</summary>
         public const string TwoFactorChallengeMinutes = "Jwt:TwoFactorChallengeMinutes";
+    }
+
+    // ==================== Data protection ====================
+
+    /// <summary>
+    /// The keys that sign email-confirmation / password-reset tokens and the 2FA challenge.
+    /// Bound to <c>Phloem.Infrastructure.Settings.Identity.DataProtectionSettings</c>.
+    /// </summary>
+    /// <remarks>Kept in a folder next to the app so they survive restarts on shared hosting (where the app pool has
+    /// no user profile and keys would otherwise be lost, breaking every link already emailed).</remarks>
+    public static class DataProtection
+    {
+        /// <summary>The whole section.</summary>
+        public const string Section = "DataProtection";
+
+        /// <summary>Name that isolates Phloem's keys from other apps on the same server, e.g. "Phloem".</summary>
+        public const string ApplicationName = "DataProtection:ApplicationName";
+
+        /// <summary>Folder for the key files, relative to the app folder (e.g. "App_Data/keys"), never in wwwroot.</summary>
+        public const string KeysPath = "DataProtection:KeysPath";
     }
 
     // ==================== Storage ====================

@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Phloem.Application.Common.Caching;
 using Phloem.Domain.Enums;
 using Phloem.Domain.Shared.Results;
@@ -13,6 +13,7 @@ namespace Phloem.Application.Features.DeliveryPricings.Commands;
 /// <param name="MinShopFee">Lowest fee a shop may charge; 0 or more.</param>
 /// <param name="MaxShopFee">Highest fee a shop may charge; at least the minimum.</param>
 /// <returns>How many shops had their fee adjusted (so the admin sees the effect).</returns>
-[InvalidatesCache(CacheTags.DeliveryPricing)]
+/// <remarks>Also clears the shop cache: moved fees are shown on the shops' pages.</remarks>
+[InvalidatesCache(CacheTags.DeliveryPricing, CacheTags.Vendors)]
 public sealed record SetDeliveryPricingCommand(Country Country, decimal MinShopFee, decimal MaxShopFee)
     : IRequest<Result<int>>;

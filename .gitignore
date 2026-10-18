@@ -8,7 +8,8 @@
 # Secrets: keep real keys in `dotnet user-secrets` (local)
 # and environment variables / GitHub Secrets (production)
 appsettings.*.local.json
-appsettings.Production.json
+# appsettings.Production.json IS committed: it holds only non-secret production values and "" placeholders
+# that the Backend CI/CD workflow fills from GitHub Secrets on the build machine.
 .env.*
 secrets.json
 
@@ -22,6 +23,10 @@ wwwroot/uploads/
 uploads/
 wwwroot/private-uploads/
 private-uploads/
+
+# Created by the app at run time: never commit
+logs/
+App_Data/
 
 # Keep the (otherwise empty) wwwroot folder in the repo so every clone and CI build has a web root
 !wwwroot/.gitkeep

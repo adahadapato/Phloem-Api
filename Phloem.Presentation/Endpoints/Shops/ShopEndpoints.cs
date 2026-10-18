@@ -14,15 +14,19 @@ using Phloem.Presentation.Extensions;
 namespace Phloem.Presentation.Endpoints.Shops;
 
 /// <summary>
-/// Every shop endpoint, in two groups:
+/// Every shop endpoint, in three groups:
 /// <list type="number">
+///   <item><description><b>Buyers</b> (<c>/api/shops</c>, GET only): browse approved shops. Open to anyone, so people
+///   can look before signing in.</description></item>
 ///   <item><description><b>My shop</b> (<c>/api/shops</c>): the signed-in user's own shop. "mine" is found from the
 ///   token, never from the URL, so nobody can change another shop.</description></item>
 ///   <item><description><b>Admin</b> (<c>/api/admin/shops</c>): review, approve, verify and block shops.
 ///   Admin role only.</description></item>
 /// </list>
 /// </summary>
-/// <remarks>"My shop" needs sign-in, not the Seller role: the role is given when an admin approves the shop, and an
+/// <remarks>Buyers and "My shop" share the <c>/api/shops</c> prefix: <c>{shopId}</c> only matches a Guid, so it never
+/// clashes with <c>mine</c>. A shop that isn't live answers 404 to buyers, so its existence isn't revealed.
+/// "My shop" needs sign-in, not the Seller role: the role is given when an admin approves the shop, and an
 /// owner must be able to set it up before that.</remarks>
 public static class ShopEndpoints
 {
@@ -31,12 +35,42 @@ public static class ShopEndpoints
     /// <returns>The same builder, for chaining.</returns>
     public static IEndpointRouteBuilder MapShopEndpoints(this IEndpointRouteBuilder api)
     {
+        MapBuyers(api);
         MapMyShop(api);
         MapAdmin(api);
         return api;
     }
 
-    // ═════════════════════════════ A. My shop ═════════════════════════════
+    // ═════════════════════════════ A. Buyers ═════════════════════════════
+
+    private static void MapBuyers(IEndpointRouteBuilder api)
+    {
+        var shops = api.MapGroup("/shops")
+                       .WithTags("Browse: Shops");
+
+        shops.MapGet("/", async ([AsParameters] GetShopsQuery query, ISender sender, CancellationToken ct) =>
+                (await sender.Send(query, ct)).ToHttp())
+            .WithName("GetShops")
+            .WithSummary("Approved shops, optionally in one country and/or matching a name")
+            .Produces<PagedResult<ShopListItemDto>>()
+            .ProducesValidationProblem();
+
+        shops.MapGet("/top", async ([AsParameters] GetTopShopsQuery query, ISender sender, CancellationToken ct) =>
+                (await sender.Send(query, ct)).ToHttp())
+            .WithName("GetTopShops")
+            .WithSummary("Home → best-rated shops (count 1–20, default 8)")
+            .Produces<IReadOnlyList<ShopListItemDto>>()
+            .ProducesValidationProblem();
+
+        shops.MapGet("/{shopId:guid}", async (Guid shopId, ISender sender, CancellationToken ct) =>
+                (await sender.Send(new GetShopQuery(shopId), ct)).ToHttp())
+            .WithName("GetShop")
+            .WithSummary("A shop's page header; its menu is GET /api/dishes?shopId=…")
+            .Produces<ShopDetailsDto>()
+            .ProducesProblem(StatusCodes.Status404NotFound);
+    }
+
+    // ═════════════════════════════ B. My shop ═════════════════════════════
 
     private static void MapMyShop(IEndpointRouteBuilder api)
     {
@@ -144,7 +178,7 @@ public static class ShopEndpoints
             .ProducesValidationProblem();
     }
 
-    // ═════════════════════════════ B. Admin ═════════════════════════════
+    // ═════════════════════════════ C. Admin ═════════════════════════════
 
     private static void MapAdmin(IEndpointRouteBuilder api)
     {
