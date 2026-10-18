@@ -4,6 +4,9 @@ using Phloem.Application.Features.Auth.Commands;
 using Phloem.Application.Features.DeliveryPricings.Commands;
 using Phloem.Application.Features.DishCatalogs.Commands;
 using Phloem.Application.Features.Dishes.Commands;
+using Phloem.Application.Features.Orders.Commands;
+using Phloem.Application.Features.Orders.Dtos;
+using Phloem.Application.Features.Orders.Queries;
 using Phloem.Application.Features.ShipmentRoutes.Commands;
 using Phloem.Application.Features.Vendors.Commands;
 using Phloem.Domain.Enums;
@@ -34,6 +37,15 @@ internal static class RequestExamples
 
     /// <summary>Stands in for a dish name's Id: replace it with one from GET /api/dish-catalog.</summary>
     private static readonly Guid DishCatalogId = Guid.Parse("0199f0a1-7c2e-7a40-9b1d-5e3f2c8a6d10");
+
+    /// <summary>Stands in for a dish's Id: replace it with one from GET /api/dishes.</summary>
+    private static readonly Guid DishId = Guid.Parse("0199f0b2-1a3c-7d55-8e2f-4b6a9c0d1e22");
+
+    /// <summary>Stands in for a saved address's Id: replace it with one from GET /api/me.</summary>
+    private static readonly Guid DeliveryAddressId = Guid.Parse("0199f0b2-5d7e-7f10-a3b4-6c8d0e2f4a35");
+
+    /// <summary>A basket: two of one dish.</summary>
+    private static readonly IReadOnlyList<BasketItemDto> Basket = [new BasketItemDto(DishId, 2)];
 
     private const string Email = "ama.mensah@example.com";
     private const string Password = "Str0ng!Passw0rd";
@@ -112,5 +124,9 @@ internal static class RequestExamples
         [typeof(ShipmentRouteEndpoints.ActiveRequest)] = new ShipmentRouteEndpoints.ActiveRequest(IsActive: true),
         [typeof(ShipmentRouteEndpoints.ShipmentRateRequest)] = new ShipmentRouteEndpoints.ShipmentRateRequest(
             BaseCharge: 15m, PricePerKg: 6.5m, MinTransitDays: 5, MaxTransitDays: 10),
+
+        // ───────────────────────────── 7. Orders ─────────────────────────────
+        [typeof(CheckBasketQuery)] = new CheckBasketQuery(Basket, DeliveryWindow.Asap),
+        [typeof(PlaceOrderCommand)] = new PlaceOrderCommand(Basket, DeliveryAddressId, DeliveryWindow.Asap),
     };
 }

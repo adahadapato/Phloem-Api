@@ -4,6 +4,7 @@ using Phloem.Presentation.Endpoints.DeliveryPricings;
 using Phloem.Presentation.Endpoints.DishCatalogs;
 using Phloem.Presentation.Endpoints.Dishes;
 using Phloem.Presentation.Endpoints.Me;
+using Phloem.Presentation.Endpoints.Orders;
 using Phloem.Presentation.Endpoints.ShipmentRoutes;
 using Phloem.Presentation.Endpoints.Shops;
 
@@ -30,7 +31,8 @@ public static class EndpointExtensions
         api.MapCommissionEndpoints();        //                         /api/admin/commissions
         api.MapDeliveryPricingEndpoints();   // /api/delivery-windows + /api/admin/delivery-pricing
         api.MapShipmentRouteEndpoints();     //                         /api/admin/shipment-routes
-                                             // next: /api/dishes (buyers), /api/orders, /api/shipments
+        api.MapOrderEndpoints();             // /api/orders           + /api/shops/mine/orders
+                                             // next: /api/shipments
 
         // 2. Private documents through signed links, e.g. /private-files/…?expires=…&sig=… (not in Swagger)
         app.MapPrivateFiles();

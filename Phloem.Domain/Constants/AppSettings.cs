@@ -396,6 +396,23 @@ public static class AppSettings
         }
     }
 
+    // ==================== Payments ====================
+
+    /// <summary>Taking payment for orders (and later shipments).</summary>
+    public static class Payments
+    {
+        /// <summary>The whole section.</summary>
+        public const string Section = "Payments";
+
+        /// <summary>
+        /// TEMPORARY: when true, buyers can pay their own orders with a pretend payment
+        /// (<c>POST /api/orders/{orderNumber}/test-payment</c>), so the owners can try the whole order flow before
+        /// Paystack / Stripe are connected. Read at start-up: change it and restart (redeploy).
+        /// MUST be false before real customers use the app.
+        /// </summary>
+        public const string TestPaymentsEnabled = "Payments:TestPaymentsEnabled";
+    }
+
     // ==================== Hosting ====================
 
     /// <summary>ASP.NET Core hosting configuration.</summary>
