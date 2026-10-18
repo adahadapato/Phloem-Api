@@ -1,13 +1,13 @@
-﻿using Phloem.Domain.Entities;
+using Phloem.Domain.Entities;
 using Phloem.Domain.Enums;
 
 namespace Phloem.Application.Features.Vendors.Dtos;
 
 /// <summary>
-/// Admin → Sellers tab rows: "Mama Ama's Kitchen · owned by Ama Mensah · Ghana · waiting for approval".
-/// Id is only for the Approve / Reject / Block buttons.
+/// Admin → Shops tab rows: "Mama Ama's Kitchen · owned by Ama Mensah · Ghana · waiting for approval".
+/// Id is for the Approve / Reject / Block buttons.
 /// </summary>
-public sealed record AdminVendorDto(
+public sealed record AdminShopDto(
     Guid Id,
     string Name,
     string OwnerName,
@@ -21,7 +21,8 @@ public sealed record AdminVendorDto(
     int RatingCount,
     DateTime OpenedAt)
 {
-    public static AdminVendorDto From(Vendor v, string ownerName) => new(
+    /// <summary>Builds the row from a shop and its owner's full name.</summary>
+    public static AdminShopDto From(Vendor v, string ownerName) => new(
         v.Id,
         v.Name,
         ownerName,

@@ -1,4 +1,4 @@
-﻿namespace Phloem.Application.Common.Caching;
+namespace Phloem.Application.Common.Caching;
 
 
 /// <summary>
@@ -37,8 +37,8 @@ public static class CacheTags
     /// Cached by: <c>SearchDishesQuery</c>.
     /// Cleared by: dish changes (<c>CreateDishCommand</c>, <c>UpdateDishCommand</c>, <c>ChangeDishPriceCommand</c>,
     /// <c>DeleteDishCommand</c>, <c>AddDishPhotoCommand</c>, <c>RemoveDishPhotoCommand</c>), shop changes that
-    /// hide or show dishes (<c>BlockVendorCommand</c>, <c>UnblockVendorCommand</c>, <c>ChangeShopLogoCommand</c>,
-    /// <c>DeleteAccountCommand</c>), and <c>SetDishPriceRangeCommand</c> (dishes may become unsellable).
+    /// hide or show dishes (<c>ApproveShopCommand</c>, <c>SetShopBlockedCommand</c>, <c>SetShopVerifiedCommand</c>,
+    /// <c>ChangeShopImageCommand</c>, <c>DeleteAccountCommand</c>), and <c>SetDishPriceRangeCommand</c> (dishes may become unsellable).
     /// </remarks>
     public const string Dishes = "dishes";
 
@@ -47,8 +47,8 @@ public static class CacheTags
     /// </summary>
     /// <remarks>
     /// Cached by: <c>GetVendorsQuery</c>, <c>GetTopVendorsQuery</c>.
-    /// Cleared by: <c>ApproveVendorCommand</c>, <c>BlockVendorCommand</c>, <c>UnblockVendorCommand</c>,
-    /// <c>UpdateShopDetailsCommand</c>, <c>ChangeShopLogoCommand</c>, <c>DeleteAccountCommand</c>,
+    /// Cleared by: <c>ApproveShopCommand</c>, <c>SetShopBlockedCommand</c>, <c>SetShopVerifiedCommand</c>,
+    /// <c>UpdateShopDetailsCommand</c>, <c>ChangeShopImageCommand</c>, <c>DeleteAccountCommand</c>,
     /// and dish commands that change a shop's dish count (<c>CreateDishCommand</c>, <c>DeleteDishCommand</c>).
     /// </remarks>
     public const string Vendors = "vendors";

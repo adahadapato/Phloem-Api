@@ -34,18 +34,18 @@ try
     app.UseSerilogRequestLogging();  // outermost: logs the FINAL status of every request
     app.UseExceptionHandler();       // turns exceptions into ProblemDetails
     app.UseHttpsRedirection();
+    app.UsePhloemStaticFiles();      // /uploads (photos, logos); the private folder is blocked
     app.UsePhloemOpenApi();          // /openapi/v1.json + /swagger (when OpenApi:Enabled)
     app.UsePhloemAuthentication();   // who is calling (token), then are they allowed
 
     // ==================== Endpoint Registration ====================
-    app.MapPhloemEndpoints();        // /api/* and /health
-
+    app.MapPhloemEndpoints();        // /api/*, /private-files/* and /health
 
     app.Run();
 }
 catch (Exception ex) when (ex is not HostAbortedException)
 {
-    // A start-up crash (missing setting, database unreachable…) reaches the log file instead of vanishing
+    // A start-up crash (missing setting, database unreachableâ€¦) reaches the log file instead of vanishing
     Log.Fatal(ex, "Phloem API failed to start.");
     throw;
 }

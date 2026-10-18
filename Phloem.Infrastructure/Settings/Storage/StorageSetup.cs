@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Phloem.Domain.Constants;
 using Phloem.Domain.Interfaces;
@@ -22,8 +22,8 @@ internal static class StorageSetup
         services.AddOptions<StorageSettings>()
                 .Bind(configuration.GetSection(StorageSettings.SectionName))
                 .Validate(s => s.Provider != StorageProvider.Local || IsValid(s.Local),
-                          $"Storage:Local needs a RootPath and a SigningKey of at least " +
-                          $"{LocalStorageSettings.MinSigningKeyLength} characters (set the key in User Secrets).")
+                          "Storage:Local needs PublicRootPath, PrivateRootPath, PrivateDownloadPath and a SigningKey " +
+                          $"of at least {LocalStorageSettings.MinSigningKeyLength} characters (set the key in User Secrets).")
                 .ValidateOnStart();
 
         var provider = configuration.GetValue<StorageProvider?>(AppSettings.Storage.Provider) ?? StorageProvider.Local;

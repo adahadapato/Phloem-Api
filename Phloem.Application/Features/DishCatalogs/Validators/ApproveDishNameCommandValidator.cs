@@ -1,10 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+using FluentValidation;
+using Phloem.Application.Features.DishCatalogs.Commands;
 
-namespace Phloem.Application.Features.DishCatalogs.Validators
+namespace Phloem.Application.Features.DishCatalogs.Validators;
+
+public sealed class ApproveDishNameCommandValidator : AbstractValidator<ApproveDishNameCommand>
 {
-    internal class ApproveDishNameCommandValidator
+    public ApproveDishNameCommandValidator()
     {
+        RuleFor(x => x.DishCatalogId).NotEmpty();
     }
 }

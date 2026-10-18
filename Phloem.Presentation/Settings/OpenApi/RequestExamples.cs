@@ -1,10 +1,15 @@
-﻿using Phloem.Application.Features.Accounts.Commands;
+using Phloem.Application.Features.Accounts.Commands;
 using Phloem.Application.Features.Accounts.Dtos;
 using Phloem.Application.Features.Auth.Commands;
 using Phloem.Application.Features.DeliveryPricings.Commands;
+using Phloem.Application.Features.DishCatalogs.Commands;
+using Phloem.Application.Features.Dishes.Commands;
 using Phloem.Application.Features.Vendors.Commands;
 using Phloem.Domain.Enums;
+using Phloem.Presentation.Endpoints.DishCatalogs;
+using Phloem.Presentation.Endpoints.Dishes;
 using Phloem.Presentation.Endpoints.Me;
+using Phloem.Presentation.Endpoints.Shops;
 
 namespace Phloem.Presentation.Settings.OpenApi;
 
@@ -22,6 +27,9 @@ internal static class RequestExamples
     /// <summary>A home address used by sign-up and the personal-details page.</summary>
     private static readonly HomeAddressInput HomeAddress =
         new("12 Allen Avenue", null, "Ikeja", "Lagos", Country.Nigeria);
+
+    /// <summary>Stands in for a dish name's Id: replace it with one from GET /api/dish-catalog.</summary>
+    private static readonly Guid DishCatalogId = Guid.Parse("0199f0a1-7c2e-7a40-9b1d-5e3f2c8a6d10");
 
     private const string Email = "ama.mensah@example.com";
     private const string Password = "Str0ng!Passw0rd";
@@ -62,8 +70,28 @@ internal static class RequestExamples
         [typeof(DisableTwoFactorCommand)] = new DisableTwoFactorCommand(Password),
         [typeof(RegenerateRecoveryCodesCommand)] = new RegenerateRecoveryCodesCommand(Password),
 
-        // ───────────────────────────── 3. My shop ─────────────────────────────
+        // ───────────────────────────── 3. Shops ─────────────────────────────
         [typeof(OpenShopCommand)] = new OpenShopCommand("Mama Ama's Kitchen", "hello@mamaamas.ng", Phone),
+        [typeof(UpdateShopDetailsCommand)] = new UpdateShopDetailsCommand(
+            "Mama Ama's Kitchen", "hello@mamaamas.ng", Phone),
         [typeof(SetMyDeliveryFeeCommand)] = new SetMyDeliveryFeeCommand(1500m),
+        [typeof(ShopEndpoints.ReasonRequest)] = new ShopEndpoints.ReasonRequest(
+            "The business email doesn't match the registration certificate. Please correct it."),
+        [typeof(ShopEndpoints.ReviewRequest)] = new ShopEndpoints.ReviewRequest(
+            Accept: false, "The photo is blurred; please upload a clearer copy."),
+        [typeof(ShopEndpoints.VerifiedRequest)] = new ShopEndpoints.VerifiedRequest(Verified: true),
+        [typeof(ShopEndpoints.BlockedRequest)] = new ShopEndpoints.BlockedRequest(Blocked: true),
+
+        // ───────────────────────────── 4. My dishes ─────────────────────────────
+        [typeof(CreateDishCommand)] = new CreateDishCommand(
+            DishCatalogId, "with fried plantain", 4500m, "Smoky party jollof with grilled chicken.", IsAvailable: true),
+        [typeof(DishEndpoints.DishRequest)] = new DishEndpoints.DishRequest(
+            DishCatalogId, "with fried plantain", 4500m, "Smoky party jollof with grilled chicken.", IsAvailable: true),
+        [typeof(DishEndpoints.PriceRequest)] = new DishEndpoints.PriceRequest(5000m),
+
+        // ───────────────────────────── 5. Dish catalog ─────────────────────────────
+        [typeof(SuggestDishNameCommand)] = new SuggestDishNameCommand(
+            "Ofada Rice & Ayamase", DishCategory.LocalMeals, CatalogGroup.Nigeria),
+        [typeof(DishCatalogEndpoints.PriceRangeRequest)] = new DishCatalogEndpoints.PriceRangeRequest(3000m, 6000m),
     };
 }
