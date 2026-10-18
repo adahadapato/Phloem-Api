@@ -9,7 +9,8 @@ namespace Phloem.Presentation.Extensions;
 /// <remarks>
 /// <para><b>Success:</b> 200 with the value, or 204 when there's nothing to return.</para>
 /// <para><b>Failure:</b> ProblemDetails, the same shape as <c>GlobalExceptionHandler</c> (with <c>traceId</c>), plus a
-/// <c>code</c> field (e.g. "Auth.InvalidCredentials") that the app can switch on.</para>
+/// <c>code</c> field (e.g. "Auth.InvalidCredentials") that the app can switch on. Also used for 401 / 403 written by
+/// authentication.</para>
 /// </remarks>
 internal static class ResultExtensions
 {
@@ -31,9 +32,10 @@ internal static class ResultExtensions
         var (status, title) = error.Type switch
         {
             ErrorType.Validation => (StatusCodes.Status400BadRequest, "Invalid request"),
+            ErrorType.Unauthorized => (StatusCodes.Status401Unauthorized, "Not signed in"),
+            ErrorType.Forbidden => (StatusCodes.Status403Forbidden, "Not allowed"),
             ErrorType.NotFound => (StatusCodes.Status404NotFound, "Not found"),
             ErrorType.Conflict => (StatusCodes.Status409Conflict, "Conflict"),
-            ErrorType.Forbidden => (StatusCodes.Status403Forbidden, "Not allowed"),
             _ => (StatusCodes.Status500InternalServerError, "Something went wrong")
         };
 

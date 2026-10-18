@@ -36,6 +36,8 @@ public sealed class Error : ValueObject
     public static Error Conflict(string code, string message) => new(code, message, ErrorType.Conflict);
     public static Error Forbidden(string code, string message) => new(code, message, ErrorType.Forbidden);
 
+    public static Error Unauthorized(string code, string message) => new(code, message, ErrorType.Unauthorized);
+
     /// <summary>Implicitly converts the error to its code.</summary>
     public static implicit operator string(Error? error) => error?.Code ?? string.Empty;
 

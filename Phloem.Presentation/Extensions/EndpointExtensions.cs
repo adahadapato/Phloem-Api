@@ -1,5 +1,6 @@
 ﻿using Phloem.Presentation.Endpoints.Auth;
 using Phloem.Presentation.Endpoints.Me;
+using Phloem.Presentation.Endpoints.Shops;
 
 namespace Phloem.Presentation.Extensions;
 
@@ -18,7 +19,8 @@ public static class EndpointExtensions
         var api = app.MapGroup("/api");
         api.MapAuthEndpoints();      // /api/auth
         api.MapMeEndpoints();        // /api/me
-                                     // next: /api/shops, /api/dishes, /api/orders, /api/shipments, /api/admin…
+        api.MapShopEndpoints();      // /api/shops
+                                     // next: /api/dishes, /api/orders, /api/shipments, /api/admin…
 
         // 2. Health (not in Swagger)
         app.MapGet("/health",

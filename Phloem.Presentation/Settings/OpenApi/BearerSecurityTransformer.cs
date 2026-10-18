@@ -47,10 +47,22 @@ internal sealed class BearerSecurityTransformer : IOpenApiDocumentTransformer, I
                        && !metadata.OfType<IAllowAnonymous>().Any();
         if (!needsSignIn) return Task.CompletedTask;
 
+        // 1. Lock icon: send the token
         operation.Security ??= [];
         operation.Security.Add(new OpenApiSecurityRequirement
         {
             [new OpenApiSecuritySchemeReference(SchemeName, context.Document)] = []
+        });
+
+        // 2. Document the refusals, so Swagger doesn't call them "Undocumented"
+        operation.Responses ??= new OpenApiResponses();
+        operation.Responses.TryAdd("401", new OpenApiResponse
+        {
+            Description = "Not signed in, or the session has expired (code: Auth.SignInRequired / Auth.SessionExpired / Auth.InvalidAccessToken)"
+        });
+        operation.Responses.TryAdd("403", new OpenApiResponse
+        {
+            Description = "Signed in, but not allowed (code: Auth.NotAllowed)"
         });
 
         return Task.CompletedTask;

@@ -31,6 +31,7 @@ public static class OpenApiSetup
             options.AddDocumentTransformer<DocumentInfoTransformer>();      // title, version, contact
             options.AddDocumentTransformer<BearerSecurityTransformer>();    // "Authorize" button
             options.AddOperationTransformer<BearerSecurityTransformer>();   // lock icons
+            options.AddSchemaTransformer<RequestExampleTransformer>();      // realistic request bodies
         });
 
         return services;

@@ -55,4 +55,22 @@ public static class AuthErrors
     /// <summary>Removing the Admin role from the only admin would leave nobody able to manage Phloem.</summary>
     public static readonly Error LastAdmin = Error.Conflict(
         "Auth.LastAdmin", "This is the only admin account, so the Admin role can't be removed.");
+
+    // ---------- Access (written by Presentation when a request is refused) ----------
+
+    /// <summary>No access token sent.</summary>
+    public static readonly Error SignInRequired = Error.Unauthorized(
+        "Auth.SignInRequired", "Please sign in to do this.");
+
+    /// <summary>The access token has expired: refresh it, or sign in again.</summary>
+    public static readonly Error SessionExpired = Error.Unauthorized(
+        "Auth.SessionExpired", "Your session has expired. Please sign in again.");
+
+    /// <summary>The access token is damaged, forged or for another app.</summary>
+    public static readonly Error InvalidAccessToken = Error.Unauthorized(
+        "Auth.InvalidAccessToken", "Your sign-in isn't valid. Please sign in again.");
+
+    /// <summary>Signed in, but this needs a role the user doesn't have.</summary>
+    public static readonly Error NotAllowed = Error.Forbidden(
+        "Auth.NotAllowed", "You don't have permission to do this.");
 }

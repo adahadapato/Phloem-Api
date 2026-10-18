@@ -2,7 +2,9 @@
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Phloem.Domain.Interfaces;
+using Phloem.Domain.Shared.Errors;
 using Phloem.Infrastructure.Settings.Identity;
+using Phloem.Presentation.Extensions;
 using Phloem.Presentation.Services;
 
 namespace Phloem.Presentation.Settings.Authentication;
@@ -12,6 +14,8 @@ namespace Phloem.Presentation.Settings.Authentication;
 /// <list type="number">
 ///   <item><description><b>Authentication:</b> JWT bearer, checked against the same <see cref="JwtSettings"/> that
 ///   signs the tokens (issuer, audience, key, lifetime).</description></item>
+///   <item><description><b>Refusals:</b> 401 / 403 written as ProblemDetails with a <c>code</c> (no token, expired,
+///   invalid, not allowed), the same shape as every other error.</description></item>
 ///   <item><description><b>Authorization:</b> role checks on endpoints (<c>RequireAuthorization</c>,
 ///   <c>RequireRole</c>).</description></item>
 ///   <item><description><b>Current user:</b> <see cref="ICurrentUser"/> for the handlers.</description></item>
@@ -61,7 +65,7 @@ public static class AuthenticationSetup
 
     // ───────────────────────────── Helpers ─────────────────────────────
 
-    /// <summary>What a valid token must look like.</summary>
+    /// <summary>What a valid token must look like, and how refusals are written.</summary>
     /// <param name="options">JWT bearer's options.</param>
     /// <param name="jwt">The <c>Jwt</c> section.</param>
     private static void Apply(JwtBearerOptions options, JwtSettings jwt)
@@ -87,5 +91,36 @@ public static class AuthenticationSetup
             NameClaimType = JwtClaimNames.UserId,
             RoleClaimType = JwtClaimNames.Role
         };
+
+        // Refusals as ProblemDetails (by default they're empty)
+        options.Events = new JwtBearerEvents
+        {
+            OnChallenge = WriteUnauthorizedAsync,
+            OnForbidden = WriteForbiddenAsync
+        };
     }
+
+    /// <summary>401: no token, an expired one, or an invalid one, each with its own <c>code</c>.</summary>
+    private static Task WriteUnauthorizedAsync(JwtBearerChallengeContext context)
+    {
+        context.HandleResponse();   // replace the default empty 401
+
+        var error = context.AuthenticateFailure switch
+        {
+            null => AuthErrors.SignInRequired,
+            SecurityTokenExpiredException => AuthErrors.SessionExpired,
+            _ => AuthErrors.InvalidAccessToken
+        };
+
+        // Standard header so clients know which scheme is expected
+        context.Response.Headers.WWWAuthenticate = context.AuthenticateFailure is null
+            ? "Bearer"
+            : "Bearer error=\"invalid_token\"";
+
+        return error.ToProblem().ExecuteAsync(context.HttpContext);
+    }
+
+    /// <summary>403: signed in, but the endpoint needs a role this user doesn't have.</summary>
+    private static Task WriteForbiddenAsync(ForbiddenContext context) =>
+        AuthErrors.NotAllowed.ToProblem().ExecuteAsync(context.HttpContext);
 }

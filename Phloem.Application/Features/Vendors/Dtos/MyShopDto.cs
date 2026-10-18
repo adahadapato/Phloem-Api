@@ -5,6 +5,8 @@ using Phloem.Domain.Interfaces;
 namespace Phloem.Application.Features.Vendors.Dtos;
 
 /// <summary>Shop settings + Seller dashboard header: the signed-in seller's own shop.</summary>
+/// <remarks><c>MissingDocuments</c> lists required documents that aren't accepted yet (missing, pending, rejected or
+/// expired): the app shows them as a to-do list for the ✓ badge.</remarks>
 public sealed record MyShopDto(
     Guid Id,
     string Name,
@@ -18,12 +20,15 @@ public sealed record MyShopDto(
     bool IsVerified,
     string? LogoUrl,
     string? CoverPhotoUrl,
+    decimal? DeliveryFee,
     decimal Rating,
     int RatingCount,
     decimal Balance,
-    DateTime OpenedAt)
+    DateTime OpenedAt,
+    IReadOnlyList<MyShopDocumentDto> Documents,
+    IReadOnlyList<VendorDocumentType> MissingDocuments)
 {
-    public static MyShopDto From(Vendor v, IFileStorage storage) => new(
+    public static MyShopDto From(Vendor v, IFileStorage storage, DateTime utcNow) => new(
         v.Id,
         v.Name,
         v.BusinessEmail.Value,
@@ -36,8 +41,11 @@ public sealed record MyShopDto(
         v.IsVerified,
         v.Logo is null ? null : storage.GetPublicUrl(v.Logo.Path),
         v.CoverPhoto is null ? null : storage.GetPublicUrl(v.CoverPhoto.Path),
+        v.DeliveryFee,
         v.Rating,
         v.RatingCount,
         v.Balance,
-        v.CreatedAt);
+        v.CreatedAt,
+        v.Documents.OrderBy(d => d.Type).Select(d => MyShopDocumentDto.From(d, utcNow)).ToList(),
+        v.MissingDocuments(utcNow));
 }
