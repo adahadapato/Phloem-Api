@@ -25,8 +25,4 @@
     <ProjectReference Include="..\Phloem.Worker\Phloem.Worker.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Endpoints\" />
-  </ItemGroup>
-
 </Project>

@@ -1,4 +1,6 @@
-﻿namespace Phloem.Presentation.Extensions;
+﻿using Phloem.Presentation.Endpoints.Auth;
+
+namespace Phloem.Presentation.Extensions;
 
 /// <summary>
 /// Maps every endpoint, so Program.cs has one line. Feature groups live under <c>/api</c>; <c>/health</c> sits outside
@@ -13,7 +15,7 @@ public static class EndpointExtensions
     {
         // 1. API groups
         var api = app.MapGroup("/api");
-        //api.MapAuthEndpoints();      // /api/auth
+        api.MapAuthEndpoints();      // /api/auth
                                      // next: /api/me, /api/shops, /api/dishes, /api/orders, /api/shipments, /api/admin…
 
         // 2. Health (not in Swagger)
