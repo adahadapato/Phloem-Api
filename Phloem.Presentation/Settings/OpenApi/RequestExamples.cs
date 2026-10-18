@@ -4,11 +4,15 @@ using Phloem.Application.Features.Auth.Commands;
 using Phloem.Application.Features.DeliveryPricings.Commands;
 using Phloem.Application.Features.DishCatalogs.Commands;
 using Phloem.Application.Features.Dishes.Commands;
+using Phloem.Application.Features.ShipmentRoutes.Commands;
 using Phloem.Application.Features.Vendors.Commands;
 using Phloem.Domain.Enums;
+using Phloem.Presentation.Endpoints.Commissions;
+using Phloem.Presentation.Endpoints.DeliveryPricings;
 using Phloem.Presentation.Endpoints.DishCatalogs;
 using Phloem.Presentation.Endpoints.Dishes;
 using Phloem.Presentation.Endpoints.Me;
+using Phloem.Presentation.Endpoints.ShipmentRoutes;
 using Phloem.Presentation.Endpoints.Shops;
 
 namespace Phloem.Presentation.Settings.OpenApi;
@@ -93,5 +97,20 @@ internal static class RequestExamples
         [typeof(SuggestDishNameCommand)] = new SuggestDishNameCommand(
             "Ofada Rice & Ayamase", DishCategory.LocalMeals, CatalogGroup.Nigeria),
         [typeof(DishCatalogEndpoints.PriceRangeRequest)] = new DishCatalogEndpoints.PriceRangeRequest(3000m, 6000m),
+
+        // ───────────────────────────── 6. Pricing and routes (admin) ─────────────────────────────
+        [typeof(CommissionEndpoints.CommissionRateRequest)] = new CommissionEndpoints.CommissionRateRequest(10m),
+        [typeof(DeliveryPricingEndpoints.ShopFeeRangeRequest)] =
+            new DeliveryPricingEndpoints.ShopFeeRangeRequest(MinShopFee: 800m, MaxShopFee: 3500m),
+        [typeof(DeliveryPricingEndpoints.WindowChargeRequest)] =
+            new DeliveryPricingEndpoints.WindowChargeRequest(ExtraCharge: 500m),
+        [typeof(CreateShipmentRouteCommand)] = new CreateShipmentRouteCommand(
+            Country.UnitedKingdom, Country.Nigeria,
+            "Unit 4, Phloem Hub, 12 Commercial Road, London E1 1AA", "Mon–Sat, 9am–6pm"),
+        [typeof(ShipmentRouteEndpoints.DropOffRequest)] = new ShipmentRouteEndpoints.DropOffRequest(
+            "Unit 4, Phloem Hub, 12 Commercial Road, London E1 1AA", "Mon–Sat, 9am–6pm"),
+        [typeof(ShipmentRouteEndpoints.ActiveRequest)] = new ShipmentRouteEndpoints.ActiveRequest(IsActive: true),
+        [typeof(ShipmentRouteEndpoints.ShipmentRateRequest)] = new ShipmentRouteEndpoints.ShipmentRateRequest(
+            BaseCharge: 15m, PricePerKg: 6.5m, MinTransitDays: 5, MaxTransitDays: 10),
     };
 }

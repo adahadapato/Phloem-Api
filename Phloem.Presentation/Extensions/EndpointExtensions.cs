@@ -1,7 +1,10 @@
 using Phloem.Presentation.Endpoints.Auth;
+using Phloem.Presentation.Endpoints.Commissions;
+using Phloem.Presentation.Endpoints.DeliveryPricings;
 using Phloem.Presentation.Endpoints.DishCatalogs;
 using Phloem.Presentation.Endpoints.Dishes;
 using Phloem.Presentation.Endpoints.Me;
+using Phloem.Presentation.Endpoints.ShipmentRoutes;
 using Phloem.Presentation.Endpoints.Shops;
 
 namespace Phloem.Presentation.Extensions;
@@ -19,12 +22,15 @@ public static class EndpointExtensions
     {
         // 1. API groups
         var api = app.MapGroup("/api");
-        api.MapAuthEndpoints();          // /api/auth
-        api.MapMeEndpoints();            // /api/me
-        api.MapShopEndpoints();          // /api/shops          + /api/admin/shops
-        api.MapDishEndpoints();          // /api/shops/mine/dishes
-        api.MapDishCatalogEndpoints();   // /api/dish-catalog   + /api/admin/dish-catalog
-                                         // next: pricing, /api/dishes (buyers), /api/orders, /api/shipments
+        api.MapAuthEndpoints();              // /api/auth
+        api.MapMeEndpoints();                // /api/me
+        api.MapShopEndpoints();              // /api/shops            + /api/admin/shops
+        api.MapDishEndpoints();              // /api/shops/mine/dishes
+        api.MapDishCatalogEndpoints();       // /api/dish-catalog     + /api/admin/dish-catalog
+        api.MapCommissionEndpoints();        //                         /api/admin/commissions
+        api.MapDeliveryPricingEndpoints();   // /api/delivery-windows + /api/admin/delivery-pricing
+        api.MapShipmentRouteEndpoints();     //                         /api/admin/shipment-routes
+                                             // next: /api/dishes (buyers), /api/orders, /api/shipments
 
         // 2. Private documents through signed links, e.g. /private-files/…?expires=…&sig=… (not in Swagger)
         app.MapPrivateFiles();
