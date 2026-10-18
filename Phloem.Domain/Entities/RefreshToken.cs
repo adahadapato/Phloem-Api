@@ -1,7 +1,7 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 
-namespace Phloem.Persistence.Configurations.Identity;
+namespace Phloem.Domain.Entities;
 
 /// <summary>
 /// One refresh token handed to an app (table RefreshTokens). Only a SHA-256 HASH of the token is stored, so a leaked
@@ -11,7 +11,9 @@ namespace Phloem.Persistence.Configurations.Identity;
 /// <para><b>Rotation:</b> every refresh revokes the old token and issues a new one (<see cref="ReplacedByTokenId"/> links
 /// them). If a revoked token is ever presented again, someone copied it: AuthService then revokes every token of that
 /// user.</para>
-/// <para>Not a Domain entity: it's purely a sign-in mechanism, used only by the Identity services.</para>
+/// <para><b>Not based on <see cref="Entity{TId}"/>:</b> no soft delete or audit columns. Tokens are revoked, then
+/// cleaned up once expired.</para>
+/// <para>Uses only .NET's own hashing; nothing from ASP.NET Identity.</para>
 /// </remarks>
 public sealed class RefreshToken
 {
@@ -43,7 +45,7 @@ public sealed class RefreshToken
     /// <summary>Row Id.</summary>
     public Guid Id { get; private set; }
 
-    /// <summary>The user (AspNetUsers.Id) this token signs in.</summary>
+    /// <summary>The user (login account Id = UserProfile Id) this token signs in.</summary>
     public Guid UserId { get; private set; }
 
     /// <summary>SHA-256 of the token as upper-case hex. The raw token is never stored.</summary>

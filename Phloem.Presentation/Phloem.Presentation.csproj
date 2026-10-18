@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.*" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.*" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.*">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -21,6 +22,10 @@
     <ProjectReference Include="..\Phloem.Persistence\Phloem.Persistence.csproj" />
     <ProjectReference Include="..\Phloem.Infrastructure\Phloem.Infrastructure.csproj" />
     <ProjectReference Include="..\Phloem.Worker\Phloem.Worker.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="EndPoints\" />
   </ItemGroup>
 
 </Project>

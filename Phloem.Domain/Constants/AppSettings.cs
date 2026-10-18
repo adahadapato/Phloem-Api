@@ -160,6 +160,9 @@ public static class AppSettings
         /// <summary>Refuse sign-in until the email is confirmed (true/false).</summary>
         public const string RequireConfirmedEmail = "Identity:RequireConfirmedEmail";
 
+        /// <summary>The name shown in authenticator apps next to the 6-digit code, e.g. "Phloem".</summary>
+        public const string AuthenticatorIssuer = "Identity:AuthenticatorIssuer";
+
         /// <summary>Password strength.</summary>
         public static class Password
         {
@@ -199,6 +202,19 @@ public static class AppSettings
 
             /// <summary>Whether new accounts can be locked out at all (true/false).</summary>
             public const string AllowedForNewUsers = "Identity:Lockout:AllowedForNewUsers";
+        }
+
+        /// <summary>Pages on the website that email links open (joined to <c>AppSettings:WebsiteBaseUrl</c>).</summary>
+        public static class Links
+        {
+            /// <summary>The whole sub-section.</summary>
+            public const string Section = "Identity:Links";
+
+            /// <summary>"Confirm your email" page, e.g. "/confirm-email" (gets ?userId=…&amp;token=…).</summary>
+            public const string ConfirmEmailPath = "Identity:Links:ConfirmEmailPath";
+
+            /// <summary>"Choose a new password" page, e.g. "/reset-password" (gets ?email=…&amp;token=…).</summary>
+            public const string ResetPasswordPath = "Identity:Links:ResetPasswordPath";
         }
     }
 

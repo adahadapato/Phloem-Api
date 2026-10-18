@@ -1,22 +1,27 @@
-﻿using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Phloem.Domain.Interfaces;
+using Phloem.Infrastructure.Services.Identity;
 using Phloem.Persistence;
 using Phloem.Persistence.Configurations.Identity;
+using System.ComponentModel.DataAnnotations;
 
 namespace Phloem.Infrastructure.Settings.Identity;
 
 /// <summary>
-/// Registers ASP.NET Core Identity. Called from <see cref="DependencyInjection.AddInfrastructure"/>.
+/// Registers ASP.NET Core Identity and sign-in. Called from <see cref="DependencyInjection.AddInfrastructure"/>.
 /// <list type="number">
 ///   <item><description><b>Settings:</b> binds and checks <see cref="IdentitySettings"/> at start-up.</description></item>
 ///   <item><description><b>Identity:</b> UserManager, RoleManager, stores on <see cref="PhloemDbContext"/>, token
 ///   providers (email confirmation, password reset, 2FA).</description></item>
 ///   <item><description><b>Rules:</b> copies the settings into Identity's options.</description></item>
-///   <item><description><b>Data protection:</b> signs the email / reset tokens.</description></item>
+///   <item><description><b>Data protection:</b> signs the email / reset tokens and the 2FA challenge.</description></item>
 ///   <item><description><b>JWT settings:</b> binds and checks <see cref="JwtSettings"/> at start-up.</description></item>
+///   <item><description><b>Sign-in:</b> token maker, 2FA challenge, <see cref="IAuthService"/>.</description></item>
+///   <item><description><b>Sign-in and accounts:</b> token maker, 2FA challenge, <see cref="IAuthService"/>,
+///   <see cref="IAccountService"/>, <see cref="IUserRoleService"/>.</description></item>
 /// </list>
 /// </summary>
 /// <remarks>
@@ -37,8 +42,8 @@ internal static class IdentitySetup
         services.AddOptions<IdentitySettings>()
                 .Bind(configuration.GetSection(IdentitySettings.SectionName))
                 .ValidateDataAnnotations()
-                .Validate(settings => IsValid(settings.Password) && IsValid(settings.Lockout),
-                          "Identity:Password or Identity:Lockout has a value out of range.")
+                .Validate(settings => IsValid(settings.Password) && IsValid(settings.Lockout) && IsValid(settings.Links),
+                          "Identity:Password, Identity:Lockout or Identity:Links has a missing or out-of-range value.")
                 .ValidateOnStart();
 
         // 2. Identity
@@ -54,11 +59,19 @@ internal static class IdentitySetup
         // 4. Data protection
         services.AddDataProtection();
 
-        // 5. JWT settings (the token service and JWT authentication come with sign-in)
+        // 5. JWT settings
         services.AddOptions<JwtSettings>()
                 .Bind(configuration.GetSection(JwtSettings.SectionName))
                 .ValidateDataAnnotations()
                 .ValidateOnStart();
+
+      
+        // 6. Sign-in and accounts
+        services.AddSingleton<JwtTokenGenerator>();            // stateless: settings + clock
+        services.AddSingleton<TwoFactorChallenge>();           // stateless: data protection + settings
+        services.AddScoped<IAuthService, AuthService>();       // per request: shares the request's database context
+        services.AddScoped<IAccountService, AccountService>();
+        services.AddScoped<IUserRoleService, UserRoleService>();
 
         return services;
     }

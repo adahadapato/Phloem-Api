@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Phloem.Domain.Entities;
 
 namespace Phloem.Persistence.Configurations.Identity;
 
@@ -7,7 +8,10 @@ namespace Phloem.Persistence.Configurations.Identity;
 /// Table <c>RefreshTokens</c>: hashed refresh tokens, linked to their user. Deleting a user deletes their tokens.
 /// </summary>
 /// <remarks>
-/// Not based on EntityConfiguration (no audit / soft-delete columns): tokens are revoked, then cleaned up when expired.
+/// <para>Not based on EntityConfiguration (no audit / soft-delete columns): tokens are revoked, then cleaned up when
+/// expired.</para>
+/// <para>Lives with the Identity configurations because of its foreign key to <see cref="ApplicationUser"/>; the class
+/// itself is in Domain.</para>
 /// </remarks>
 public sealed class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
 {

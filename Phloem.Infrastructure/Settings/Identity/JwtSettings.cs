@@ -1,4 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text;
+using Microsoft.IdentityModel.Tokens;
 using Phloem.Domain.Constants;
 
 namespace Phloem.Infrastructure.Settings.Identity;
@@ -46,4 +48,11 @@ public sealed class JwtSettings
     /// <summary>Minutes allowed to type the 2FA code after the password (1–30).</summary>
     [Range(1, 30)]
     public int TwoFactorChallengeMinutes { get; set; } = 5;
+
+    /// <summary>
+    /// The key that signs (Infrastructure) and checks (Presentation) every access token. Both sides call this, so
+    /// they always use the same bytes.
+    /// </summary>
+    /// <returns>An HMAC key built from <see cref="Key"/> (UTF-8).</returns>
+    public SymmetricSecurityKey CreateSigningKey() => new(Encoding.UTF8.GetBytes(Key));
 }

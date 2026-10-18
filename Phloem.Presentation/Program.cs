@@ -1,22 +1,14 @@
 using Phloem.Persistence.Seeding;
 using Phloem.Presentation;
+using Phloem.Presentation.Settings.Authentication;
 using Phloem.Presentation.Settings.OpenApi;
 using Phloem.Worker;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// TEMPORARY: don't check every handler's services at start-up.
-// ICurrentUser, IAuthService, IAccountService and IUserRoleService aren't implemented yet; remove this block
-// once they are, so a missing registration is caught at start-up again instead of on the first request.
-builder.Host.UseDefaultServiceProvider(options =>
-{
-    options.ValidateScopes = builder.Environment.IsDevelopment();   // still catch scoped-in-singleton mistakes
-    options.ValidateOnBuild = false;
-});
-
 // ---------- Layers (each registers only its own services) ----------
 builder.Services
-     .AddPresentation(builder.Configuration)      // layers, OpenAPI; endpoints, auth, CurrentUser (to come)
+     .AddPresentation(builder.Configuration)      // layers, OpenAPI, authentication, CurrentUser
      .AddWorker(builder.Configuration);           // scheduled jobs (later)
 
 var app = builder.Build();
@@ -27,6 +19,7 @@ await app.Services.SeedDatabaseAsync();
 // ---------- Pipeline ----------
 app.UseHttpsRedirection();
 app.UsePhloemOpenApi();          // /openapi/v1.json + /swagger (when OpenApi:Enabled)
+app.UsePhloemAuthentication();   // who is calling (token), then are they allowed
 
 // ==================== Endpoint Registration ====================
 var api = app.MapGroup("/api");

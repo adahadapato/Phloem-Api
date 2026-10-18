@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Phloem.Domain.Constants;
 using Phloem.Domain.Enums;
 using Phloem.Domain.Interfaces;
+using Phloem.Domain.Interfaces.Identity;
 using Phloem.Persistence.Interceptors;
 using Phloem.Persistence.Repositories;
 using Phloem.Persistence.Seeding;
@@ -33,7 +34,7 @@ public static class DependencyInjection
     public static IServiceCollection AddPersistence(this IServiceCollection services, IConfiguration configuration)
     {
         var connectionString = GetConnectionString(configuration);   // 1
-
+                                                                    
         return services
             .AddInterceptors()                                       // 2
             .AddDatabase(connectionString)                           // 3
@@ -142,8 +143,13 @@ public static class DependencyInjection
         services.AddScoped<IShipmentRouteRepository, ShipmentRouteRepository>();
         services.AddScoped<IShipmentRepository, ShipmentRepository>();
 
+        // 5e. Sign-in (not a Domain aggregate; used by Infrastructure's Identity services)
+        services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+
         return services;
     }
+
+   
 
     // ───────────────────────────── 6. Seeding ─────────────────────────────
 

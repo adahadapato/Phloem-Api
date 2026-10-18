@@ -4,7 +4,7 @@ using Phloem.Domain.Constants;
 namespace Phloem.Infrastructure.Settings.Identity;
 
 /// <summary>
-/// The <c>"Identity"</c> section of appsettings.json: sign-in rules. Keys are listed in
+/// The <c>"Identity"</c> section of appsettings.json: sign-in rules, 2FA naming and email links. Keys are listed in
 /// <see cref="AppSettings.Identity"/>.
 /// </summary>
 /// <remarks>Checked when the app starts (see <see cref="IdentitySetup"/>), so an impossible value (e.g. a password
@@ -20,6 +20,10 @@ public sealed class IdentitySettings
     /// </summary>
     public bool RequireConfirmedEmail { get; set; }
 
+    /// <summary>The name shown in authenticator apps next to the code, e.g. "Phloem".</summary>
+    [Required]
+    public string AuthenticatorIssuer { get; set; } = string.Empty;
+
     /// <summary>Password strength.</summary>
     [Required]
     public PasswordSettings Password { get; set; } = new();
@@ -27,4 +31,8 @@ public sealed class IdentitySettings
     /// <summary>Lockout after wrong passwords.</summary>
     [Required]
     public LockoutSettings Lockout { get; set; } = new();
+
+    /// <summary>Website pages the emails link to.</summary>
+    [Required]
+    public IdentityLinkSettings Links { get; set; } = new();
 }

@@ -1,6 +1,7 @@
 ﻿using Phloem.Application;
 using Phloem.Infrastructure;
 using Phloem.Persistence;
+using Phloem.Presentation.Settings.Authentication;
 using Phloem.Presentation.Settings.OpenApi;
 
 namespace Phloem.Presentation;
@@ -30,6 +31,7 @@ public static class DependencyInjection
 
         // 2. API
         services.AddPhloemOpenApi(configuration);    // 2a. OpenAPI document + Swagger page
+        services.AddPhloemAuthentication();          // 2b. JWT bearer, authorization, CurrentUser
         // 2b. authentication + JWT bearer, 2c. policies, 2d. CurrentUser, 2e. CORS, 2f. rate limiting,
         // 2g. exception handler
 
