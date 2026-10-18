@@ -1,6 +1,7 @@
 ﻿using Phloem.Application;
 using Phloem.Infrastructure;
 using Phloem.Persistence;
+using Phloem.Presentation.Middleware;
 using Phloem.Presentation.Settings.Authentication;
 using Phloem.Presentation.Settings.OpenApi;
 
@@ -27,11 +28,16 @@ public static class DependencyInjection
         services.AddApplication();                   // MediatR pipeline, validators, caching, TimeProvider
         services.AddPersistence(configuration);      // SQL Server DbContext, unit of work, repositories, seeding
         services.AddInfrastructure(configuration);   // settings, email, storage, images (Identity next)
-        // services.AddWorker(configuration);         // scheduled jobs (later)
+                                                     // services.AddWorker(configuration);         // scheduled jobs (later)
 
         // 2. API
         services.AddPhloemOpenApi(configuration);    // 2a. OpenAPI document + Swagger page
         services.AddPhloemAuthentication();          // 2b. JWT bearer, authorization, CurrentUser
+
+        // 2c. Errors: one ProblemDetails shape for thrown exceptions AND Result failures
+        services.AddProblemDetails();
+        services.AddExceptionHandler<GlobalExceptionHandler>();
+
         // 2b. authentication + JWT bearer, 2c. policies, 2d. CurrentUser, 2e. CORS, 2f. rate limiting,
         // 2g. exception handler
 

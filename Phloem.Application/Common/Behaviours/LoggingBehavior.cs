@@ -1,13 +1,26 @@
-﻿using MediatR;
+﻿using System.Diagnostics;
+using MediatR;
 using Microsoft.Extensions.Logging;
-using System.Diagnostics;
+using Phloem.Domain.Shared.Results;
 
-namespace Phloem.Application.Common.Behaviors;
+namespace Phloem.Application.Common.Behaviours;
 
 /// <summary>
-/// MediatR pipeline behavior that logs request execution time and outcome.
+/// MediatR pipeline behavior that logs every request's name, duration and outcome.
 /// Useful for monitoring, debugging, and performance analysis.
 /// </summary>
+/// <remarks>
+/// <para><b>Never logs the request's contents:</b> commands carry passwords, refresh tokens and reset tokens, and
+/// logs are kept and shared. Only the request's NAME is logged.</para>
+/// <para><b>What is logged where:</b></para>
+/// <list type="bullet">
+///   <item><description><b>Success:</b> Debug, with the duration.</description></item>
+///   <item><description><b>Result failure</b> (wrong password, not found…): Information, with the error code. These are
+///   normal outcomes, not faults.</description></item>
+///   <item><description><b>Exception:</b> Debug only, with the duration, then re-thrown. The global exception handler
+///   logs it once, at the right level (warning for validation, error for real faults).</description></item>
+/// </list>
+/// </remarks>
 public class LoggingBehavior<TRequest, TResponse>
     : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
@@ -30,7 +43,7 @@ public class LoggingBehavior<TRequest, TResponse>
     /// Executes the request pipeline and logs its duration and outcome.
     /// </summary>
     /// <param name="request">
-    /// The MediatR request being executed.
+    /// The MediatR request being executed (its contents are never logged).
     /// </param>
     /// <param name="next">
     /// Delegate used to invoke the next pipeline behavior or request handler.
@@ -49,10 +62,7 @@ public class LoggingBehavior<TRequest, TResponse>
         var requestName = typeof(TRequest).Name;
         var stopwatch = Stopwatch.StartNew();
 
-        _logger.LogDebug(
-            "Starting request {RequestName} {@Request}",
-            requestName,
-            request);
+        _logger.LogDebug("Starting request {RequestName}", requestName);
 
         try
         {
@@ -60,6 +70,19 @@ public class LoggingBehavior<TRequest, TResponse>
 
             stopwatch.Stop();
 
+            // 1. Expected failure, returned as a Result (not an exception)
+            if (response is Result { IsFailure: true } failure)
+            {
+                _logger.LogInformation(
+                    "Request {RequestName} returned {ErrorCode} after {ElapsedMilliseconds}ms",
+                    requestName,
+                    failure.Error.Code,
+                    stopwatch.ElapsedMilliseconds);
+
+                return response;
+            }
+
+            // 2. Success
             _logger.LogDebug(
                 "Completed request {RequestName} in {ElapsedMilliseconds}ms",
                 requestName,
@@ -79,18 +102,16 @@ public class LoggingBehavior<TRequest, TResponse>
 
             throw;
         }
-        catch (Exception exception)
+        catch (Exception)
         {
             stopwatch.Stop();
 
-            _logger.LogError(
-                exception,
-                "Failed request {RequestName} after {ElapsedMilliseconds}ms",
+            // 3. Thrown: only the timing here; GlobalExceptionHandler logs the exception itself, once
+            _logger.LogDebug(
+                "Request {RequestName} threw after {ElapsedMilliseconds}ms",
                 requestName,
                 stopwatch.ElapsedMilliseconds);
 
-            // Re-throw so the application's central exception handling
-            // pipeline can process genuine failures.
             throw;
         }
     }

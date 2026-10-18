@@ -377,4 +377,24 @@ public static class AppSettings
         /// <summary>Host names the API answers to ("*" = any).</summary>
         public const string AllowedHosts = "AllowedHosts";
     }
+
+    // ==================== Logging ====================
+
+    /// <summary>
+    /// Serilog: log levels and where logs go (console + daily files in <c>logs/</c>, kept 14 days).
+    /// Read by Serilog itself (<c>ReadFrom.Configuration</c>), not bound to a settings class.
+    /// </summary>
+    /// <remarks>
+    /// <para>Change a level without code changes, e.g. <c>Serilog:MinimumLevel:Override:Phloem</c> = <c>Debug</c>
+    /// (environment variable <c>Serilog__MinimumLevel__Override__Phloem</c>).</para>
+    /// <para>The <c>logs/</c> folder is next to the app, never inside <c>wwwroot</c>, so log files can't be downloaded.</para>
+    /// </remarks>
+    public static class Serilog
+    {
+        /// <summary>The whole section.</summary>
+        public const string Section = "Serilog";
+
+        /// <summary>The default minimum level, e.g. "Information".</summary>
+        public const string MinimumLevelDefault = "Serilog:MinimumLevel:Default";
+    }
 }

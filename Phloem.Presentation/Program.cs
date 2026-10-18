@@ -3,34 +3,60 @@ using Phloem.Presentation;
 using Phloem.Presentation.Settings.Authentication;
 using Phloem.Presentation.Settings.OpenApi;
 using Phloem.Worker;
+using Serilog;
 
-var builder = WebApplication.CreateBuilder(args);
+// Until settings are read, log start-up problems to the console
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
-// ---------- Layers (each registers only its own services) ----------
-builder.Services
-     .AddPresentation(builder.Configuration)      // layers, OpenAPI, authentication, CurrentUser
-     .AddWorker(builder.Configuration);           // scheduled jobs (later)
+try
+{
+    var builder = WebApplication.CreateBuilder(args);
 
-var app = builder.Build();
+    // ---------- Logging: Serilog, configured from the "Serilog" section ----------
+    builder.Services.AddSerilog((services, logger) => logger
+        .ReadFrom.Configuration(builder.Configuration)
+        .ReadFrom.Services(services));
 
-// ---------- Database: migrations, roles, first admin ----------
-await app.Services.SeedDatabaseAsync();
+    // ---------- Layers (each registers only its own services) ----------
+    builder.Services
+         .AddPresentation(builder.Configuration)      // layers, OpenAPI, authentication, errors, CurrentUser
+         .AddWorker(builder.Configuration);           // scheduled jobs (later)
 
-// ---------- Pipeline ----------
-app.UseHttpsRedirection();
-app.UsePhloemOpenApi();          // /openapi/v1.json + /swagger (when OpenApi:Enabled)
-app.UsePhloemAuthentication();   // who is calling (token), then are they allowed
+    var app = builder.Build();
 
-// ==================== Endpoint Registration ====================
-var api = app.MapGroup("/api");
+    // ---------- Database: migrations, roles, first admin ----------
+    await app.Services.SeedDatabaseAsync();
 
-app.MapGet("/health",
-        () => Results.Ok(
-            new
-            {
-                status = "healthy",
-                timestamp = DateTime.UtcNow
-            }))
-    .ExcludeFromDescription();
+    // ---------- Pipeline ----------
+    app.UseExceptionHandler();       // first, so it catches errors from everything after it
+    app.UseSerilogRequestLogging();  // one line per request: method, path, status, time
+    app.UseHttpsRedirection();
+    app.UsePhloemOpenApi();          // /openapi/v1.json + /swagger (when OpenApi:Enabled)
+    app.UsePhloemAuthentication();   // who is calling (token), then are they allowed
 
-app.Run();
+    // ==================== Endpoint Registration ====================
+    var api = app.MapGroup("/api");
+
+    app.MapGet("/health",
+            () => Results.Ok(
+                new
+                {
+                    status = "healthy",
+                    timestamp = DateTime.UtcNow
+                }))
+        .ExcludeFromDescription();
+
+    app.Run();
+}
+catch (Exception ex) when (ex is not HostAbortedException)
+{
+    // A start-up crash (missing setting, database unreachable…) reaches the log file instead of vanishing
+    Log.Fatal(ex, "Phloem API failed to start.");
+    throw;
+}
+finally
+{
+    Log.CloseAndFlush();
+}
