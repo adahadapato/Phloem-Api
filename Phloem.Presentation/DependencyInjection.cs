@@ -4,6 +4,9 @@ using Phloem.Persistence;
 using Phloem.Presentation.Middleware;
 using Phloem.Presentation.Settings.Authentication;
 using Phloem.Presentation.Settings.OpenApi;
+using System;
+using System.Text.Json.Serialization;
+using static Azure.Core.HttpHeader;
 
 namespace Phloem.Presentation;
 
@@ -38,6 +41,9 @@ public static class DependencyInjection
         services.AddProblemDetails();
         services.AddExceptionHandler<GlobalExceptionHandler>();
 
+        // 2d.JSON: enums as names ("Ghana", not 2), both in and out; numbers are still accepted
+        services.ConfigureHttpJsonOptions(options =>
+                options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
         // 2b. authentication + JWT bearer, 2c. policies, 2d. CurrentUser, 2e. CORS, 2f. rate limiting,
         // 2g. exception handler
 

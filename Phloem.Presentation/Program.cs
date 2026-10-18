@@ -1,5 +1,6 @@
 using Phloem.Persistence.Seeding;
 using Phloem.Presentation;
+using Phloem.Presentation.Extensions;
 using Phloem.Presentation.Settings.Authentication;
 using Phloem.Presentation.Settings.OpenApi;
 using Phloem.Worker;
@@ -37,16 +38,8 @@ try
     app.UsePhloemAuthentication();   // who is calling (token), then are they allowed
 
     // ==================== Endpoint Registration ====================
-    var api = app.MapGroup("/api");
+    app.MapPhloemEndpoints();        // /api/* and /health
 
-    app.MapGet("/health",
-            () => Results.Ok(
-                new
-                {
-                    status = "healthy",
-                    timestamp = DateTime.UtcNow
-                }))
-        .ExcludeFromDescription();
 
     app.Run();
 }
