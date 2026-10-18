@@ -1,0 +1,475 @@
+﻿{
+  // Phloem's cut of each order (%). Launch rates: below the big apps to win sellers.
+  "commissions": [
+    {
+      "country": "UnitedKingdom",
+      "ratePercent": 12
+    },
+    {
+      "country": "Nigeria",
+      "ratePercent": 10
+    },
+    {
+      "country": "Ghana",
+      "ratePercent": 10
+    }
+  ],
+
+  // Range a shop may charge for delivery, and the offered windows (+ extra charge).
+  "deliveryPricing": [
+    {
+      "country": "UnitedKingdom",
+      "minShopFee": 1.99,
+      "maxShopFee": 5.99,
+      "windows": [
+        {
+          "window": "Asap",
+          "extraCharge": 0
+        },
+        {
+          "window": "TodayEvening",
+          "extraCharge": 1.00
+        },
+        {
+          "window": "Tomorrow",
+          "extraCharge": 0
+        }
+      ]
+    },
+    {
+      "country": "Nigeria",
+      "minShopFee": 800,
+      "maxShopFee": 3500,
+      "windows": [
+        {
+          "window": "Asap",
+          "extraCharge": 0
+        },
+        {
+          "window": "TodayEvening",
+          "extraCharge": 500
+        },
+        {
+          "window": "Tomorrow",
+          "extraCharge": 0
+        }
+      ]
+    },
+    {
+      "country": "Ghana",
+      "minShopFee": 10,
+      "maxShopFee": 40,
+      "windows": [
+        {
+          "window": "Asap",
+          "extraCharge": 0
+        },
+        {
+          "window": "TodayEvening",
+          "extraCharge": 5
+        },
+        {
+          "window": "Tomorrow",
+          "extraCharge": 0
+        }
+      ]
+    }
+  ],
+
+  // Dish names sellers pick from, with allowed price per plate per country.
+  "dishes": [
+    {
+      "name": "Jollof Rice",
+      "category": "LocalMeals",
+      "group": "WestAfrican",
+      "priceRanges": [
+        {
+          "country": "Nigeria",
+          "min": 2000,
+          "max": 8000
+        },
+        {
+          "country": "Ghana",
+          "min": 30,
+          "max": 120
+        },
+        {
+          "country": "UnitedKingdom",
+          "min": 8,
+          "max": 18
+        }
+      ]
+    },
+    {
+      "name": "Fried Rice",
+      "category": "LocalMeals",
+      "group": "WestAfrican",
+      "priceRanges": [
+        {
+          "country": "Nigeria",
+          "min": 2000,
+          "max": 8000
+        },
+        {
+          "country": "Ghana",
+          "min": 30,
+          "max": 120
+        },
+        {
+          "country": "UnitedKingdom",
+          "min": 8,
+          "max": 18
+        }
+      ]
+    },
+
+    {
+      "name": "Pounded Yam & Egusi Soup",
+      "category": "LocalMeals",
+      "group": "Nigeria",
+      "priceRanges": [
+        {
+          "country": "Nigeria",
+          "min": 3000,
+          "max": 10000
+        },
+        {
+          "country": "UnitedKingdom",
+          "min": 10,
+          "max": 20
+        }
+      ]
+    },
+    {
+      "name": "Amala & Ewedu",
+      "category": "LocalMeals",
+      "group": "Nigeria",
+      "priceRanges": [
+        {
+          "country": "Nigeria",
+          "min": 2000,
+          "max": 7000
+        },
+        {
+          "country": "UnitedKingdom",
+          "min": 9,
+          "max": 18
+        }
+      ]
+    },
+    {
+      "name": "Efo Riro",
+      "category": "LocalMeals",
+      "group": "Nigeria",
+      "priceRanges": [
+        {
+          "country": "Nigeria",
+          "min": 2500,
+          "max": 8000
+        },
+        {
+          "country": "UnitedKingdom",
+          "min": 9,
+          "max": 18
+        }
+      ]
+    },
+    {
+      "name": "Ofada Rice & Ayamase",
+      "category": "LocalMeals",
+      "group": "Nigeria",
+      "priceRanges": [
+        {
+          "country": "Nigeria",
+          "min": 3000,
+          "max": 9000
+        },
+        {
+          "country": "UnitedKingdom",
+          "min": 10,
+          "max": 20
+        }
+      ]
+    },
+    {
+      "name": "Moi Moi",
+      "category": "LocalMeals",
+      "group": "Nigeria",
+      "priceRanges": [
+        {
+          "country": "Nigeria",
+          "min": 500,
+          "max": 3000
+        },
+        {
+          "country": "UnitedKingdom",
+          "min": 3,
+          "max": 8
+        }
+      ]
+    },
+
+    {
+      "name": "Waakye",
+      "category": "LocalMeals",
+      "group": "Ghana",
+      "priceRanges": [
+        {
+          "country": "Ghana",
+          "min": 25,
+          "max": 90
+        },
+        {
+          "country": "UnitedKingdom",
+          "min": 8,
+          "max": 16
+        }
+      ]
+    },
+    {
+      "name": "Banku & Tilapia",
+      "category": "LocalMeals",
+      "group": "Ghana",
+      "priceRanges": [
+        {
+          "country": "Ghana",
+          "min": 50,
+          "max": 180
+        },
+        {
+          "country": "UnitedKingdom",
+          "min": 12,
+          "max": 25
+        }
+      ]
+    },
+    {
+      "name": "Fufu & Light Soup",
+      "category": "LocalMeals",
+      "group": "Ghana",
+      "priceRanges": [
+        {
+          "country": "Ghana",
+          "min": 40,
+          "max": 150
+        },
+        {
+          "country": "UnitedKingdom",
+          "min": 10,
+          "max": 20
+        }
+      ]
+    },
+    {
+      "name": "Red Red",
+      "category": "LocalMeals",
+      "group": "Ghana",
+      "priceRanges": [
+        {
+          "country": "Ghana",
+          "min": 25,
+          "max": 80
+        },
+        {
+          "country": "UnitedKingdom",
+          "min": 7,
+          "max": 14
+        }
+      ]
+    },
+    {
+      "name": "Kenkey & Fish",
+      "category": "LocalMeals",
+      "group": "Ghana",
+      "priceRanges": [
+        {
+          "country": "Ghana",
+          "min": 25,
+          "max": 100
+        },
+        {
+          "country": "UnitedKingdom",
+          "min": 8,
+          "max": 16
+        }
+      ]
+    },
+
+    {
+      "name": "Suya",
+      "category": "Snacks",
+      "group": "Snacks",
+      "priceRanges": [
+        {
+          "country": "Nigeria",
+          "min": 1000,
+          "max": 6000
+        },
+        {
+          "country": "Ghana",
+          "min": 20,
+          "max": 80
+        },
+        {
+          "country": "UnitedKingdom",
+          "min": 6,
+          "max": 15
+        }
+      ]
+    },
+    {
+      "name": "Kelewele",
+      "category": "Snacks",
+      "group": "Snacks",
+      "priceRanges": [
+        {
+          "country": "Ghana",
+          "min": 10,
+          "max": 50
+        },
+        {
+          "country": "UnitedKingdom",
+          "min": 4,
+          "max": 9
+        }
+      ]
+    },
+    {
+      "name": "Puff Puff",
+      "category": "Snacks",
+      "group": "Snacks",
+      "priceRanges": [
+        {
+          "country": "Nigeria",
+          "min": 300,
+          "max": 2500
+        },
+        {
+          "country": "Ghana",
+          "min": 5,
+          "max": 30
+        },
+        {
+          "country": "UnitedKingdom",
+          "min": 3,
+          "max": 7
+        }
+      ]
+    },
+    {
+      "name": "Meat Pie",
+      "category": "Snacks",
+      "group": "Snacks",
+      "priceRanges": [
+        {
+          "country": "Nigeria",
+          "min": 500,
+          "max": 2500
+        },
+        {
+          "country": "Ghana",
+          "min": 10,
+          "max": 40
+        },
+        {
+          "country": "UnitedKingdom",
+          "min": 2,
+          "max": 6
+        }
+      ]
+    },
+
+    {
+      "name": "Zobo",
+      "category": "Drinks",
+      "group": "Drinks",
+      "priceRanges": [
+        {
+          "country": "Nigeria",
+          "min": 300,
+          "max": 2000
+        },
+        {
+          "country": "UnitedKingdom",
+          "min": 2,
+          "max": 5
+        }
+      ]
+    },
+    {
+      "name": "Sobolo",
+      "category": "Drinks",
+      "group": "Drinks",
+      "priceRanges": [
+        {
+          "country": "Ghana",
+          "min": 5,
+          "max": 25
+        },
+        {
+          "country": "UnitedKingdom",
+          "min": 2,
+          "max": 5
+        }
+      ]
+    },
+    {
+      "name": "Chapman",
+      "category": "Drinks",
+      "group": "Drinks",
+      "priceRanges": [
+        {
+          "country": "Nigeria",
+          "min": 1000,
+          "max": 4000
+        },
+        {
+          "country": "UnitedKingdom",
+          "min": 3,
+          "max": 7
+        }
+      ]
+    }
+  ],
+
+  // Off until an admin enters a real drop-off point and rates.
+  "shipmentRoutes": [
+    {
+      "from": "Nigeria",
+      "to": "UnitedKingdom",
+      "dropOffAddress": "To be confirmed",
+      "dropOffHours": "To be confirmed"
+    },
+    {
+      "from": "Ghana",
+      "to": "UnitedKingdom",
+      "dropOffAddress": "To be confirmed",
+      "dropOffHours": "To be confirmed"
+    },
+    {
+      "from": "UnitedKingdom",
+      "to": "Nigeria",
+      "dropOffAddress": "To be confirmed",
+      "dropOffHours": "To be confirmed"
+    },
+    {
+      "from": "UnitedKingdom",
+      "to": "Ghana",
+      "dropOffAddress": "To be confirmed",
+      "dropOffHours": "To be confirmed"
+    },
+    {
+      "from": "Nigeria",
+      "to": "Ghana",
+      "dropOffAddress": "To be confirmed",
+      "dropOffHours": "To be confirmed"
+    },
+    {
+      "from": "Ghana",
+      "to": "Nigeria",
+      "dropOffAddress": "To be confirmed",
+      "dropOffHours": "To be confirmed"
+    }
+  ]
+
+}

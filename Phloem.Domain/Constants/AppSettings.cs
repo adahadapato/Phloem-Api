@@ -142,6 +142,13 @@ public static class AppSettings
 
         /// <summary>The first Admin's country, by enum name: "Ghana", "Nigeria" or "UnitedKingdom".</summary>
         public const string AdminCountry = "SeedData:AdminCountry";
+
+        /// <summary>Seed the starter data (commissions, delivery pricing, dish list, routes) on an empty database
+        /// (true/false).</summary>
+        public const string StarterDataEnabled = "SeedData:StarterDataEnabled";
+
+        /// <summary>The starter-data JSON file, relative to the app folder, e.g. "Seeding/Data/starter-data.json".</summary>
+        public const string StarterDataPath = "SeedData:StarterDataPath";
     }
 
     // ==================== Identity ====================

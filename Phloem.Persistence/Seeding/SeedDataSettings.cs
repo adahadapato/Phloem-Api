@@ -23,6 +23,12 @@ public sealed class SeedDataSettings
     /// <summary>Country on the Admin's profile; null if the setting is missing or not a valid country name.</summary>
     public Country? AdminCountry { get; set; }
 
+    /// <summary>Seed the starter data on an empty database.</summary>
+    public bool StarterDataEnabled { get; set; }
+
+    /// <summary>The starter-data JSON file, relative to the app folder (or a full path).</summary>
+    public string StarterDataPath { get; set; } = string.Empty;
+
     /// <summary>True when every value needed to create the Admin is present.</summary>
     public bool CanSeedAdmin =>
         !string.IsNullOrWhiteSpace(AdminEmail) &&

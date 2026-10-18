@@ -46,6 +46,11 @@ public static class DbSeeder
             logger,
             cancellationToken);
 
-        // 4. Starter data: next step
+        // 4. Starter data (each block only if its table is empty)
+        await StarterDataSeeder.SeedAsync(
+            context,
+            provider.GetRequiredService<IOptions<SeedDataSettings>>().Value,
+            logger,
+            cancellationToken);
     }
 }

@@ -171,6 +171,9 @@ public static class DependencyInjection
                                                            ignoreCase: true, out var country)
                 ? country
                 : null;
+            settings.StarterDataEnabled = bool.TryParse(configuration[AppSettings.SeedData.StarterDataEnabled],
+                                            out var enabled) && enabled;
+            settings.StarterDataPath = configuration[AppSettings.SeedData.StarterDataPath] ?? string.Empty;
         });
 
         return services;
