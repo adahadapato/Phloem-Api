@@ -84,7 +84,7 @@ internal sealed class GlobalExceptionHandler(
         {
             Status = badRequest.StatusCode,
             Title = "Bad request",
-            Detail = "The request couldn't be read. Please check the data sent."
+            Detail = UnreadableFieldMessage(badRequest)
         },
 
         // A Domain guard: input that should have been caught by a validator
@@ -130,4 +130,15 @@ internal sealed class GlobalExceptionHandler(
         argument.ParamName is null
             ? argument.Message
             : argument.Message.Replace($" (Parameter '{argument.ParamName}')", string.Empty);
+
+    /// <summary>
+    /// "The value for 'country' isn't valid." when the JSON names the field; otherwise a general message.
+    /// </summary>
+    private static string UnreadableFieldMessage(BadHttpRequestException badRequest)
+    {
+        if (badRequest.InnerException is System.Text.Json.JsonException { Path: { Length: > 2 } path })
+            return $"The value for '{path.TrimStart('$', '.')}' isn't valid. Please check it and try again.";
+
+        return "The request couldn't be read. Please check the data sent.";
+    }
 }

@@ -1,17 +1,22 @@
 ﻿using Phloem.Domain.Enums;
 using Phloem.Domain.Shared.Errors;
 using Phloem.Domain.Shared.Results;
+using Phloem.Domain.ValueObjects;
 
 namespace Phloem.Domain.Entities;
 
 /// <summary>
-/// The business side of a Phloem account: name, country, photo, delivery addresses, notification switches.
-/// It has the SAME Id as the login account (ApplicationUser in Persistence), which owns email, phone, password
-/// and roles. "Member since" = CreatedAt (from the base Entity).
+/// The business side of a Phloem account: name, country, photo, personal details, delivery addresses, notification
+/// switches. It has the SAME Id as the login account (ApplicationUser in Persistence), which owns email, phone,
+/// password and roles. "Member since" = CreatedAt (from the base Entity).
 /// </summary>
 /// <remarks>
 /// <para><b>Names:</b> first and last name are stored separately (the app greets people by first name);
 /// <see cref="GetFullName"/> joins them wherever the whole name is shown.</para>
+/// <para><b>Personal details</b> (date of birth + home address) are optional, but required, and the user must be
+/// <see cref="MinimumTradingAge"/> or older, before opening a shop or sending a parcel (<see cref="CheckCanTrade"/>).</para>
+/// <para><b>Home address vs delivery addresses:</b> one <see cref="ResidentialAddress"/> says where the person lives;
+/// <see cref="Addresses"/> are places food can be delivered to (any number).</para>
 /// <para><b>Errors:</b> business-rule failures are RETURNED as a Result (see UserProfileErrors); programmer mistakes
 /// (blank names / addresses the validator should have caught) still THROW.</para>
 /// </remarks>
@@ -27,6 +32,12 @@ public class UserProfile : Entity<Guid>
 
     /// <summary>Longest full name (first + space + last): the size of name snapshots, e.g. a shipment's sender.</summary>
     public const int FullNameMaxLength = FirstNameMaxLength + 1 + LastNameMaxLength;
+
+    /// <summary>Age needed to open a shop or send a parcel (a contract and legal rule).</summary>
+    public const int MinimumTradingAge = 18;
+
+    /// <summary>Oldest believable age; anything older is a typing mistake.</summary>
+    public const int MaximumAge = 120;
 
     private readonly List<DeliveryAddress> _addresses = new();
 
@@ -54,6 +65,17 @@ public class UserProfile : Entity<Guid>
 
     /// <summary>Storage path of the profile photo; null = no photo.</summary>
     public string? PhotoUrl { get; private set; }
+
+    // ---------- Personal details ----------
+
+    /// <summary>Date of birth; null until the user adds it.</summary>
+    public DateOnly? DateOfBirth { get; private set; }
+
+    /// <summary>Where the user lives; null until the user adds it.</summary>
+    public ResidentialAddress? ResidentialAddress { get; private set; }
+
+    /// <summary>True once both date of birth and home address are filled in.</summary>
+    public bool HasPersonalDetails => DateOfBirth is not null && ResidentialAddress is not null;
 
     // ---------- Notification switches (app's Notifications page) ----------
 
@@ -87,6 +109,10 @@ public class UserProfile : Entity<Guid>
     /// <summary>"Kofi Boateng": first and last name joined by one space.</summary>
     /// <returns>The full name.</returns>
     public string GetFullName() => $"{FirstName} {LastName}";
+
+    /// <summary>The user's age in whole years on a given day; null without a date of birth.</summary>
+    /// <param name="today">Today's date.</param>
+    public int? AgeOn(DateOnly today) => DateOfBirth is { } born ? YearsBetween(born, today) : null;
 
     /// <summary>
     /// Called right after the Identity account is created, with the SAME Id, so the login account and the profile
@@ -146,6 +172,44 @@ public class UserProfile : Entity<Guid>
         NotifyOffers = offers;
         NotifyNewDishes = newDishes;
         NotifyShopOrders = shopOrders;
+        return Result.Success();
+    }
+
+    // ---------- Personal details ----------
+
+    /// <summary>Sets (or changes) date of birth and home address together.</summary>
+    /// <param name="dateOfBirth">Date of birth.</param>
+    /// <param name="residentialAddress">Where the user lives.</param>
+    /// <param name="today">Today's date (from the app's clock).</param>
+    /// <returns>Success; or <see cref="UserProfileErrors.AccountDeleted"/>,
+    /// <see cref="UserProfileErrors.InvalidDateOfBirth"/>.</returns>
+    /// <remarks>Under-18s may save their details (they can still order food); <see cref="CheckCanTrade"/> decides
+    /// what they're allowed to do.</remarks>
+    public Result UpdatePersonalDetails(DateOnly dateOfBirth, ResidentialAddress residentialAddress, DateOnly today)
+    {
+        ArgumentNullException.ThrowIfNull(residentialAddress);
+        if (IsDeleted) return UserProfileErrors.AccountDeleted;
+
+        if (dateOfBirth > today || YearsBetween(dateOfBirth, today) > MaximumAge)
+            return UserProfileErrors.InvalidDateOfBirth;
+
+        DateOfBirth = dateOfBirth;
+        ResidentialAddress = residentialAddress;
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Before opening a shop or sending a parcel: personal details must be filled in, and the user must be
+    /// <see cref="MinimumTradingAge"/> or older.
+    /// </summary>
+    /// <param name="today">Today's date (from the app's clock).</param>
+    /// <returns>Success; or <see cref="UserProfileErrors.AccountDeleted"/>,
+    /// <see cref="UserProfileErrors.PersonalDetailsRequired"/>, <see cref="UserProfileErrors.TooYoung"/>.</returns>
+    public Result CheckCanTrade(DateOnly today)
+    {
+        if (IsDeleted) return UserProfileErrors.AccountDeleted;
+        if (!HasPersonalDetails) return UserProfileErrors.PersonalDetailsRequired;
+        if (AgeOn(today) < MinimumTradingAge) return UserProfileErrors.TooYoung;
         return Result.Success();
     }
 
@@ -224,6 +288,8 @@ public class UserProfile : Entity<Guid>
         FirstName = "Deleted";
         LastName = "user";
         PhotoUrl = null;
+        DateOfBirth = null;
+        ResidentialAddress = null;
         _addresses.Clear();
 
         SoftDelete(utcNow);   // base Entity: sets IsDeleted + DeletedAt
@@ -238,6 +304,14 @@ public class UserProfile : Entity<Guid>
     {
         foreach (var a in _addresses) a.ClearDefault();
         chosen.MarkDefault();
+    }
+
+    /// <summary>Whole years from one date to another (birthdays not yet reached this year don't count).</summary>
+    private static int YearsBetween(DateOnly from, DateOnly to)
+    {
+        var years = to.Year - from.Year;
+        if (from > to.AddYears(-years)) years--;
+        return years;
     }
 
     /// <summary>Trims and checks both names.</summary>

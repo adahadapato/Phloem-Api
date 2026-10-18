@@ -5,10 +5,10 @@ using Phloem.Domain.Interfaces;
 namespace Phloem.Application.Features.Accounts.Dtos;
 
 /// <summary>
-/// The signed-in user ("me"). The app loads this into SessionService.CurrentUser;
-/// Account, Edit profile, Change password, Notifications and Delivery address all read from it.
-/// Roles (IsAdmin) come from the login tokens, not from here.
+/// The Account page: who I am, my personal details, my delivery addresses and my notification switches.
 /// </summary>
+/// <remarks><c>HasPersonalDetails</c> false = the app shows "Add your date of birth and home address" before opening a
+/// shop or sending a parcel.</remarks>
 public sealed record ProfileDto(
     Guid Id,
     string FirstName,
@@ -22,6 +22,9 @@ public sealed record ProfileDto(
     string? PhotoUrl,
     DateTime MemberSince,
     bool HasShop,
+    DateOnly? DateOfBirth,
+    HomeAddressDto? HomeAddress,
+    bool HasPersonalDetails,
     bool NotifyOrderUpdates,
     bool NotifyShipmentUpdates,
     bool NotifyOffers,
@@ -42,6 +45,9 @@ public sealed record ProfileDto(
         photoUrl,
         profile.CreatedAt,
         hasShop,
+        profile.DateOfBirth,
+        profile.ResidentialAddress is null ? null : HomeAddressDto.From(profile.ResidentialAddress),
+        profile.HasPersonalDetails,
         profile.NotifyOrderUpdates,
         profile.NotifyShipmentUpdates,
         profile.NotifyOffers,

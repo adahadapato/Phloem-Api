@@ -10,6 +10,8 @@ using Phloem.Domain.ValueObjects;
 namespace Phloem.Application.Features.Shipments.Commands;
 
 /// <summary>Handles <see cref="BookShipmentCommand"/>.</summary>
+/// <remarks>The sender must have their date of birth and home address on their profile, and be 18 or older
+/// (<see cref="UserProfile.CheckCanTrade"/>).</remarks>
 public sealed class BookShipmentCommandHandler(
     ICurrentUser currentUser,
     IUserProfileRepository profiles,
@@ -23,13 +25,14 @@ public sealed class BookShipmentCommandHandler(
     private const int MaxTrackingNumberAttempts = 10;
 
     /// <summary>
-    /// 1. Load the sender and route. 2. Make a tracking number. 3. <see cref="Shipment.Book"/> (all rules
-    /// in Domain). 4. Save.
+    /// 1. Load the sender and check they can send parcels. 2. Load the route. 3. Make a tracking number.
+    /// 4. <see cref="Shipment.Book"/> (all rules in Domain). 5. Save.
     /// </summary>
     /// <param name="command">The booking form.</param>
     /// <param name="ct">Cancels the database calls.</param>
     /// <returns>
-    /// The booking; or <see cref="UserProfileErrors.NotFound"/>, <see cref="ShipmentErrors.RouteNotAvailable"/>,
+    /// The booking; or <see cref="UserProfileErrors.NotFound"/>, <see cref="UserProfileErrors.PersonalDetailsRequired"/>,
+    /// <see cref="UserProfileErrors.TooYoung"/>, <see cref="ShipmentErrors.RouteNotAvailable"/>,
     /// or any booking error from <see cref="Shipment.Book"/>.
     /// </returns>
     /// <exception cref="InvalidOperationException">Called without a signed-in user, or no free tracking number.</exception>
@@ -38,13 +41,18 @@ public sealed class BookShipmentCommandHandler(
         var userId = currentUser.UserId
             ?? throw new InvalidOperationException("This action requires a signed-in user.");
 
+        var now = time.GetUtcNow().UtcDateTime;                              // NEW: moved up
+
         var sender = await profiles.GetByIdAsync(userId, ct);
         if (sender is null) return UserProfileErrors.NotFound;
+
+        // NEW: date of birth + home address filled in, and 18 or older
+        var canTrade = sender.CheckCanTrade(DateOnly.FromDateTime(now));
+        if (canTrade.IsFailure) return canTrade.Error;
 
         var route = await routes.GetByCountriesAsync(command.FromCountry, command.ToCountry, ct);
         if (route is null) return ShipmentErrors.RouteNotAvailable;
 
-        var now = time.GetUtcNow().UtcDateTime;
         var trackingNumber = await NewTrackingNumberAsync(now, ct);
 
         var recipient = new ShipmentRecipient(

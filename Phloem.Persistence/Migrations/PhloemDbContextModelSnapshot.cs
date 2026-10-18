@@ -644,6 +644,42 @@ namespace Phloem.Persistence.Migrations
                     b.ToTable("OrderLines", (string)null);
                 });
 
+            modelBuilder.Entity("Phloem.Domain.Entities.RefreshToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ReplacedByTokenId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("RevokedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nchar(64)")
+                        .IsFixedLength();
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId", "RevokedAtUtc");
+
+                    b.ToTable("RefreshTokens", (string)null);
+                });
+
             modelBuilder.Entity("Phloem.Domain.Entities.Shipment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -967,6 +1003,9 @@ namespace Phloem.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateOnly?>("DateOfBirth")
+                        .HasColumnType("date");
+
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
 
@@ -1249,42 +1288,6 @@ namespace Phloem.Persistence.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
-            modelBuilder.Entity("Phloem.Persistence.Configurations.Identity.RefreshToken", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("ExpiresAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("ReplacedByTokenId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("RevokedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("TokenHash")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("nchar(64)")
-                        .IsFixedLength();
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TokenHash")
-                        .IsUnique();
-
-                    b.HasIndex("UserId", "RevokedAtUtc");
-
-                    b.ToTable("RefreshTokens", (string)null);
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
                     b.HasOne("Phloem.Persistence.Configurations.Identity.ApplicationRole", null)
@@ -1483,6 +1486,15 @@ namespace Phloem.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Phloem.Domain.Entities.RefreshToken", b =>
+                {
+                    b.HasOne("Phloem.Persistence.Configurations.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Phloem.Domain.Entities.Shipment", b =>
                 {
                     b.HasOne("Phloem.Domain.Entities.UserProfile", "Sender")
@@ -1525,6 +1537,46 @@ namespace Phloem.Persistence.Migrations
                         .HasForeignKey("ShipmentRouteId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Phloem.Domain.Entities.UserProfile", b =>
+                {
+                    b.OwnsOne("Phloem.Domain.ValueObjects.ResidentialAddress", "ResidentialAddress", b1 =>
+                        {
+                            b1.Property<Guid>("UserProfileId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("City")
+                                .IsRequired()
+                                .HasMaxLength(80)
+                                .HasColumnType("nvarchar(80)");
+
+                            b1.Property<int>("Country")
+                                .HasColumnType("int");
+
+                            b1.Property<string>("Line1")
+                                .IsRequired()
+                                .HasMaxLength(80)
+                                .HasColumnType("nvarchar(80)");
+
+                            b1.Property<string>("Line2")
+                                .HasMaxLength(80)
+                                .HasColumnType("nvarchar(80)");
+
+                            b1.Property<string>("RegionOrPostcode")
+                                .IsRequired()
+                                .HasMaxLength(50)
+                                .HasColumnType("nvarchar(50)");
+
+                            b1.HasKey("UserProfileId");
+
+                            b1.ToTable("UserProfiles");
+
+                            b1.WithOwner()
+                                .HasForeignKey("UserProfileId");
+                        });
+
+                    b.Navigation("ResidentialAddress");
                 });
 
             modelBuilder.Entity("Phloem.Domain.Entities.Vendor", b =>
@@ -1701,15 +1753,6 @@ namespace Phloem.Persistence.Migrations
                         });
 
                     b.Navigation("File")
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Phloem.Persistence.Configurations.Identity.RefreshToken", b =>
-                {
-                    b.HasOne("Phloem.Persistence.Configurations.Identity.ApplicationUser", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 

@@ -50,7 +50,7 @@ internal sealed class BearerSecurityTransformer : IOpenApiDocumentTransformer, I
         operation.Security ??= [];
         operation.Security.Add(new OpenApiSecurityRequirement
         {
-            [new OpenApiSecuritySchemeReference(SchemeName)] = []
+            [new OpenApiSecuritySchemeReference(SchemeName, context.Document)] = []
         });
 
         return Task.CompletedTask;

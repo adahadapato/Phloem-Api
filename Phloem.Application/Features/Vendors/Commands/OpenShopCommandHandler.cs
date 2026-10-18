@@ -11,12 +11,15 @@ namespace Phloem.Application.Features.Vendors.Commands;
 /// The signed-in user opens their shop. Buyers can't see it until an admin approves it,
 /// so no cache needs clearing here.
 /// </summary>
+/// <remarks>The owner must have their date of birth and home address on their profile, and be 18 or older
+/// (<see cref="UserProfile.CheckCanTrade"/>).</remarks>
 public sealed class OpenShopCommandHandler(
     ICurrentUser currentUser,
     IUserProfileRepository profiles,
     IVendorRepository vendors,
     IAccountService accounts,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    TimeProvider time)                                                       // NEW
     : IRequestHandler<OpenShopCommand, Result<Guid>>
 {
     public async Task<Result<Guid>> Handle(OpenShopCommand command, CancellationToken ct)
@@ -27,6 +30,10 @@ public sealed class OpenShopCommandHandler(
         // ---------- Checks that need the database ----------
         var profile = await profiles.GetByIdAsync(userId, ct);
         if (profile is null) return UserProfileErrors.NotFound;
+
+        // NEW: date of birth + home address filled in, and 18 or older
+        var canTrade = profile.CheckCanTrade(DateOnly.FromDateTime(time.GetUtcNow().UtcDateTime));
+        if (canTrade.IsFailure) return canTrade.Error;
 
         if (await vendors.GetByOwnerIdAsync(userId, ct) is not null)
             return VendorErrors.AlreadyHasShop;

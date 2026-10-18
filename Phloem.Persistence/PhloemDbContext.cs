@@ -72,6 +72,7 @@ public sealed class PhloemDbContext(DbContextOptions<PhloemDbContext> options)
     /// <para><b>Value objects stored as one column:</b> every <see cref="EmailAddress"/> and <see cref="PhoneNumber"/>
     /// property, on any entity, uses its converter and column size. Without this, EF would mistake an unconfigured one
     /// for a related table.</para>
+    /// <para><b>Dates:</b> every DateTime is UTC and read back marked as UTC.</para>
     /// </remarks>
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
@@ -86,6 +87,10 @@ public sealed class PhloemDbContext(DbContextOptions<PhloemDbContext> options)
         configurationBuilder.Properties<PhoneNumber>()
                             .HaveConversion<PhoneNumberConverter>()
                             .HaveMaxLength(PhoneNumberConverter.MaxLength);
+
+        // 3. Dates: stored as UTC, read back marked as UTC (so JSON writes the "Z")
+        configurationBuilder.Properties<DateTime>().HaveConversion<UtcDateTimeConverter>();
+        configurationBuilder.Properties<DateTime?>().HaveConversion<UtcDateTimeConverter>();
     }
 
     /// <inheritdoc />

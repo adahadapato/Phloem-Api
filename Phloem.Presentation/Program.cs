@@ -31,8 +31,8 @@ try
     await app.Services.SeedDatabaseAsync();
 
     // ---------- Pipeline ----------
-    app.UseExceptionHandler();       // first, so it catches errors from everything after it
-    app.UseSerilogRequestLogging();  // one line per request: method, path, status, time
+    app.UseSerilogRequestLogging();  // outermost: logs the FINAL status of every request
+    app.UseExceptionHandler();       // turns exceptions into ProblemDetails
     app.UseHttpsRedirection();
     app.UsePhloemOpenApi();          // /openapi/v1.json + /swagger (when OpenApi:Enabled)
     app.UsePhloemAuthentication();   // who is calling (token), then are they allowed

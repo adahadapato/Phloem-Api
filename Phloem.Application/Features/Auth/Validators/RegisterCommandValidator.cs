@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using Phloem.Application.Features.Accounts.Validators;
 using Phloem.Application.Features.Auth.Commands;
 using Phloem.Domain.Entities;
 using Phloem.Domain.ValueObjects;
@@ -20,8 +21,10 @@ public sealed class RegisterCommandValidator : AbstractValidator<RegisterCommand
             .Must(v => string.IsNullOrWhiteSpace(v) || PhoneNumber.IsValid(v))
             .WithMessage(PhoneNumber.InvalidMessage);
 
-        RuleFor(x => x.Address).MaximumLength(DeliveryAddress.FullAddressMaxLength);
         RuleFor(x => x.Country).IsInEnum();
+
+        // Optional, but checked when given
+        RuleFor(x => x.HomeAddress!).SetValidator(new HomeAddressInputValidator()).When(x => x.HomeAddress is not null);
 
         // Strength (length, digits…) is Identity's job; its message comes back as a Result
         RuleFor(x => x.Password).NotEmpty();

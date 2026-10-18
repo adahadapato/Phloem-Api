@@ -11,10 +11,13 @@ namespace Phloem.Application.Features.Auth.Commands;
 /// Creates the login account AND the UserProfile (same Id) in ONE transaction,
 /// then signs the new user in. We already know the name and email, so no extra lookups.
 /// </summary>
+/// <remarks>Optional personal details: a date of birth is saved only together with a home address (they're one step
+/// on the profile), and the home address also becomes the first delivery address.</remarks>
 public sealed class RegisterCommandHandler(
     IAuthService auth,
     IUserProfileRepository profiles,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    TimeProvider time)
     : IRequestHandler<RegisterCommand, Result<AuthTokensDto>>
 {
     private const string SignUpAddressLabel = "Home";
@@ -34,9 +37,19 @@ public sealed class RegisterCommandHandler(
             // 2. Profile with the SAME Id
             profile = UserProfile.Create(registered.Value, command.FirstName, command.LastName, command.Country);
 
-            if (!string.IsNullOrWhiteSpace(command.Address))
+            // 3. Optional home address (+ date of birth); also the first delivery address
+            if (command.HomeAddress is not null)
             {
-                var added = profile.AddAddress(SignUpAddressLabel, command.Address, command.Country, makeDefault: true);
+                var home = command.HomeAddress.ToResidentialAddress();
+
+                if (command.DateOfBirth is { } born)
+                {
+                    var today = DateOnly.FromDateTime(time.GetUtcNow().UtcDateTime);
+                    var details = profile.UpdatePersonalDetails(born, home, today);
+                    if (details.IsFailure) return details.Error;
+                }
+
+                var added = profile.AddAddress(SignUpAddressLabel, home.ToSingleLine(), home.Country, makeDefault: true);
                 if (added.IsFailure) return added.Error;
             }
 
@@ -46,7 +59,7 @@ public sealed class RegisterCommandHandler(
             await transaction.CommitAsync(ct);
         }
 
-        // 3. Sign in (only after the account is definitely saved)
+        // 4. Sign in (only after the account is definitely saved)
         var login = await auth.LoginAsync(email, command.Password, ct);
         if (login.IsFailure) return login.Error;
 

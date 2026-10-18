@@ -82,6 +82,14 @@ public static class AuthEndpoints
             .Produces(StatusCodes.Status204NoContent)
             .ProducesValidationProblem();
 
+        // 5. Email confirmation (the website's /confirm-email page posts the link's values here)
+        auth.MapPost("/confirm-email", async (ConfirmEmailCommand command, ISender sender, CancellationToken ct) =>
+                (await sender.Send(command, ct)).ToHttp())
+                .WithName("ConfirmEmail")
+                .WithSummary("Confirm the email address using the emailed link")
+                .Produces(StatusCodes.Status204NoContent)
+                .ProducesValidationProblem();
+
         return api;
     }
 }
