@@ -1,3 +1,4 @@
+
 using Phloem.Persistence.Seeding;
 using Phloem.Presentation;
 using Phloem.Presentation.Extensions;
@@ -6,47 +7,119 @@ using Phloem.Presentation.Settings.OpenApi;
 using Phloem.Worker;
 using Serilog;
 
-// Until settings are read, log start-up problems to the console
+var diagnosticDirectory = Path.Combine(
+    AppContext.BaseDirectory,
+    "App_Data");
+
+var diagnosticFile = Path.Combine(
+    diagnosticDirectory,
+    "startup-diagnostics.log");
+
+void WriteStartupDiagnostic(string message, Exception? exception = null)
+{
+    try
+    {
+        Directory.CreateDirectory(diagnosticDirectory);
+
+        var entry =
+            $"[{DateTimeOffset.UtcNow:yyyy-MM-dd HH:mm:ss.fff zzz}] {message}" +
+            Environment.NewLine;
+
+        if (exception is not null)
+        {
+            entry += exception + Environment.NewLine;
+        }
+
+        File.AppendAllText(diagnosticFile, entry);
+    }
+    catch
+    {
+        // Diagnostic logging must never prevent the API from starting.
+    }
+}
+
+// Bootstrap logger for failures before application logging is configured.
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
     .CreateBootstrapLogger();
 
 try
 {
+    WriteStartupDiagnostic("Phloem API startup initiated.");
+
+    Log.Information("Creating Phloem application builder.");
+
     var builder = WebApplication.CreateBuilder(args);
 
-    // ---------- Logging: Serilog, configured from the "Serilog" section ----------
+    WriteStartupDiagnostic(
+        $"Environment: {builder.Environment.EnvironmentName}");
+
+    WriteStartupDiagnostic(
+        $"Content root: {builder.Environment.ContentRootPath}");
+
+    // Configure Serilog from application configuration.
     builder.Services.AddSerilog((services, logger) => logger
         .ReadFrom.Configuration(builder.Configuration)
         .ReadFrom.Services(services));
 
-    // ---------- Layers (each registers only its own services) ----------
+    WriteStartupDiagnostic("Registering application services.");
+
     builder.Services
-         .AddPresentation(builder.Configuration)      // layers, OpenAPI, authentication, errors, CurrentUser
-         .AddWorker(builder.Configuration);           // scheduled jobs (later)
+        .AddPresentation(builder.Configuration)
+        .AddWorker(builder.Configuration);
+
+    WriteStartupDiagnostic("Application services registered.");
+
+    WriteStartupDiagnostic("Building application.");
 
     var app = builder.Build();
 
-    // ---------- Database: migrations, roles, first admin ----------
+    WriteStartupDiagnostic("Application built successfully.");
+
+    // Database initialization.
+    WriteStartupDiagnostic("Starting database initialization.");
+
+    Log.Information("Starting Phloem database initialization.");
+
     await app.Services.SeedDatabaseAsync();
 
-    // ---------- Pipeline ----------
-    app.UseSerilogRequestLogging();  // outermost: logs the FINAL status of every request
-    app.UseExceptionHandler();       // turns exceptions into ProblemDetails
-    app.UseHttpsRedirection();
-    app.UsePhloemStaticFiles();      // /uploads (photos, logos); the private folder is blocked
-    app.UsePhloemOpenApi();          // /openapi/v1.json + /swagger (when OpenApi:Enabled)
-    app.UsePhloemAuthentication();   // who is calling (token), then are they allowed
+    WriteStartupDiagnostic("Database initialization completed.");
 
-    // ==================== Endpoint Registration ====================
-    app.MapPhloemEndpoints();        // /api/*, /private-files/* and /health
+    Log.Information("Phloem database initialization completed.");
+
+    // HTTP pipeline.
+    WriteStartupDiagnostic("Configuring HTTP middleware.");
+
+    app.UseSerilogRequestLogging();
+    app.UseExceptionHandler();
+    app.UseHttpsRedirection();
+    app.UsePhloemStaticFiles();
+    app.UsePhloemOpenApi();
+    app.UsePhloemAuthentication();
+
+    WriteStartupDiagnostic("Registering API endpoints.");
+
+    app.MapPhloemEndpoints();
+
+    WriteStartupDiagnostic("API endpoints registered.");
+
+    app.Lifetime.ApplicationStarted.Register(() =>
+    {
+        WriteStartupDiagnostic("Phloem API started successfully.");
+    });
+
+    WriteStartupDiagnostic("Starting web host.");
 
     app.Run();
 }
 catch (Exception ex) when (ex is not HostAbortedException)
 {
-    // A start-up crash (missing setting, database unreachable…) reaches the log file instead of vanishing
+    WriteStartupDiagnostic(
+        "FATAL: Phloem API failed to start.",
+        ex);
+
     Log.Fatal(ex, "Phloem API failed to start.");
+
     throw;
 }
 finally
