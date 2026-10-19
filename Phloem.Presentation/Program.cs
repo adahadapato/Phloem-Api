@@ -7,13 +7,10 @@ using Phloem.Presentation.Settings.OpenApi;
 using Phloem.Worker;
 using Serilog;
 
-var diagnosticDirectory = Path.Combine(
-    AppContext.BaseDirectory,
-    "App_Data");
+var diagnosticDirectory = Path.Combine(AppContext.BaseDirectory, "App_Data");
 
 var diagnosticFile = Path.Combine(
-    diagnosticDirectory,
-    "startup-diagnostics.log");
+    diagnosticDirectory,  "startup-diagnostics.log");
 
 void WriteStartupDiagnostic(string message, Exception? exception = null)
 {
