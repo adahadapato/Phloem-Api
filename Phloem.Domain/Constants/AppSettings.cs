@@ -149,6 +149,17 @@ public static class AppSettings
 
         /// <summary>The starter-data JSON file, relative to the app folder, e.g. "Seeding/Data/starter-data.json".</summary>
         public const string StarterDataPath = "SeedData:StarterDataPath";
+
+        /// <summary>Seed the DEMO shops (owners, shops, dishes, pictures) once each (true/false). Turn off before
+        /// launch.</summary>
+        public const string DemoDataEnabled = "SeedData:DemoDataEnabled";
+
+        /// <summary>The demo-data JSON file, relative to the app folder, e.g. "Seeding/Data/demo-data.json".</summary>
+        public const string DemoDataPath = "SeedData:DemoDataPath";
+
+        /// <summary>Password of every demo owner account, so the owners can try the seller screens. SECRET; empty =
+        /// random passwords nobody knows.</summary>
+        public const string DemoOwnerPassword = "SeedData:DemoOwnerPassword";
     }
 
     // ==================== Identity ====================

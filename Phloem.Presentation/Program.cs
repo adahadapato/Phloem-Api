@@ -87,7 +87,10 @@ try
 
     app.UseSerilogRequestLogging();
     app.UseExceptionHandler();
-    app.UseHttpsRedirection();
+    // Development: no redirect, so the Android emulator can load pictures over http://10.0.2.2:5175
+    // (it doesn't trust the local development certificate). The live site always redirects to https.
+    if (!app.Environment.IsDevelopment())
+        app.UseHttpsRedirection();
     app.UsePhloemStaticFiles();
     app.UsePhloemOpenApi();
     app.UsePhloemAuthentication();

@@ -1,0 +1,84 @@
+{
+  // DEMO shops so the app has something to show. Seeded only when SeedData:DemoDataEnabled is true.
+  // Each shop is added once (found by its owner's email), so restarts and deploys never duplicate it.
+  // Dish names must be in the dish catalog (starter-data.json) and prices inside that country's range.
+  // Photos are in demo-photos/ (next to this file): dishes 1200x900 + 400x300 thumbnail, logos 800x800, covers 800x300.
+  "shops": [
+    {
+      "owner": {
+        "firstName": "Ama", "lastName": "Mensah", "email": "demo.mamaama@phloem.app", "phone": "+233245550192",
+        "country": "Ghana", "dateOfBirth": "1984-03-12",
+        "address": { "line1": "12 Ring Road Central", "city": "Accra", "regionOrPostcode": "Greater Accra" }
+      },
+      "name": "Mama Ama's Kitchen", "businessEmail": "hello@mamaamas.demo.phloem.app", "deliveryFee": 15,
+      "logo": { "file": "shops/mama-amas-kitchen-logo.webp", "width": 800, "height": 800 },
+      "coverPhoto": { "file": "shops/mama-amas-kitchen-cover.webp", "width": 800, "height": 300 },
+      "ratings": [5, 5, 5, 4, 5, 5, 4, 5],
+      "dishes": [
+        { "name": "Jollof Rice", "detail": "& Chicken", "price": 65, "photo": "dishes/jollof_rice",
+          "description": "Smoky party jollof with grilled chicken and fresh salad.", "ratings": [5, 5, 4, 5] },
+        { "name": "Waakye", "price": 45, "photo": "dishes/waakye",
+          "description": "Rice and beans with shito, gari, spaghetti, egg and fried plantain.", "ratings": [5, 4, 5] },
+        { "name": "Kelewele", "price": 20, "photo": "dishes/kelewele",
+          "description": "Spicy fried plantain cubes with ginger and pepper.", "ratings": [5, 5, 4] },
+        { "name": "Sobolo", "price": 12, "photo": "dishes/sobolo",
+          "description": "Chilled hibiscus drink with ginger and pineapple.", "ratings": [4, 5] }
+      ]
+    },
+    {
+      "owner": {
+        "firstName": "Kofi", "lastName": "Asante", "email": "demo.foodaffairs@phloem.app", "phone": "+233205550147",
+        "country": "Ghana", "dateOfBirth": "1979-11-02",
+        "address": { "line1": "7 Liberation Road", "city": "Kumasi", "regionOrPostcode": "Ashanti" }
+      },
+      "name": "Food Affairs Ltd", "businessEmail": "orders@foodaffairs.demo.phloem.app", "deliveryFee": 20,
+      "logo": { "file": "shops/food-affairs-ltd-logo.webp", "width": 800, "height": 800 },
+      "coverPhoto": { "file": "shops/food-affairs-ltd-cover.webp", "width": 800, "height": 300 },
+      "ratings": [5, 4, 5, 4, 5],
+      "dishes": [
+        { "name": "Banku & Tilapia", "price": 95, "photo": "dishes/banku_tilapia",
+          "description": "Grilled whole tilapia with banku, pepper sauce and onions.", "ratings": [5, 5, 4] },
+        { "name": "Meat Pie", "price": 15, "photo": "dishes/meat_pie",
+          "description": "Flaky pastry filled with seasoned minced beef.", "ratings": [4, 5] }
+      ]
+    },
+    {
+      "owner": {
+        "firstName": "Tunde", "lastName": "Bakare", "email": "demo.lagosflavours@phloem.app", "phone": "+2348035550147",
+        "country": "Nigeria", "dateOfBirth": "1986-06-21",
+        "address": { "line1": "5 Allen Avenue", "city": "Ikeja", "regionOrPostcode": "Lagos" }
+      },
+      "name": "Lagos Flavours", "businessEmail": "hello@lagosflavours.demo.phloem.app", "deliveryFee": 1500,
+      "logo": { "file": "shops/lagos-flavours-logo.webp", "width": 800, "height": 800 },
+      "coverPhoto": { "file": "shops/lagos-flavours-cover.webp", "width": 800, "height": 300 },
+      "ratings": [5, 5, 4, 5, 4, 5],
+      "dishes": [
+        { "name": "Pounded Yam & Egusi Soup", "price": 4500, "photo": "dishes/egusi_soup",
+          "description": "Rich egusi soup with assorted meat and soft pounded yam.", "ratings": [5, 5, 5] },
+        { "name": "Suya", "detail": "Beef", "price": 2500, "photo": "dishes/suya_skewers",
+          "description": "Spicy grilled beef skewers with yaji, onions and tomatoes.", "ratings": [5, 4, 5, 5] },
+        { "name": "Zobo", "price": 800, "photo": "dishes/zobo_drink",
+          "description": "Chilled hibiscus drink with ginger and cloves.", "ratings": [4, 4, 5] }
+      ]
+    },
+    {
+      "owner": {
+        "firstName": "Grace", "lastName": "Adjei", "email": "demo.diasporadelights@phloem.app", "phone": "+447700900123",
+        "country": "UnitedKingdom", "dateOfBirth": "1990-02-08",
+        "address": { "line1": "31 Camden High Street", "city": "London", "regionOrPostcode": "NW1 7JE" }
+      },
+      "name": "Diaspora Delights", "businessEmail": "info@diasporadelights.demo.phloem.app", "deliveryFee": 2.99,
+      "logo": { "file": "shops/diaspora-delights-logo.webp", "width": 800, "height": 800 },
+      "coverPhoto": { "file": "shops/diaspora-delights-cover.webp", "width": 800, "height": 300 },
+      "ratings": [5, 5, 5, 4],
+      "dishes": [
+        { "name": "Pounded Yam & Egusi Soup", "price": 14, "photo": "dishes/pounded_yam_egusi",
+          "description": "Home-style egusi with pounded yam, cooked in London.", "ratings": [5, 5] },
+        { "name": "Jollof Rice", "detail": "& Chicken", "price": 12, "photo": "dishes/jollof_rice",
+          "description": "Party jollof with grilled chicken.", "ratings": [5, 4, 5] },
+        { "name": "Waakye", "price": 11, "photo": "dishes/waakye",
+          "description": "Rice and beans with shito, gari, egg and plantain.", "ratings": [4, 5] }
+      ]
+    }
+  ]
+}

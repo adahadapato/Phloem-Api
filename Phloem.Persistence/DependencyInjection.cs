@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -174,6 +174,10 @@ public static class DependencyInjection
             settings.StarterDataEnabled = bool.TryParse(configuration[AppSettings.SeedData.StarterDataEnabled],
                                             out var enabled) && enabled;
             settings.StarterDataPath = configuration[AppSettings.SeedData.StarterDataPath] ?? string.Empty;
+            settings.DemoDataEnabled = bool.TryParse(configuration[AppSettings.SeedData.DemoDataEnabled],
+                                                     out var demo) && demo;
+            settings.DemoDataPath = configuration[AppSettings.SeedData.DemoDataPath] ?? string.Empty;
+            settings.DemoOwnerPassword = configuration[AppSettings.SeedData.DemoOwnerPassword] ?? string.Empty;
         });
 
         return services;

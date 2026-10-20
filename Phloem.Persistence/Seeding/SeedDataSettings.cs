@@ -1,9 +1,10 @@
-﻿using Phloem.Domain.Enums;
+using Phloem.Domain.Enums;
 
 namespace Phloem.Persistence.Seeding;
 
 /// <summary>
-/// The <c>SeedData</c> section: everything the seeder needs to create the first Admin.
+/// The <c>SeedData</c> section: everything the seeder needs to create the first Admin, the starter data and the
+/// demo shops.
 /// Keys: <c>Phloem.Domain.Constants.AppSettings.SeedData</c>.
 /// </summary>
 public sealed class SeedDataSettings
@@ -28,6 +29,15 @@ public sealed class SeedDataSettings
 
     /// <summary>The starter-data JSON file, relative to the app folder (or a full path).</summary>
     public string StarterDataPath { get; set; } = string.Empty;
+
+    /// <summary>Seed the DEMO shops (owners, shops, dishes, pictures). Turn off before launch.</summary>
+    public bool DemoDataEnabled { get; set; }
+
+    /// <summary>The demo-data JSON file, relative to the app folder (or a full path); its pictures are next to it.</summary>
+    public string DemoDataPath { get; set; } = string.Empty;
+
+    /// <summary>Password of every demo owner account (SECRET). Empty = random passwords nobody knows.</summary>
+    public string DemoOwnerPassword { get; set; } = string.Empty;
 
     /// <summary>True when every value needed to create the Admin is present.</summary>
     public bool CanSeedAdmin =>

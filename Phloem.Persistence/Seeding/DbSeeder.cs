@@ -1,9 +1,10 @@
-﻿
+
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Phloem.Domain.Interfaces;
 using Phloem.Persistence.Configurations.Identity;
 
 namespace Phloem.Persistence.Seeding;
@@ -124,6 +125,33 @@ public static class DbSeeder
                 logger.LogError(
                     ex,
                     "Database initialization STEP 4 FAILED: starter data.");
+
+                throw;
+            }
+
+            // 5. Demo shops (only when SeedData:DemoDataEnabled is true)
+            logger.LogInformation(
+                "Database initialization STEP 5: starting demo data seeding.");
+
+            try
+            {
+                await DemoDataSeeder.SeedAsync(
+                    provider.GetRequiredService<UserManager<ApplicationUser>>(),
+                    context,
+                    provider.GetRequiredService<IFileStorage>(),
+                    provider.GetRequiredService<IOptions<SeedDataSettings>>().Value,
+                    provider.GetRequiredService<TimeProvider>(),
+                    logger,
+                    cancellationToken);
+
+                logger.LogInformation(
+                    "Database initialization STEP 5: demo data completed.");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(
+                    ex,
+                    "Database initialization STEP 5 FAILED: demo data.");
 
                 throw;
             }
