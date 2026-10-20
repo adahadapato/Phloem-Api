@@ -1,5 +1,6 @@
 using Phloem.Presentation.Endpoints.Auth;
 using Phloem.Presentation.Endpoints.Commissions;
+using Phloem.Presentation.Endpoints.Countries;
 using Phloem.Presentation.Endpoints.DeliveryPricings;
 using Phloem.Presentation.Endpoints.DishCatalogs;
 using Phloem.Presentation.Endpoints.Dishes;
@@ -23,6 +24,7 @@ public static class EndpointExtensions
     {
         // 1. API groups
         var api = app.MapGroup("/api");
+        api.MapCountryEndpoints();           // /api/countries
         api.MapAuthEndpoints();              // /api/auth
         api.MapMeEndpoints();                // /api/me
         api.MapShopEndpoints();              // /api/shops            + /api/admin/shops
