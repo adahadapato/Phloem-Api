@@ -20,7 +20,8 @@ namespace Phloem.Persistence.Seeding;
 /// <remarks>
 /// <para><b>Only when <c>SeedData:DemoDataEnabled</c> is true.</b> Turn it off before launch.</para>
 /// <para><b>Once per shop:</b> a shop is skipped when its owner's email already exists, so restarts and deploys never
-/// duplicate it, and a demo shop an admin blocked stays blocked.</para>
+/// duplicate it, and a demo shop an admin blocked stays blocked. It's also skipped (with a warning) when a shop with
+/// the same name already exists, because shop names are unique.</para>
 /// <para><b>One transaction per shop:</b> owner, shop and dishes are all created, or none.</para>
 /// <para><b>Pictures:</b> ready-made WebP files from <c>demo-photos/</c>, copied into storage as they are. They skip
 /// the upload checks (size, blur): real sellers' photos always go through them.</para>
@@ -66,7 +67,16 @@ internal static class DemoDataSeeder
         var added = new List<string>();
         foreach (var shop in data.Shops)
         {
-            if (await userManager.FindByEmailAsync(shop.Owner.Email.Trim()) is not null) continue;   // already there
+            // Already seeded (its demo owner exists): nothing to do
+            if (await userManager.FindByEmailAsync(shop.Owner.Email.Trim()) is not null) continue;
+
+            // A shop with this name already exists (a real or test shop): shop names are unique, so leave it alone
+            var name = shop.Name.Trim();
+            if (await context.Vendors.IgnoreQueryFilters().AnyAsync(v => v.Name == name, cancellationToken))
+            {
+                logger.LogWarning("Demo shop '{Shop}' skipped: a shop with that name already exists.", name);
+                continue;
+            }
 
             await SeedShopAsync(shop, folder, password, userManager, context, storage, time, cancellationToken);
             added.Add(shop.Name);
@@ -141,8 +151,12 @@ internal static class DemoDataSeeder
             dish.SetAvailability(true);
 
             var name = Guid.CreateVersion7().ToString("N");
+
+            // A NEW ImageDimensions for every photo: EF Core stores it as part of the photo's row, and one object
+            // shared by several photos (like the DishPhotoStandard.FullSize constant) is saved for only one of them
+            var size = ImageDimensions.Create(DishPhotoStandard.FullSize.Width, DishPhotoStandard.FullSize.Height);
             var photo = await SaveAsync(storage, folder, $"{d.Photo}.webp", $"{d.Photo}_thumb.webp",
-                                        DishPhotoStandard.FullSize, $"dishes/{dish.Id:N}/{name}.webp",
+                                        size, $"dishes/{dish.Id:N}/{name}.webp",
                                         $"dishes/{dish.Id:N}/{name}_thumb.webp", ct);
             Check(dishEntry, dish.AddPhoto(photo, dish.Name));
 
