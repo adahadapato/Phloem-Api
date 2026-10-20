@@ -48,11 +48,9 @@ try
 
     var builder = WebApplication.CreateBuilder(args);
 
-    WriteStartupDiagnostic(
-        $"Environment: {builder.Environment.EnvironmentName}");
+    WriteStartupDiagnostic($"Environment: {builder.Environment.EnvironmentName}");
 
-    WriteStartupDiagnostic(
-        $"Content root: {builder.Environment.ContentRootPath}");
+    WriteStartupDiagnostic($"Content root: {builder.Environment.ContentRootPath}");
 
     // Configure Serilog from application configuration.
     builder.Services.AddSerilog((services, logger) => logger
@@ -111,9 +109,7 @@ try
 }
 catch (Exception ex) when (ex is not HostAbortedException)
 {
-    WriteStartupDiagnostic(
-        "FATAL: Phloem API failed to start.",
-        ex);
+    WriteStartupDiagnostic("FATAL: Phloem API failed to start.",  ex);
 
     Log.Fatal(ex, "Phloem API failed to start.");
 
