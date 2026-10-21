@@ -8,6 +8,9 @@ using Phloem.Application.Features.Orders.Commands;
 using Phloem.Application.Features.Orders.Dtos;
 using Phloem.Application.Features.Orders.Queries;
 using Phloem.Application.Features.ShipmentRoutes.Commands;
+using Phloem.Application.Features.Shipments.Commands;
+using Phloem.Application.Features.Shipments.Dtos;
+using Phloem.Application.Features.Shipments.Queries;
 using Phloem.Application.Features.Vendors.Commands;
 using Phloem.Domain.Enums;
 using Phloem.Presentation.Endpoints.Commissions;
@@ -16,6 +19,7 @@ using Phloem.Presentation.Endpoints.DishCatalogs;
 using Phloem.Presentation.Endpoints.Dishes;
 using Phloem.Presentation.Endpoints.Me;
 using Phloem.Presentation.Endpoints.ShipmentRoutes;
+using Phloem.Presentation.Endpoints.Shipments;
 using Phloem.Presentation.Endpoints.Shops;
 
 namespace Phloem.Presentation.Settings.OpenApi;
@@ -128,5 +132,19 @@ internal static class RequestExamples
         // ───────────────────────────── 7. Orders ─────────────────────────────
         [typeof(CheckBasketQuery)] = new CheckBasketQuery(Basket, DeliveryWindow.Asap),
         [typeof(PlaceOrderCommand)] = new PlaceOrderCommand(Basket, DeliveryAddressId, DeliveryWindow.Asap),
+
+        // ───────────────────────────── 8. Shipments ─────────────────────────────
+        [typeof(GetShipmentQuoteQuery)] = new GetShipmentQuoteQuery(
+            Country.Ghana, Country.UnitedKingdom, DeliverySpeed.Standard, EstimatedWeightKg: 4.5m),
+        [typeof(BookShipmentCommand)] = new BookShipmentCommand(
+            Country.Ghana, Country.UnitedKingdom, SenderPhone: "+233245550192",
+            RecipientName: "Adjoa Boateng", RecipientPhone: "+447700900123",
+            RecipientAddressLine: "14 Elm Road", RecipientCity: "Manchester", RecipientRegionOrPostcode: "M14 5RB",
+            Items: [new ShipmentItemInputDto(ShipmentItemCategory.PackagedFood, "Gari (1 kg bags)", 3, 40m),
+                    new ShipmentItemInputDto(ShipmentItemCategory.PackagedFood, "Shito (jar)", 2, 35m)],
+            DeliverySpeed.Standard, EstimatedWeightKg: 4.5m, ConfirmedNoProhibitedItems: true, AcceptedTerms: true),
+        [typeof(ShipmentEndpoints.ReceiveRequest)] = new ShipmentEndpoints.ReceiveRequest(WeighedWeightKg: 4.6m),
+        [typeof(ShipmentEndpoints.ProgressRequest)] = new ShipmentEndpoints.ProgressRequest(
+            ShipmentStatus.InTransit, Note: "Flight BA078"),
     };
 }
