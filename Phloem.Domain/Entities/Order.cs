@@ -372,6 +372,22 @@ public class Order : Entity<Guid>
         return Result.Success();
     }
 
+    /// <summary>
+    /// The shop's owner was suspended, so the shop can't make this order: it's cancelled whatever the buyer's cancel
+    /// window says, if it hasn't left the shop yet (awaiting payment, paid or being prepared). A paid one then
+    /// <see cref="NeedsRefund"/>. Orders already out for delivery, delivered or cancelled are left alone.
+    /// </summary>
+    /// <param name="utcNow">The current time.</param>
+    /// <returns>True when this call cancelled the order.</returns>
+    public bool CancelBecauseShopSuspended(DateTime utcNow)
+    {
+        if (Status is not (OrderStatus.AwaitingPayment or OrderStatus.Paid or OrderStatus.Preparing)) return false;
+
+        Status = OrderStatus.Cancelled;
+        CancelledAtUtc = utcNow;
+        return true;
+    }
+
     // =====================================================================
     // Progress (shop / delivery)
     // =====================================================================

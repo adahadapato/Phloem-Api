@@ -23,7 +23,8 @@ internal sealed class DishRepository(PhloemDbContext context)
 
     /// <inheritdoc />
     /// <remarks>
-    /// Only what a buyer can order right now: available, not waiting for a price update, from an approved shop.
+    /// Only what a buyer can order right now: available, not waiting for a price update, from an approved shop
+    /// whose owner isn't suspended.
     /// Read-only, with photos and shop (the dish cards show both).
     /// </remarks>
     public Task<PagedResult<Dish>> SearchAsync(Country? country, DishCategory? category, string? search,
@@ -35,7 +36,8 @@ internal sealed class DishRepository(PhloemDbContext context)
             .Include(d => d.Vendor)
             .Where(d => d.IsAvailable
                      && !d.NeedsPriceUpdate
-                     && d.Vendor.Status == VendorStatus.Approved);
+                     && d.Vendor.Status == VendorStatus.Approved
+                     && !d.Vendor.IsOwnerSuspended);
 
         if (country is not null) query = query.Where(d => d.Country == country);
         if (category is not null) query = query.Where(d => d.Category == category);

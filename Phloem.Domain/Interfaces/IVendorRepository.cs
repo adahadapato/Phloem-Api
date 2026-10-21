@@ -23,12 +23,12 @@ public interface IVendorRepository : IRepository<Vendor>
     Task<IReadOnlyList<Vendor>> GetPendingApprovalAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Vendors list page (buyers: Approved only) and Admin "Active sellers" (any status).
-    /// Optional filters: status, country, name search.
+    /// Vendors list page (buyers: <paramref name="visibleToBuyersOnly"/> = approved shops whose owner isn't
+    /// suspended) and Admin "Active sellers" (any status). Optional filters: status, country, name search.
     /// </summary>
     Task<PagedResult<Vendor>> GetPagedAsync(
         VendorStatus? status, Country? country, string? search, PageRequest page,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default, bool visibleToBuyersOnly = false);
 
     /// <summary>Home page → "Top sellers": best-rated approved shops, optionally in one country.</summary>
     Task<IReadOnlyList<Vendor>> GetTopRatedAsync(

@@ -16,7 +16,8 @@ public sealed class GetShopsQueryHandler(
     public async Task<Result<PagedResult<ShopListItemDto>>> Handle(GetShopsQuery query, CancellationToken ct)
     {
         var page = new PageRequest { Page = query.Page, PageSize = query.PageSize };
-        var paged = await vendors.GetPagedAsync(VendorStatus.Approved, query.Country, query.Search?.Trim(), page, ct);
+        var paged = await vendors.GetPagedAsync(status: null, query.Country, query.Search?.Trim(), page, ct,
+                                                visibleToBuyersOnly: true);
 
         var counts = await dishes.CountByVendorsAsync(paged.Items.Select(v => v.Id).ToList(), ct);
         var items = paged.Items

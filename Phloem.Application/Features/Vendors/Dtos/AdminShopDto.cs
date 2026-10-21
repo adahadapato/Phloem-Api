@@ -1,11 +1,13 @@
 using Phloem.Domain.Entities;
 using Phloem.Domain.Enums;
+using Phloem.Domain.Interfaces;
 
 namespace Phloem.Application.Features.Vendors.Dtos;
 
 /// <summary>
 /// Admin → Shops tab rows: "Mama Ama's Kitchen · owned by Ama Mensah · Ghana · waiting for approval".
-/// Id is for the Approve / Reject / Block buttons.
+/// Id is for the Approve / Reject / Block buttons. <see cref="IsOwnerSuspended"/>: hidden because its owner is
+/// suspended (its own Status is unchanged).
 /// </summary>
 public sealed record AdminShopDto(
     Guid Id,
@@ -19,10 +21,12 @@ public sealed record AdminShopDto(
     bool IsVerified,
     decimal Rating,
     int RatingCount,
-    DateTime OpenedAt)
+    DateTime OpenedAt,
+    string? LogoUrl,
+    bool IsOwnerSuspended)
 {
-    /// <summary>Builds the row from a shop and its owner's full name.</summary>
-    public static AdminShopDto From(Vendor v, string ownerName) => new(
+    /// <summary>Builds the row from a shop, its owner's full name, and storage (for the logo's address).</summary>
+    public static AdminShopDto From(Vendor v, string ownerName, IFileStorage storage) => new(
         v.Id,
         v.Name,
         ownerName,
@@ -34,5 +38,7 @@ public sealed record AdminShopDto(
         v.IsVerified,
         v.Rating,
         v.RatingCount,
-        v.CreatedAt);
+        v.CreatedAt,
+        v.Logo is null ? null : storage.GetPublicUrl(v.Logo.Path),   // the logo on the admin seller cards
+        v.IsOwnerSuspended);
 }

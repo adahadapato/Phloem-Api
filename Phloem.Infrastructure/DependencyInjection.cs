@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Phloem.Application;
+using Phloem.Infrastructure.Services.Accounts;
 using Phloem.Infrastructure.Settings.Application;
 using Phloem.Infrastructure.Settings.Email;
 using Phloem.Infrastructure.Settings.Identity;
@@ -22,6 +23,9 @@ namespace Phloem.Infrastructure
             services.AddStorage(configuration);
             services.AddImages(configuration);                     
             services.AddPhloemIdentity(configuration);  
+
+            // Background tasks
+            services.AddHostedService<SuspensionExpiryService>();   // hourly: lift suspensions that have ended
 
             // Add infrastructure layer services here
 

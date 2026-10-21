@@ -77,4 +77,13 @@ public interface IOrderRepository : IRepository<Order>
     /// <param name="cancellationToken">Cancels the database call.</param>
     Task<IReadOnlyList<Order>> GetAwaitingPaymentAsync(
         int skip, int take, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The shop's orders that haven't left it yet (awaiting payment, paid, being prepared), tracked, so they can be
+    /// cancelled when the owner is suspended.
+    /// </summary>
+    /// <param name="vendorId">The shop.</param>
+    /// <param name="cancellationToken">Cancels the database call.</param>
+    Task<IReadOnlyList<Order>> GetUnfinishedForVendorAsync(
+        Guid vendorId, CancellationToken cancellationToken = default);
 }

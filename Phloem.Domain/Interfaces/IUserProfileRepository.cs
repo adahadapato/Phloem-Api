@@ -9,10 +9,16 @@ public interface IUserProfileRepository : IRepository<UserProfile>
 
     /// <summary>
     /// Admin dashboard → Users tab: everyone who has signed up, newest first.
-    /// Search matches the full name.
+    /// Search matches the full name; <paramref name="suspendedOnly"/> shows only suspended people.
     /// </summary>
     Task<PagedResult<UserProfile>> GetPagedAsync(
-        string? search, PageRequest page, CancellationToken cancellationToken = default);
+        string? search, PageRequest page, CancellationToken cancellationToken = default, bool suspendedOnly = false);
+
+    /// <summary>Hourly expiry task: people whose suspension end date has passed (tracked, for <c>Reinstate</c>).</summary>
+    /// <param name="utcNow">The current time.</param>
+    /// <param name="cancellationToken">Cancels the database call.</param>
+    Task<IReadOnlyList<UserProfile>> GetEndedSuspensionsAsync(
+        DateTime utcNow, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Admin lists: people's names for a whole list in ONE query (Id → full name).

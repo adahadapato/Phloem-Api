@@ -17,9 +17,11 @@ internal sealed class UserProfileRepository(PhloemDbContext context)
     /// <inheritdoc />
     /// <remarks>Read-only list, newest first. Search matches first name, last name or "first last".</remarks>
     public Task<PagedResult<UserProfile>> GetPagedAsync(string? search, PageRequest page,
-                                                         CancellationToken cancellationToken = default)
+                                                         CancellationToken cancellationToken = default,
+                                                         bool suspendedOnly = false)
     {
         IQueryable<UserProfile> query = Set.AsNoTracking();
+        if (suspendedOnly) query = query.Where(p => p.SuspendedAtUtc != null);
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -31,6 +33,13 @@ internal sealed class UserProfileRepository(PhloemDbContext context)
 
         return ToPagedAsync(query.OrderByDescending(p => p.CreatedAt), page, cancellationToken);
     }
+
+    /// <inheritdoc />
+    /// <remarks>Without addresses: the task only lifts the suspension.</remarks>
+    public async Task<IReadOnlyList<UserProfile>> GetEndedSuspensionsAsync(DateTime utcNow,
+                                                                          CancellationToken cancellationToken = default) =>
+        await Set.Where(p => p.SuspendedAtUtc != null && p.SuspendedUntilUtc != null && p.SuspendedUntilUtc <= utcNow)
+                 .ToListAsync(cancellationToken);
 
     /// <inheritdoc />
     /// <remarks>

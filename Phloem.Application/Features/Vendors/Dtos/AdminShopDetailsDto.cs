@@ -14,7 +14,7 @@ public sealed record AdminShopDetailsDto(
 {
     /// <summary>Builds the review screen for one shop.</summary>
     public static AdminShopDetailsDto From(Vendor v, string ownerName, IFileStorage storage, DateTime utcNow) => new(
-        AdminShopDto.From(v, ownerName),
+        AdminShopDto.From(v, ownerName, storage),
         v.Logo is null ? null : storage.GetPublicUrl(v.Logo.Path),
         v.CoverPhoto is null ? null : storage.GetPublicUrl(v.CoverPhoto.Path),
         v.Documents.OrderBy(d => d.Type).Select(d => AdminShopDocumentDto.From(d, utcNow)).ToList(),

@@ -66,7 +66,15 @@ public class Vendor : Entity<Guid>
     // ---------- Status ----------
     public VendorStatus Status { get; private set; }
     public bool IsVerified { get; private set; }                    // the ✓ badge
-    public bool IsVisibleToBuyers => Status == VendorStatus.Approved;
+
+    /// <summary>
+    /// True while the shop's OWNER is suspended: the shop is hidden like a blocked one, but its own
+    /// <see cref="Status"/> (and Block) is untouched, so it comes back as it was when the suspension is lifted.
+    /// Set by the Application layer when the owner is suspended or reinstated.
+    /// </summary>
+    public bool IsOwnerSuspended { get; private set; }
+
+    public bool IsVisibleToBuyers => Status == VendorStatus.Approved && !IsOwnerSuspended;
 
     /// <summary>NEW (proposal): why an admin rejected the shop; shown on Shop settings.</summary>
     public string? RejectionReason { get; private set; }
@@ -205,6 +213,10 @@ public class Vendor : Entity<Guid>
     }
 
     public void Block() => Status = VendorStatus.Blocked;
+
+    /// <summary>Set when the owner is suspended or reinstated; the shop's own Status/Block is untouched.</summary>
+    /// <param name="suspended">True while the owner is suspended.</param>
+    public void SetOwnerSuspended(bool suspended) => IsOwnerSuspended = suspended;
 
     public void Unblock()
     {

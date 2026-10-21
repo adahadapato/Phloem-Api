@@ -21,6 +21,7 @@ using Phloem.Presentation.Endpoints.Me;
 using Phloem.Presentation.Endpoints.ShipmentRoutes;
 using Phloem.Presentation.Endpoints.Shipments;
 using Phloem.Presentation.Endpoints.Shops;
+using Phloem.Presentation.Endpoints.Users;
 
 namespace Phloem.Presentation.Settings.OpenApi;
 
@@ -146,5 +147,10 @@ internal static class RequestExamples
         [typeof(ShipmentEndpoints.ReceiveRequest)] = new ShipmentEndpoints.ReceiveRequest(WeighedWeightKg: 4.6m),
         [typeof(ShipmentEndpoints.ProgressRequest)] = new ShipmentEndpoints.ProgressRequest(
             ShipmentStatus.InTransit, Note: "Flight BA078"),
+
+        // ───────────────────────────── 9. Admin: users ─────────────────────────────
+        [typeof(UserEndpoints.SuspendRequest)] = new UserEndpoints.SuspendRequest(
+            "Repeated fake orders and abusive messages to sellers.",
+            UntilUtc: new DateTime(2026, 11, 30, 0, 0, 0, DateTimeKind.Utc)),
     };
 }

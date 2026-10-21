@@ -53,6 +53,13 @@ public sealed class UserProfileConfiguration : EntityConfiguration<UserProfile>
         builder.Property(p => p.NotifyNewDishes).IsRequired();
         builder.Property(p => p.NotifyShopOrders).IsRequired();
 
+        // ---------- Suspension (admins); all null while not suspended ----------
+        builder.Property(p => p.SuspendedAtUtc);
+        builder.Property(p => p.SuspendedUntilUtc);
+        builder.Property(p => p.SuspensionReason).HasMaxLength(UserProfile.SuspensionReasonMaxLength);
+        builder.Property(p => p.SuspendedByUserId);
+        builder.HasIndex(p => p.SuspendedAtUtc);   // admin "suspended" filter + hourly expiry task
+
         // ---------- Addresses: one profile → many addresses, through the private list ----------
         builder.HasMany(p => p.Addresses)
                .WithOne()

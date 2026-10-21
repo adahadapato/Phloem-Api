@@ -47,10 +47,13 @@ internal sealed class VendorRepository(PhloemDbContext context)
     /// admins get the same stable order.
     /// </remarks>
     public Task<PagedResult<Vendor>> GetPagedAsync(VendorStatus? status, Country? country, string? search,
-                                                    PageRequest page, CancellationToken cancellationToken = default)
+                                                    PageRequest page, CancellationToken cancellationToken = default,
+                                                    bool visibleToBuyersOnly = false)
     {
         IQueryable<Vendor> query = Set.AsNoTracking();
 
+        // Buyers: approved shops whose owner isn't suspended (same rule as Vendor.IsVisibleToBuyers)
+        if (visibleToBuyersOnly) query = query.Where(v => v.Status == VendorStatus.Approved && !v.IsOwnerSuspended);
         if (status is not null) query = query.Where(v => v.Status == status);
         if (country is not null) query = query.Where(v => v.Country == country);
         if (!string.IsNullOrWhiteSpace(search))
@@ -67,11 +70,12 @@ internal sealed class VendorRepository(PhloemDbContext context)
     }
 
     /// <inheritdoc />
-    /// <remarks>Approved shops only; ties broken by number of ratings, then name.</remarks>
+    /// <remarks>Shops buyers can see (approved, owner not suspended); ties broken by number of ratings, then name.</remarks>
     public async Task<IReadOnlyList<Vendor>> GetTopRatedAsync(Country? country, int count,
                                                               CancellationToken cancellationToken = default)
     {
-        IQueryable<Vendor> query = Set.AsNoTracking().Where(v => v.Status == VendorStatus.Approved);
+        IQueryable<Vendor> query = Set.AsNoTracking()
+                                      .Where(v => v.Status == VendorStatus.Approved && !v.IsOwnerSuspended);
         if (country is not null) query = query.Where(v => v.Country == country);
 
         return await query.OrderByDescending(v => v.Rating)

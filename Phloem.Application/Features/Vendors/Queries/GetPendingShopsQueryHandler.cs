@@ -7,7 +7,8 @@ namespace Phloem.Application.Features.Vendors.Queries;
 
 public sealed class GetPendingShopsQueryHandler(
     IVendorRepository vendors,
-    IUserProfileRepository profiles)
+    IUserProfileRepository profiles,
+    IFileStorage storage)
     : IRequestHandler<GetPendingShopsQuery, Result<IReadOnlyList<AdminShopDto>>>
 {
     private const string UnknownUser = "Unknown user";
@@ -18,7 +19,7 @@ public sealed class GetPendingShopsQueryHandler(
 
         var owners = await profiles.GetFullNamesAsync(pending.Select(v => v.OwnerId).Distinct().ToList(), ct);
         IReadOnlyList<AdminShopDto> items = pending
-            .Select(v => AdminShopDto.From(v, owners.GetValueOrDefault(v.OwnerId, UnknownUser)))
+            .Select(v => AdminShopDto.From(v, owners.GetValueOrDefault(v.OwnerId, UnknownUser), storage))
             .ToList();
 
         return Result<IReadOnlyList<AdminShopDto>>.Success(items);

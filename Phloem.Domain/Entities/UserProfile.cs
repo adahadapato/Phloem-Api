@@ -17,6 +17,9 @@ namespace Phloem.Domain.Entities;
 /// <see cref="MinimumTradingAge"/> or older, before opening a shop or sending a parcel (<see cref="CheckCanTrade"/>).</para>
 /// <para><b>Home address vs delivery addresses:</b> one <see cref="ResidentialAddress"/> says where the person lives;
 /// <see cref="Addresses"/> are places food can be delivered to (any number).</para>
+/// <para><b>Suspension:</b> an admin can suspend someone who abuses Phloem, until a date or until further notice
+/// (<see cref="Suspend"/>, <see cref="Reinstate"/>). While suspended they can't sign in, and their shop (if any) is
+/// hidden too (<see cref="Vendor.IsOwnerSuspended"/>, set by the Application layer).</para>
 /// <para><b>Errors:</b> business-rule failures are RETURNED as a Result (see UserProfileErrors); programmer mistakes
 /// (blank names / addresses the validator should have caught) still THROW.</para>
 /// </remarks>
@@ -38,6 +41,9 @@ public class UserProfile : Entity<Guid>
 
     /// <summary>Oldest believable age; anything older is a typing mistake.</summary>
     public const int MaximumAge = 120;
+
+    /// <summary>Longest suspension reason (it's shown to the person and emailed to them).</summary>
+    public const int SuspensionReasonMaxLength = 500;
 
     private readonly List<DeliveryAddress> _addresses = new();
 
@@ -93,6 +99,20 @@ public class UserProfile : Entity<Guid>
 
     /// <summary>Sellers: new orders for their shop.</summary>
     public bool NotifyShopOrders { get; private set; } = true;
+
+    // ---------- Suspension (admins) ----------
+
+    /// <summary>When the current suspension started; null = not suspended.</summary>
+    public DateTime? SuspendedAtUtc { get; private set; }
+
+    /// <summary>When the current suspension ends; null = until further notice (an admin lifts it).</summary>
+    public DateTime? SuspendedUntilUtc { get; private set; }
+
+    /// <summary>Why the person was suspended (shown to them when they try to sign in, and emailed).</summary>
+    public string? SuspensionReason { get; private set; }
+
+    /// <summary>The admin who suspended them.</summary>
+    public Guid? SuspendedByUserId { get; private set; }
 
     // ---------- Navigation ----------
 
@@ -293,6 +313,55 @@ public class UserProfile : Entity<Guid>
         _addresses.Clear();
 
         SoftDelete(utcNow);   // base Entity: sets IsDeleted + DeletedAt
+    }
+
+    // ---------- Suspension (admins) ----------
+
+    /// <summary>
+    /// True while the person is suspended. A suspension whose end date has passed no longer counts (the hourly
+    /// expiry task then clears it with <see cref="Reinstate"/>).
+    /// </summary>
+    /// <param name="utcNow">The current time.</param>
+    public bool IsSuspendedAt(DateTime utcNow) =>
+        SuspendedAtUtc is not null && (SuspendedUntilUtc is null || SuspendedUntilUtc > utcNow);
+
+    /// <summary>
+    /// An admin suspends the person, until a date or until further notice. Suspending someone already suspended
+    /// replaces the reason and end date. Whether the admin may suspend THIS person (not themselves, not another
+    /// admin) is checked by the Application layer, which knows the roles.
+    /// </summary>
+    /// <param name="reason">Why (shown to the person).</param>
+    /// <param name="untilUtc">When it ends; null = until further notice.</param>
+    /// <param name="byUserId">The admin.</param>
+    /// <param name="utcNow">The current time.</param>
+    /// <returns>Success; or <see cref="UserProfileErrors.AccountDeleted"/>,
+    /// <see cref="UserProfileErrors.CannotSuspendYourself"/>, <see cref="UserProfileErrors.SuspensionEndInPast"/>.</returns>
+    /// <exception cref="ArgumentException">Blank reason.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Reason longer than <see cref="SuspensionReasonMaxLength"/>.</exception>
+    public Result Suspend(string reason, DateTime? untilUtc, Guid byUserId, DateTime utcNow)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(reason);
+        var text = reason.Trim();
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(text.Length, SuspensionReasonMaxLength, nameof(reason));
+
+        if (IsDeleted) return UserProfileErrors.AccountDeleted;
+        if (byUserId == Id) return UserProfileErrors.CannotSuspendYourself;
+        if (untilUtc is { } until && until <= utcNow) return UserProfileErrors.SuspensionEndInPast;
+
+        SuspendedAtUtc = utcNow;
+        SuspendedUntilUtc = untilUtc;
+        SuspensionReason = text;
+        SuspendedByUserId = byUserId;
+        return Result.Success();
+    }
+
+    /// <summary>Lifts the suspension (an admin, or the expiry task when the end date passes). Lifting twice is fine.</summary>
+    public void Reinstate()
+    {
+        SuspendedAtUtc = null;
+        SuspendedUntilUtc = null;
+        SuspensionReason = null;
+        SuspendedByUserId = null;
     }
 
     // ---------- Helpers ----------

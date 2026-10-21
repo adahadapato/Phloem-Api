@@ -78,6 +78,16 @@ internal sealed class OrderRepository(PhloemDbContext context)
                 .Take(take)
                 .ToListAsync(cancellationToken);
 
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<Order>> GetUnfinishedForVendorAsync(Guid vendorId,
+                                                                        CancellationToken cancellationToken = default) =>
+        await WithChildren(Set)
+                .Where(o => o.VendorId == vendorId
+                         && (o.Status == OrderStatus.AwaitingPayment
+                          || o.Status == OrderStatus.Paid
+                          || o.Status == OrderStatus.Preparing))
+                .ToListAsync(cancellationToken);
+
     // ───────────────────────────── 3. Dashboard ─────────────────────────────
 
     /// <inheritdoc />

@@ -25,8 +25,10 @@ namespace Phloem.Infrastructure.Services.Identity;
 /// <para><b>Sessions:</b> an access token (JWT, short) plus a refresh token (random, long; only its hash is stored).
 /// Every refresh rotates the refresh token. A revoked token presented again means it was copied, so every session of
 /// that user is ended.</para>
-/// <para><b>Sign-in checks, in order:</b> lockout → password → deactivated → email confirmed (if required) → 2FA.
-/// "Deactivated" is only revealed to someone who knows the password.</para>
+/// <para><b>Sign-in checks, in order:</b> lockout → password → deactivated → suspended → email confirmed (if
+/// required) → 2FA. "Deactivated" and "suspended" are only revealed to someone who knows the password.</para>
+/// <para><b>Suspended</b> people (UserProfile.IsSuspendedAt) can't sign in, and renewing a session fails, so an app
+/// that was signed in is signed out at the next renewal (the access token is short-lived).</para>
 /// <para><b>Emails</b> never fail the request: a sending error is logged, and the user can ask again.</para>
 /// <para><b>Saving:</b> UserManager saves its own changes; refresh tokens and <c>LastLoginAt</c> are saved through
 /// <see cref="IUnitOfWork"/>. Both use the same scoped database context.</para>
@@ -34,6 +36,7 @@ namespace Phloem.Infrastructure.Services.Identity;
 internal sealed class AuthService(
     UserManager<ApplicationUser> users,
     IRefreshTokenRepository refreshTokens,
+    IUserProfileRepository profiles,
     IUnitOfWork unitOfWork,
     JwtTokenGenerator tokenGenerator,
     TwoFactorChallenge challenges,
@@ -86,7 +89,7 @@ internal sealed class AuthService(
         var passwordCheck = await CheckPasswordAsync(user, password);
         if (passwordCheck.IsFailure) return passwordCheck.Error;
 
-        var allowed = CheckCanSignIn(user);
+        var allowed = await CheckCanSignInAsync(user, ct);
         if (allowed.IsFailure) return allowed.Error;
 
         // Password right, but a 2FA code is needed before any real tokens
@@ -125,7 +128,7 @@ internal sealed class AuthService(
 
         if (user.AccessFailedCount > 0) await users.ResetAccessFailedCountAsync(user);
 
-        var allowed = CheckCanSignIn(user);
+        var allowed = await CheckCanSignInAsync(user, ct);
         if (allowed.IsFailure) return allowed.Error;
 
         var session = await StartSessionAsync(user, isNewSignIn: true);
@@ -161,6 +164,14 @@ internal sealed class AuthService(
             stored.Revoke(now);
             await unitOfWork.SaveChangesAsync(ct);
             return user is null ? AuthErrors.InvalidToken : AuthErrors.AccountDeactivated;
+        }
+
+        // Suspended since signing in: no new session (the app shows the message and signs out)
+        if (await SuspensionAsync(user.Id, now, ct) is { } suspended)
+        {
+            stored.Revoke(now);
+            await unitOfWork.SaveChangesAsync(ct);
+            return suspended;
         }
 
         // Rotate: new pair (with the user's CURRENT roles), old token points at its replacement
@@ -252,11 +263,21 @@ internal sealed class AuthService(
     }
 
     /// <summary>Rules that apply after the password is known to be right.</summary>
-    private Result CheckCanSignIn(ApplicationUser user)
+    private async Task<Result> CheckCanSignInAsync(ApplicationUser user, CancellationToken ct)
     {
         if (!user.IsActive) return AuthErrors.AccountDeactivated;
+        if (await SuspensionAsync(user.Id, Now, ct) is { } suspended) return suspended;
         if (identityOptions.Value.RequireConfirmedEmail && !user.EmailConfirmed) return AuthErrors.EmailNotConfirmed;
         return Result.Success();
+    }
+
+    /// <summary>The "your account is suspended…" error when the person is suspended right now; otherwise null.</summary>
+    private async Task<Error?> SuspensionAsync(Guid userId, DateTime now, CancellationToken ct)
+    {
+        var profile = await profiles.GetByIdAsync(userId, ct);
+        return profile is not null && profile.IsSuspendedAt(now)
+            ? UserProfileErrors.Suspended(profile.SuspendedUntilUtc, profile.SuspensionReason)
+            : null;
     }
 
     /// <summary>
