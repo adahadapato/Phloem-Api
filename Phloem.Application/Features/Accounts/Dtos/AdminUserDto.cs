@@ -15,6 +15,7 @@ namespace Phloem.Application.Features.Accounts.Dtos;
 /// <param name="SuspendedUntil">When the suspension ends (UTC); null = until further notice (or not suspended).</param>
 /// <param name="SuspensionReason">Why; null when not suspended.</param>
 /// <param name="CanBeSuspended">False for admins (and for yourself): the app hides the Suspend button.</param>
+/// <param name="PhotoUrl">Their profile photo's public URL; null when they haven't added one.</param>
 public sealed record AdminUserDto(
     Guid Id,
     string FullName,
@@ -27,4 +28,5 @@ public sealed record AdminUserDto(
     bool IsSuspended,
     DateTime? SuspendedUntil,
     string? SuspensionReason,
-    bool CanBeSuspended);
+    bool CanBeSuspended,
+    string? PhotoUrl);

@@ -16,6 +16,7 @@ public sealed class GetAdminUsersQueryHandler(
     IAccountService accounts,
     IUserRoleService roles,
     IVendorRepository vendors,
+    IFileStorage storage,
     TimeProvider time)
     : IRequestHandler<GetAdminUsersQuery, Result<PagedResult<AdminUserDto>>>
 {
@@ -48,7 +49,8 @@ public sealed class GetAdminUsersQueryHandler(
                 isSuspended,
                 isSuspended ? p.SuspendedUntilUtc : null,
                 isSuspended ? p.SuspensionReason : null,
-                CanBeSuspended: !isAdmin && p.Id != currentUser.UserId));
+                CanBeSuspended: !isAdmin && p.Id != currentUser.UserId,
+                PhotoUrl: p.PhotoUrl is null ? null : storage.GetPublicUrl(p.PhotoUrl)));
         }
 
         return new PagedResult<AdminUserDto>(items, paged.TotalCount, paged.Page, paged.PageSize);
