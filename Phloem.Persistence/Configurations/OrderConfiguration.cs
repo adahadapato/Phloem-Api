@@ -64,6 +64,8 @@ public sealed class OrderConfiguration : EntityConfiguration<Order>
         builder.Property(o => o.PaidAtUtc);
         builder.Property(o => o.PaymentReference).HasMaxLength(Order.PaymentReferenceMaxLength);
         builder.Property(o => o.CancelledAtUtc);
+        builder.Property(o => o.DeclinedByShop).IsRequired();
+        builder.Property(o => o.DeclineReason).HasMaxLength(Order.DeclineReasonMaxLength);
         builder.Property(o => o.DeliveredAtUtc);
 
         // ---------- Lines ----------

@@ -33,6 +33,25 @@ public static class CountryExtensions
         _ => currency.ToString()
     };
 
+    /// <summary>
+    /// The country's clock, for "orders for today close at 7pm" (shop's local time). Uses the IANA name
+    /// (e.g. "Africa/Accra") and falls back to the Windows name on servers without IANA time zones.
+    /// </summary>
+    public static TimeZoneInfo TimeZone(this Country country)
+    {
+        var (iana, windows) = country switch
+        {
+            Country.Ghana         => ("Africa/Accra", "Greenwich Standard Time"),
+            Country.Nigeria       => ("Africa/Lagos", "W. Central Africa Standard Time"),
+            Country.UnitedKingdom => ("Europe/London", "GMT Standard Time"),
+            _ => throw new ArgumentOutOfRangeException(nameof(country))
+        };
+
+        return TimeZoneInfo.TryFindSystemTimeZoneById(iana, out var zone) ? zone
+             : TimeZoneInfo.TryFindSystemTimeZoneById(windows, out zone) ? zone
+             : TimeZoneInfo.Utc;   // never expected; better a slightly wrong cut-off than a crash
+    }
+
     /// <summary>The two-letter ISO 3166 code, e.g. "GH", "NG", "GB" (phones use it to guess the user's country).</summary>
     /// <exception cref="ArgumentOutOfRangeException">A country without a code (add it here).</exception>
     public static string IsoCode(this Country country) => country switch

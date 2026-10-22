@@ -26,6 +26,12 @@ public class Vendor : Entity<Guid>
     public static readonly IReadOnlyList<VendorDocumentType> RequiredDocuments =
         [VendorDocumentType.BusinessRegistration, VendorDocumentType.FoodHygieneCertificate];
 
+    /// <summary>
+    /// New shops stop taking orders for TODAY at this time (their own local time); after it, only "Tomorrow" delivery
+    /// can be chosen. Each shop can change it in Shop settings.
+    /// </summary>
+    public static readonly TimeOnly DefaultOrderCutoff = new(19, 0);
+
     private readonly List<VendorDocument> _documents = new();
 
     protected Vendor() { }
@@ -58,6 +64,14 @@ public class Vendor : Entity<Guid>
     /// the minimum if the admin changes it.
     /// </summary>
     public decimal? DeliveryFee { get; private set; }
+
+    // ---------- Order cut-off (Shop settings) ----------
+
+    /// <summary>
+    /// Orders for TODAY (ASAP, this evening) are taken until this time, in the shop's country's local time; after it,
+    /// only "Tomorrow" delivery can be chosen. Default <see cref="DefaultOrderCutoff"/> (7pm).
+    /// </summary>
+    public TimeOnly OrderCutoffTime { get; private set; } = DefaultOrderCutoff;
 
     // ---------- Shop images (public container) ----------
     public ImageFile? Logo { get; private set; }                   // round picture on shop cards
@@ -213,6 +227,40 @@ public class Vendor : Entity<Guid>
     }
 
     public void Block() => Status = VendorStatus.Blocked;
+
+    // ---------- Order cut-off ----------
+
+    /// <summary>The seller changes when orders for today stop (Shop settings).</summary>
+    /// <param name="cutoff">The shop's local time, e.g. 19:00.</param>
+    /// <returns>Success; or <see cref="VendorErrors.Blocked"/>.</returns>
+    public Result SetOrderCutoff(TimeOnly cutoff)
+    {
+        if (Status == VendorStatus.Blocked) return VendorErrors.Blocked;
+        OrderCutoffTime = cutoff;
+        return Result.Success();
+    }
+
+    /// <summary>The time now in the shop's country.</summary>
+    /// <param name="utcNow">The current time (UTC).</param>
+    public DateTime LocalTime(DateTime utcNow) =>
+        TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utcNow, DateTimeKind.Utc), Country.TimeZone());
+
+    /// <summary>
+    /// True when the shop takes orders for this delivery time right now: "Tomorrow" always; ASAP and "this evening"
+    /// only before <see cref="OrderCutoffTime"/> (shop's local time).
+    /// </summary>
+    /// <param name="window">The delivery time the buyer chose.</param>
+    /// <param name="utcNow">The current time (UTC).</param>
+    public bool AcceptsDeliveryWindow(DeliveryWindow window, DateTime utcNow) =>
+        window == DeliveryWindow.Tomorrow || TimeOnly.FromDateTime(LocalTime(utcNow)) < OrderCutoffTime;
+
+    /// <summary>
+    /// <see cref="AcceptsDeliveryWindow"/> as a Result, for placing and paying, e.g. "Mama Ama's Kitchen takes orders
+    /// for today until 7:00 pm. Please choose Tomorrow."
+    /// </summary>
+    /// <returns>Success; or <see cref="VendorErrors.ClosedForToday"/>.</returns>
+    public Result CheckDeliveryWindow(DeliveryWindow window, DateTime utcNow) =>
+        AcceptsDeliveryWindow(window, utcNow) ? Result.Success() : VendorErrors.ClosedForToday(Name, OrderCutoffTime);
 
     /// <summary>Set when the owner is suspended or reinstated; the shop's own Status/Block is untouched.</summary>
     /// <param name="suspended">True while the owner is suspended.</param>

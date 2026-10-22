@@ -13,14 +13,16 @@ public sealed class PrepareOrderPaymentCommandHandler(
     IVendorRepository vendors,
     IDishRepository dishes,
     IDeliveryPricingRepository pricings,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    TimeProvider time)
     : IRequestHandler<PrepareOrderPaymentCommand, Result<OrderPaymentDto>>
 {
     /// <summary>Loads today's dishes and fee, lets the Domain refresh / drop lines, and saves.</summary>
     /// <returns>
     /// The amount and removed dishes; or <see cref="OrderErrors.NotFound"/>,
     /// <see cref="OrderErrors.NotAwaitingPayment"/>, <see cref="OrderErrors.NothingToPay"/>,
-    /// <see cref="DeliveryPricingErrors.NotSet"/>, <see cref="DeliveryPricingErrors.WindowNotOffered"/>.
+    /// <see cref="DeliveryPricingErrors.NotSet"/>, <see cref="DeliveryPricingErrors.WindowNotOffered"/>,
+    /// <see cref="VendorErrors.ClosedForToday"/>.
     /// </returns>
     /// <exception cref="InvalidOperationException">Called without a signed-in user (endpoint misconfigured).</exception>
     public async Task<Result<OrderPaymentDto>> Handle(PrepareOrderPaymentCommand command, CancellationToken ct)
@@ -34,6 +36,10 @@ public sealed class PrepareOrderPaymentCommandHandler(
         // The shop is gone (closed) → every dish is out of stock
         var vendor = await vendors.GetByIdAsync(order.VendorId, ct);
         if (vendor is null) return OrderErrors.NothingToPay;
+
+        // Paying after the shop's cut-off for a delivery today: refused (the buyer picks Tomorrow on a new order)
+        var open = vendor.CheckDeliveryWindow(order.DeliveryWindow, time.GetUtcNow().UtcDateTime);
+        if (open.IsFailure) return open.Error;
 
         var pricing = await pricings.GetByCountryAsync(vendor.Country, ct);
         if (pricing is null) return DeliveryPricingErrors.NotSet;

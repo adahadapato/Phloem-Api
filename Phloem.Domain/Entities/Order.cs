@@ -49,6 +49,9 @@ public class Order : Entity<Guid>
     /// <summary>Longest payment-provider reference (column size); Paystack and Stripe references are far shorter.</summary>
     public const int PaymentReferenceMaxLength = 100;
 
+    /// <summary>Longest reason a shop can give for declining (the buyer sees it).</summary>
+    public const int DeclineReasonMaxLength = 500;
+
     private readonly List<OrderLine> _lines = new();
 
     /// <summary>Required by EF Core.</summary>
@@ -137,6 +140,12 @@ public class Order : Entity<Guid>
     /// <summary>When the order was cancelled; null if not cancelled.</summary>
     public DateTime? CancelledAtUtc { get; private set; }
 
+    /// <summary>True when the SHOP declined it (rather than the buyer cancelling).</summary>
+    public bool DeclinedByShop { get; private set; }
+
+    /// <summary>Why the shop declined it (the buyer sees it); null otherwise.</summary>
+    public string? DeclineReason { get; private set; }
+
     /// <summary>When the order was delivered; null until then.</summary>
     public DateTime? DeliveredAtUtc { get; private set; }
 
@@ -178,7 +187,7 @@ public class Order : Entity<Guid>
     /// <returns>
     /// The new order, or: <see cref="OrderErrors.AccountDeleted"/>, <see cref="OrderErrors.AddressNotYours"/>,
     /// <see cref="OrderErrors.EmptyBasket"/>, <see cref="OrderErrors.MixedShops"/>,
-    /// <see cref="OrderErrors.DishUnavailable"/>.
+    /// <see cref="OrderErrors.DishUnavailable"/>, <see cref="VendorErrors.ClosedForToday"/>.
     /// </returns>
     /// <exception cref="ArgumentException">Blank order number.</exception>
     /// <exception cref="ArgumentNullException">A null argument.</exception>
@@ -206,6 +215,10 @@ public class Order : Entity<Guid>
 
         var unavailable = list.FirstOrDefault(i => !i.Dish.CanBeOrdered).Dish;
         if (unavailable is not null) return OrderErrors.DishUnavailable(unavailable.Name);
+
+        // After the shop's cut-off, only "Tomorrow" (shop's local time)
+        var open = vendor.CheckDeliveryWindow(deliveryWindow, utcNow);
+        if (open.IsFailure) return open.Error;
 
         var order = new Order(Guid.CreateVersion7(), orderNumber.Trim(), customer.Id, vendor,
                               deliveryFee, deliveryWindow, address, utcNow);
@@ -386,6 +399,30 @@ public class Order : Entity<Guid>
         Status = OrderStatus.Cancelled;
         CancelledAtUtc = utcNow;
         return true;
+    }
+
+    /// <summary>
+    /// The shop declines a paid order it hasn't accepted yet (e.g. an ingredient ran out): the order is cancelled and,
+    /// being paid, <see cref="NeedsRefund"/>. The buyer is told the reason.
+    /// </summary>
+    /// <param name="reason">Why (shown to the buyer).</param>
+    /// <param name="utcNow">The current time.</param>
+    /// <returns>Success; or <see cref="OrderErrors.CannotDecline"/> (not paid, or already accepted).</returns>
+    /// <exception cref="ArgumentException">Blank reason.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Reason longer than <see cref="DeclineReasonMaxLength"/>.</exception>
+    public Result DeclineByShop(string reason, DateTime utcNow)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(reason);
+        var text = reason.Trim();
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(text.Length, DeclineReasonMaxLength, nameof(reason));
+
+        if (Status != OrderStatus.Paid) return OrderErrors.CannotDecline;
+
+        Status = OrderStatus.Cancelled;
+        CancelledAtUtc = utcNow;
+        DeclinedByShop = true;
+        DeclineReason = text;
+        return Result.Success();
     }
 
     // =====================================================================

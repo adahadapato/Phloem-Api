@@ -26,6 +26,8 @@ namespace Phloem.Application.Features.Orders.Dtos;
 /// <param name="CancelSecondsLeft">Paid orders: seconds left to cancel (countdown); null = no deadline.</param>
 /// <param name="NeedsRefund">A paid order that was cancelled.</param>
 /// <param name="ViewedBySeller">True when the shop is viewing (shows Accept / Send out / Delivered).</param>
+/// <param name="DeclinedByShop">The shop couldn't make it (cancelled and refunded).</param>
+/// <param name="DeclineReason">The shop's reason, when <paramref name="DeclinedByShop"/>.</param>
 public sealed record OrderDetailsDto(
     string OrderNumber,
     string ShopName,
@@ -46,4 +48,6 @@ public sealed record OrderDetailsDto(
     bool CanCancel,
     int? CancelSecondsLeft,
     bool NeedsRefund,
-    bool ViewedBySeller);
+    bool ViewedBySeller,
+    bool DeclinedByShop,
+    string? DeclineReason);

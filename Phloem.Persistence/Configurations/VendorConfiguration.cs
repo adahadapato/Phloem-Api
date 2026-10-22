@@ -57,6 +57,8 @@ public sealed class VendorConfiguration : EntityConfiguration<Vendor>
         builder.Property(v => v.Status).IsRequired();
         builder.Property(v => v.IsVerified).IsRequired();
         builder.Property(v => v.IsOwnerSuspended).IsRequired();   // hidden while the owner is suspended
+        builder.Property(v => v.OrderCutoffTime).IsRequired()     // SQL "time"; existing shops get 7pm
+               .HasDefaultValue(Vendor.DefaultOrderCutoff);
         builder.Property(v => v.RejectionReason).HasMaxLength(Vendor.RejectionReasonMaxLength);
         builder.Property(v => v.ApprovedAtUtc);
 

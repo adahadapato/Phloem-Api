@@ -12,7 +12,8 @@ namespace Phloem.Application.Features.Orders.Queries;
 public sealed class CheckBasketQueryHandler(
     IDishRepository dishes,
     IDeliveryPricingRepository pricings,
-    IFileStorage storage)
+    IFileStorage storage,
+    TimeProvider time)
     : IRequestHandler<CheckBasketQuery, Result<BasketCheckDto>>
 {
     /// <summary>
@@ -27,6 +28,7 @@ public sealed class CheckBasketQueryHandler(
         var missing = quantities.Keys.Except(found.Select(d => d.Id)).ToList();
         var pricingByCountry = new Dictionary<Country, DeliveryPricing?>();
         var shops = new List<BasketShopDto>();
+        var now = time.GetUtcNow().UtcDateTime;
 
         foreach (var shopDishes in found.GroupBy(d => d.VendorId))
         {
@@ -53,9 +55,18 @@ public sealed class CheckBasketQueryHandler(
             decimal? fee = null;
             string? problem;
 
+            // Delivery times the shop takes right now (its cut-off), among those offered in its country
+            IReadOnlyList<DeliveryWindow> open = Enum.GetValues<DeliveryWindow>()
+                .Where(w => pricing is not null && pricing.Offers(w) && vendor.AcceptsDeliveryWindow(w, now))
+                .ToList();
+
             if (pricing is null)
             {
                 problem = DeliveryPricingErrors.NotSet.Message;
+            }
+            else if (vendor.CheckDeliveryWindow(query.DeliveryWindow, now) is { IsFailure: true } closed)
+            {
+                problem = closed.Error.Message;   // after the cut-off: "… Please choose Tomorrow"
             }
             else
             {
@@ -65,7 +76,8 @@ public sealed class CheckBasketQueryHandler(
             }
 
             shops.Add(new BasketShopDto(vendor.Id, vendor.Name, vendor.Currency, lines, subtotal,
-                                        fee, problem, fee is null ? null : subtotal + fee));
+                                        fee, problem, fee is null ? null : subtotal + fee,
+                                        open, vendor.OrderCutoffTime));
         }
 
         var canPlace = missing.Count == 0

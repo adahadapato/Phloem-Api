@@ -72,4 +72,8 @@ public static class OrderErrors
     /// <summary>The delivery address is in a different country from the shop.</summary>
     public static readonly Error AddressInAnotherCountry = Error.Validation(
         "Order.AddressInAnotherCountry", "This shop doesn't deliver to that country. Please choose another address.");
+
+    /// <summary>Only paid orders the shop hasn't accepted yet can be declined.</summary>
+    public static readonly Error CannotDecline = Error.Conflict(
+        "Order.CannotDecline", "Only new paid orders can be declined. This one was already accepted, cancelled or isn't paid.");
 }

@@ -64,4 +64,11 @@ public static class VendorErrors
         VendorDocumentType.OwnerId => "owner's ID",
         _ => "other document"
     };
+
+    /// <summary>Orders for today have closed (the shop's cut-off has passed): only "Tomorrow" can be chosen.</summary>
+    /// <param name="shopName">The shop.</param>
+    /// <param name="cutoff">Its cut-off, shop's local time.</param>
+    public static Error ClosedForToday(string shopName, TimeOnly cutoff) => Error.Conflict(
+        "Vendor.ClosedForToday",
+        $"{shopName} takes orders for today until {cutoff:h:mm tt}. Please choose Tomorrow for delivery.");
 }

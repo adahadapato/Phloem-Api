@@ -88,6 +88,13 @@ internal sealed class OrderRepository(PhloemDbContext context)
                           || o.Status == OrderStatus.Preparing))
                 .ToListAsync(cancellationToken);
 
+    /// <inheritdoc />
+    public Task<int> CountDeclinedForVendorSinceAsync(Guid vendorId, DateTime sinceUtc,
+                                                      CancellationToken cancellationToken = default) =>
+        Set.AsNoTracking()
+           .CountAsync(o => o.VendorId == vendorId && o.DeclinedByShop && o.CancelledAtUtc >= sinceUtc,
+                       cancellationToken);
+
     // ───────────────────────────── 3. Dashboard ─────────────────────────────
 
     /// <inheritdoc />

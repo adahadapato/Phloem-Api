@@ -176,6 +176,16 @@ public static class ShopEndpoints
             .WithSummary("Set my delivery fee (must be inside my country's range)")
             .Produces(StatusCodes.Status204NoContent)
             .ProducesValidationProblem();
+
+        shops.MapPut("/mine/order-cutoff", async (SetMyOrderCutoffCommand command, ISender sender,
+                                                  CancellationToken ct) =>
+                (await sender.Send(command, ct)).ToHttp())
+            .WithName("SetMyOrderCutoff")
+            .WithSummary("When orders for today close (my shop's local time, default 19:00); after it only Tomorrow")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
     }
 
     // ═════════════════════════════ C. Admin ═════════════════════════════

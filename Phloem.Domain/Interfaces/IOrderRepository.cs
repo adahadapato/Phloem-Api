@@ -86,4 +86,11 @@ public interface IOrderRepository : IRepository<Order>
     /// <param name="cancellationToken">Cancels the database call.</param>
     Task<IReadOnlyList<Order>> GetUnfinishedForVendorAsync(
         Guid vendorId, CancellationToken cancellationToken = default);
+
+    /// <summary>How many orders the shop has declined since a time (team alert when a shop declines too often).</summary>
+    /// <param name="vendorId">The shop.</param>
+    /// <param name="sinceUtc">Count declines from this time.</param>
+    /// <param name="cancellationToken">Cancels the database call.</param>
+    Task<int> CountDeclinedForVendorSinceAsync(
+        Guid vendorId, DateTime sinceUtc, CancellationToken cancellationToken = default);
 }

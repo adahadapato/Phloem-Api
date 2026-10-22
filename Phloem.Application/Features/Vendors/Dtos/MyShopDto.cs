@@ -26,7 +26,8 @@ public sealed record MyShopDto(
     decimal Balance,
     DateTime OpenedAt,
     IReadOnlyList<MyShopDocumentDto> Documents,
-    IReadOnlyList<VendorDocumentType> MissingDocuments)
+    IReadOnlyList<VendorDocumentType> MissingDocuments,
+    TimeOnly OrderCutoffTime)
 {
     public static MyShopDto From(Vendor v, IFileStorage storage, DateTime utcNow) => new(
         v.Id,
@@ -47,5 +48,6 @@ public sealed record MyShopDto(
         v.Balance,
         v.CreatedAt,
         v.Documents.OrderBy(d => d.Type).Select(d => MyShopDocumentDto.From(d, utcNow)).ToList(),
-        v.MissingDocuments(utcNow));
+        v.MissingDocuments(utcNow),
+        v.OrderCutoffTime);
 }

@@ -87,6 +87,8 @@ public sealed class GetOrderQueryHandler(
             CanCancel: isCustomer && order.CanCancel(now),
             CancelSecondsLeft: secondsLeft is null ? null : (int)secondsLeft.Value.TotalSeconds,
             order.NeedsRefund,
-            ViewedBySeller: isSeller);
+            ViewedBySeller: isSeller,
+            order.DeclinedByShop,
+            order.DeclineReason);
     }
 }

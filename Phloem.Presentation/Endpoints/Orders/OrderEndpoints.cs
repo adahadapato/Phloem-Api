@@ -186,6 +186,18 @@ public static class OrderEndpoints
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict);
 
+        shopOrders.MapPost("/{orderNumber}/decline",
+                async (string orderNumber, DeclineRequest body, ISender sender, CancellationToken ct) =>
+                    (await sender.Send(new DeclineOrderCommand(orderNumber, body.Reason), ct)).ToHttp())
+            .WithName("DeclineShopOrder")
+            .WithSummary("Can't make a new order: it's cancelled and refunded, and the buyer is emailed the reason")
+            .WithDescription("Only a Paid order (not yet accepted). The team is told if a shop declines more than " +
+                             "3 orders in 7 days.")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
+
         shopOrders.MapPost("/{orderNumber}/send-out", async (string orderNumber, ISender sender,
                                                              CancellationToken ct) =>
                 (await sender.Send(new SendOutOrderCommand(orderNumber), ct)).ToHttp())
@@ -204,4 +216,9 @@ public static class OrderEndpoints
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict);
     }
+
+    // ═════════════════════════════ Request bodies ═════════════════════════════
+
+    /// <summary>Body of "decline" (the order comes from the URL): why, shown to the buyer.</summary>
+    public sealed record DeclineRequest(string Reason);
 }

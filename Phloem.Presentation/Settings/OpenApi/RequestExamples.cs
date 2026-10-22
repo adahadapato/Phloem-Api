@@ -18,6 +18,7 @@ using Phloem.Presentation.Endpoints.DeliveryPricings;
 using Phloem.Presentation.Endpoints.DishCatalogs;
 using Phloem.Presentation.Endpoints.Dishes;
 using Phloem.Presentation.Endpoints.Me;
+using Phloem.Presentation.Endpoints.Orders;
 using Phloem.Presentation.Endpoints.ShipmentRoutes;
 using Phloem.Presentation.Endpoints.Shipments;
 using Phloem.Presentation.Endpoints.Shops;
@@ -96,6 +97,7 @@ internal static class RequestExamples
         [typeof(UpdateShopDetailsCommand)] = new UpdateShopDetailsCommand(
             "Mama Ama's Kitchen", "hello@mamaamas.ng", Phone),
         [typeof(SetMyDeliveryFeeCommand)] = new SetMyDeliveryFeeCommand(1500m),
+        [typeof(SetMyOrderCutoffCommand)] = new SetMyOrderCutoffCommand(new TimeOnly(19, 0)),
         [typeof(ShopEndpoints.ReasonRequest)] = new ShopEndpoints.ReasonRequest(
             "The business email doesn't match the registration certificate. Please correct it."),
         [typeof(ShopEndpoints.ReviewRequest)] = new ShopEndpoints.ReviewRequest(
@@ -133,6 +135,8 @@ internal static class RequestExamples
         // ───────────────────────────── 7. Orders ─────────────────────────────
         [typeof(CheckBasketQuery)] = new CheckBasketQuery(Basket, DeliveryWindow.Asap),
         [typeof(PlaceOrderCommand)] = new PlaceOrderCommand(Basket, DeliveryAddressId, DeliveryWindow.Asap),
+        [typeof(OrderEndpoints.DeclineRequest)] = new OrderEndpoints.DeclineRequest(
+            "Sorry, we've run out of tilapia today."),
 
         // ───────────────────────────── 8. Shipments ─────────────────────────────
         [typeof(GetShipmentQuoteQuery)] = new GetShipmentQuoteQuery(
