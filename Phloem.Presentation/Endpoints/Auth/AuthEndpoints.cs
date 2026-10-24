@@ -102,6 +102,12 @@ public static class AuthEndpoints
                 .ProducesValidationProblem();
 
         // 6. Google sign-in (switched off until Authentication:Google has keys)
+        auth.MapGet("/external/providers", (IOptions<ExternalAuthSettings> options) =>
+                Results.Ok(new ExternalProvidersResponse(Google: options.Value.IsGoogleEnabled)))
+            .WithName("GetExternalProviders")
+            .WithSummary("Which \"Continue with …\" buttons the app should show")
+            .Produces<ExternalProvidersResponse>();
+
         auth.MapGet("/external/google", StartGoogleSignIn)
             .WithName("StartGoogleSignIn")
             .WithSummary("Open in the app's sign-in sheet: goes to Google's page (404 while Google isn't set up)")
