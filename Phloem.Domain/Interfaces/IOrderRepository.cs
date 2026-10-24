@@ -1,5 +1,6 @@
 ﻿using Phloem.Domain.Entities;
 using Phloem.Domain.Enums;
+using Phloem.Domain.Models;
 using Phloem.Domain.Shared.Results;
 
 namespace Phloem.Domain.Interfaces;
@@ -39,13 +40,26 @@ public interface IOrderRepository : IRepository<Order>
     Task<bool> OrderNumberExistsAsync(string orderNumber, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Orders tab → "My orders": ALL the customer's orders (unpaid ones included), newest first, with lines.
+    /// Orders tab → "My orders": the customer's orders (unpaid ones included), newest first, with lines,
+    /// narrowed down by the tabs, the time choice and the search box.
     /// </summary>
     /// <param name="customerId">The signed-in customer.</param>
+    /// <param name="filter">Statuses, placed-since and search text (<see cref="CustomerOrderFilter.None"/> = all).</param>
     /// <param name="page">Which page and how many per page.</param>
     /// <param name="cancellationToken">Cancels the database call.</param>
     Task<PagedResult<Order>> GetForCustomerAsync(
-        Guid customerId, PageRequest page, CancellationToken cancellationToken = default);
+        Guid customerId, CustomerOrderFilter filter, PageRequest page, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// "Buy it again": the dishes from the customer's PAID orders (cancelled ones included: they may still want
+    /// them), most recently ordered first, each dish once.
+    /// </summary>
+    /// <param name="customerId">The signed-in customer.</param>
+    /// <param name="take">How many dish Ids at most.</param>
+    /// <param name="cancellationToken">Cancels the database call.</param>
+    /// <returns>Dish Ids, newest first. Dishes may since have been deleted: the caller checks.</returns>
+    Task<IReadOnlyList<Guid>> GetRecentDishIdsForCustomerAsync(
+        Guid customerId, int take, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Seller → "Shop orders": this shop's orders, newest first, with lines.

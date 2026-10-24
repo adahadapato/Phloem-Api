@@ -4,6 +4,7 @@ using Phloem.Application.Features.Orders.Dtos;
 using Phloem.Domain.Entities;
 using Phloem.Domain.Enums;
 using Phloem.Domain.Interfaces;
+using Phloem.Domain.Models;
 using Phloem.Domain.Shared.Results;
 
 namespace Phloem.Application.Features.Orders.Queries;
@@ -19,8 +20,8 @@ public sealed class GetMyOrdersQueryHandler(
     : IRequestHandler<GetMyOrdersQuery, Result<PagedResult<OrderSummaryDto>>>
 {
     /// <summary>
-    /// Loads one page of orders, then (in ONE query) the current dishes of the unpaid ones,
-    /// and builds each card with live prices where needed.
+    /// Loads one page of orders (narrowed down by the tab, start date and search), then (in ONE query) the current
+    /// dishes of the unpaid ones, and builds each card with live prices where needed.
     /// </summary>
     /// <exception cref="InvalidOperationException">Called without a signed-in user (endpoint misconfigured).</exception>
     public async Task<Result<PagedResult<OrderSummaryDto>>> Handle(GetMyOrdersQuery query, CancellationToken ct)
@@ -29,7 +30,11 @@ public sealed class GetMyOrdersQueryHandler(
             ?? throw new InvalidOperationException("This action requires a signed-in user.");
 
         var page = new PageRequest { Page = query.Page, PageSize = query.PageSize };
-        var paged = await orders.GetForCustomerAsync(userId, page, ct);
+        var filter = new CustomerOrderFilter(
+            query.Show.Statuses(),
+            query.From?.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc),
+            string.IsNullOrWhiteSpace(query.Search) ? null : query.Search.Trim());
+        var paged = await orders.GetForCustomerAsync(userId, filter, page, ct);
 
         // Current dishes for every unpaid order on this page, in one query
         var liveDishIds = paged.Items
@@ -74,7 +79,15 @@ public sealed class GetMyOrdersQueryHandler(
                 order.Currency,
                 lines.Any(l => l.PriceChanged),
                 lines.Count(l => l.IsOutOfStock),
-                order.CanCancel(now));
+                order.CanCancel(now),
+                order.DeliveryWindow,
+                order.DeliveryLabel,
+                order.DeliveryAddressLine,
+                order.DeliveredAtUtc,
+                order.CancelledAtUtc,
+                order.DeclinedByShop,
+                order.NeedsRefund,
+                lines);
         }).ToList();
 
         return new PagedResult<OrderSummaryDto>(items, paged.TotalCount, paged.Page, paged.PageSize);

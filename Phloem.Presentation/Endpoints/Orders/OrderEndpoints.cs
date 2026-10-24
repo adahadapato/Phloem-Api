@@ -1,4 +1,5 @@
 using MediatR;
+using Phloem.Application.Features.Dishes.Dtos;
 using Phloem.Application.Features.Orders.Commands;
 using Phloem.Application.Features.Orders.Dtos;
 using Phloem.Application.Features.Orders.Queries;
@@ -75,8 +76,19 @@ public static class OrderEndpoints
         orders.MapGet("/", async ([AsParameters] GetMyOrdersQuery query, ISender sender, CancellationToken ct) =>
                 (await sender.Send(query, ct)).ToHttp())
             .WithName("GetMyOrders")
-            .WithSummary("My orders, newest first")
-            .Produces<PagedResult<OrderSummaryDto>>();
+            .WithSummary("My orders, newest first; optionally one tab (show), placed since a day (from) and a search")
+            .WithDescription("show = All | WaitingForPayment | InProgress | Completed | Cancelled. " +
+                             "from = yyyy-MM-dd (e.g. three months ago). search = order number, shop or dish name.")
+            .Produces<PagedResult<OrderSummaryDto>>()
+            .ProducesValidationProblem();
+
+        orders.MapGet("/recent-dishes", async ([AsParameters] GetRecentlyOrderedDishesQuery query, ISender sender,
+                                               CancellationToken ct) =>
+                (await sender.Send(query, ct)).ToHttp())
+            .WithName("GetRecentlyOrderedDishes")
+            .WithSummary("\"Buy it again\": dishes from my paid orders still on sale, most recent first (dish cards)")
+            .Produces<IReadOnlyList<DishCardDto>>()
+            .ProducesValidationProblem();
 
         orders.MapGet("/{orderNumber}", async (string orderNumber, ISender sender, CancellationToken ct) =>
                 (await sender.Send(new GetOrderQuery(orderNumber), ct)).ToHttp())
