@@ -304,6 +304,24 @@ public static class AppSettings
         }
     }
 
+    // ==================== CORS (the website) ====================
+
+    /// <summary>
+    /// Which websites may call the API from a browser (the Phloem website). Bound to
+    /// <c>Phloem.Presentation.Settings.Cors.CorsSettings</c>.
+    /// </summary>
+    /// <remarks>The mobile app isn't a browser, so it needs no entry here. An empty list means no website may call
+    /// the API from a browser.</remarks>
+    public static class Cors
+    {
+        /// <summary>The whole section.</summary>
+        public const string Section = "Cors";
+
+        /// <summary>Full addresses without a path or trailing slash, e.g. "https://phloemmarket.com".
+        /// appsettings.Development.json lists the local Vite address instead.</summary>
+        public const string AllowedOrigins = "Cors:AllowedOrigins";
+    }
+
     // ==================== Data protection ====================
 
     /// <summary>

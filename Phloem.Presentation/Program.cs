@@ -3,6 +3,7 @@ using Phloem.Persistence.Seeding;
 using Phloem.Presentation;
 using Phloem.Presentation.Extensions;
 using Phloem.Presentation.Settings.Authentication;
+using Phloem.Presentation.Settings.Cors;
 using Phloem.Presentation.Settings.OpenApi;
 using Phloem.Worker;
 using Serilog;
@@ -93,6 +94,7 @@ try
         app.UseHttpsRedirection();
     app.UsePhloemStaticFiles();
     app.UsePhloemOpenApi();
+    app.UsePhloemCors();             // before authentication: browser preflights need no sign-in
     app.UsePhloemAuthentication();
 
     WriteStartupDiagnostic("Registering API endpoints.");
