@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Phloem.Domain.Interfaces;
+using Phloem.Domain.Interfaces.Identity;
 using Phloem.Infrastructure.Services.Identity;
 using Phloem.Persistence;
 using Phloem.Persistence.Configurations.Identity;
@@ -23,6 +24,9 @@ namespace Phloem.Infrastructure.Settings.Identity;
 ///   <item><description><b>JWT settings:</b> binds and checks <see cref="JwtSettings"/> at start-up.</description></item>
 ///   <item><description><b>Sign-in and accounts:</b> token maker, 2FA challenge, <see cref="IAuthService"/>,
 ///   <see cref="IAccountService"/>, <see cref="IUserRoleService"/>.</description></item>
+///   <item><description><b>Outside sign-in:</b> binds and checks <see cref="LoginCodeSettings"/>, and keeps the
+///   one-time Google sign-in codes (<see cref="ILoginCodeStore"/>). Google itself is registered in Presentation,
+///   next to JWT bearer.</description></item>
 /// </list>
 /// </summary>
 /// <remarks>
@@ -82,6 +86,13 @@ internal static class IdentitySetup
         services.AddScoped<IAuthService, AuthService>();       // per request: shares the request's database context
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IUserRoleService, UserRoleService>();
+
+        // 7. Outside sign-in (Google): one-time codes that carry the sign-in back into the app
+        services.AddOptions<LoginCodeSettings>()
+                .Bind(configuration.GetSection(LoginCodeSettings.SectionName))
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
+        services.AddSingleton<ILoginCodeStore, MemoryLoginCodeStore>();   // must be ONE list for the whole app
 
         return services;
     }

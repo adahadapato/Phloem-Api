@@ -35,7 +35,7 @@ public static class DependencyInjection
 
         // 2. API
         services.AddPhloemOpenApi(configuration);    // 2a. OpenAPI document + Swagger page
-        services.AddPhloemAuthentication();          // 2b. JWT bearer, authorization, CurrentUser
+        services.AddPhloemAuthentication(configuration);   // 2b. JWT bearer (+ Google when set up), authorization, CurrentUser
 
         // 2c. Errors: one ProblemDetails shape for thrown exceptions AND Result failures
         services.AddProblemDetails();

@@ -267,6 +267,43 @@ public static class AppSettings
         public const string TwoFactorChallengeMinutes = "Jwt:TwoFactorChallengeMinutes";
     }
 
+    // ==================== Authentication (outside sign-in) ====================
+
+    /// <summary>
+    /// Signing in with an outside provider (Google today). Bound to
+    /// <c>Phloem.Presentation.Settings.Authentication.ExternalAuthSettings</c> and
+    /// <c>Phloem.Infrastructure.Settings.Identity.LoginCodeSettings</c>.
+    /// </summary>
+    /// <remarks>A provider is switched ON only when both its client Id and secret are filled in. While they are empty
+    /// the API runs exactly as before and its sign-in endpoint answers "not available yet".</remarks>
+    public static class Authentication
+    {
+        /// <summary>The whole section.</summary>
+        public const string Section = "Authentication";
+
+        /// <summary>Where the browser is sent back to the app after the provider's page, e.g. "phloem://auth".
+        /// Always taken from here, never from the request, so the endpoint can't send people to other sites.</summary>
+        public const string AppCallbackUrl = "Authentication:AppCallbackUrl";
+
+        /// <summary>How long the one-time code in that link works, in seconds (e.g. 60).</summary>
+        public const string LoginCodeSeconds = "Authentication:LoginCodeSeconds";
+
+        /// <summary>Google sign-in. Created in the owners' Google Cloud account (OAuth client, "Web application").</summary>
+        public static class Google
+        {
+            /// <summary>The whole sub-section.</summary>
+            public const string Section = "Authentication:Google";
+
+            /// <summary>The OAuth client Id ("….apps.googleusercontent.com").
+            /// SECRET placeholder: User Secrets / environment variables (<c>Authentication__Google__ClientId</c>).</summary>
+            public const string ClientId = "Authentication:Google:ClientId";
+
+            /// <summary>The OAuth client secret.
+            /// SECRET: User Secrets / environment variables only (<c>Authentication__Google__ClientSecret</c>).</summary>
+            public const string ClientSecret = "Authentication:Google:ClientSecret";
+        }
+    }
+
     // ==================== Data protection ====================
 
     /// <summary>

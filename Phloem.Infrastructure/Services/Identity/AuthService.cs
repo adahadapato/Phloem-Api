@@ -7,6 +7,7 @@ using Phloem.Domain.Entities;
 using Phloem.Domain.Enums;
 using Phloem.Domain.Interfaces;
 using Phloem.Domain.Interfaces.Identity;
+using Phloem.Domain.Models;
 using Phloem.Domain.Shared.Errors;
 using Phloem.Domain.Shared.Results;
 using Phloem.Infrastructure.Settings.Application;
@@ -29,6 +30,8 @@ namespace Phloem.Infrastructure.Services.Identity;
 /// required) → 2FA. "Deactivated" and "suspended" are only revealed to someone who knows the password.</para>
 /// <para><b>Suspended</b> people (UserProfile.IsSuspendedAt) can't sign in, and renewing a session fails, so an app
 /// that was signed in is signed out at the next renewal (the access token is short-lived).</para>
+/// <para><b>Google sign-in</b> replaces only the password step: the account is found by its linked login or its
+/// email, or created without a password, and then the same checks run (lockout → deactivated → suspended → 2FA).</para>
 /// <para><b>Emails</b> never fail the request: a sending error is logged, and the user can ask again.</para>
 /// <para><b>Saving:</b> UserManager saves its own changes; refresh tokens and <c>LastLoginAt</c> are saved through
 /// <see cref="IUnitOfWork"/>. Both use the same scoped database context.</para>
@@ -242,7 +245,86 @@ internal sealed class AuthService(
         return Result.Success();
     }
 
+    // ───────────────────────────── 5. Outside sign-in (Google) ─────────────────────────────
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// <para>Order: the provider's login (already linked) → the email (link it now). A login that is already linked
+    /// is trusted even if the provider no longer reports the email as verified: the person proved it when linking.</para>
+    /// <para>Linking sets <c>EmailConfirmed</c> in the same save as the new login row.</para>
+    /// </remarks>
+    public async Task<Result<Guid>> FindExternalLoginAsync(ExternalIdentity identity, CancellationToken ct = default)
+    {
+        // 1. Already linked
+        var linkedUser = await users.FindByLoginAsync(identity.Provider, identity.ProviderKey);
+        if (linkedUser is not null) return linkedUser.Id;
+
+        // 2. Same email as an existing account: link, but only if the provider confirmed the email
+        var user = await users.FindByEmailAsync(identity.Email.Trim());
+        if (user is null) return AuthErrors.NoAccountForExternalLogin;
+        if (!identity.EmailVerified) return AuthErrors.ExternalEmailNotVerified;
+
+        user.EmailConfirmed = true;   // saved by AddLoginAsync below
+        var linked = await users.AddLoginAsync(user, ToLoginInfo(identity));
+        if (!linked.Succeeded) return IdentityErrors.ToError(linked);
+
+        logger.LogInformation("Linked a {Provider} login to user {UserId}.", identity.Provider, user.Id);
+        return user.Id;
+    }
+
+    /// <inheritdoc />
+    /// <remarks>Every new account gets the <see cref="Roles.Customer"/> role, like a password sign-up. No confirmation
+    /// email is sent: the provider has already confirmed the address.</remarks>
+    public async Task<Result<Guid>> RegisterExternalAsync(ExternalIdentity identity, CancellationToken ct = default)
+    {
+        if (!identity.EmailVerified) return AuthErrors.ExternalEmailNotVerified;
+
+        var email = identity.Email.Trim();
+        if (await users.FindByEmailAsync(email) is not null) return AuthErrors.EmailTaken;
+
+        var user = new ApplicationUser { UserName = email, Email = email, EmailConfirmed = true };
+
+        var created = await users.CreateAsync(user);   // no password: they can add one with "Forgot password"
+        if (!created.Succeeded) return IdentityErrors.ToError(created);
+
+        var role = await users.AddToRoleAsync(user, Roles.Customer);
+        if (!role.Succeeded) return IdentityErrors.ToError(role);
+
+        var linked = await users.AddLoginAsync(user, ToLoginInfo(identity));
+        if (!linked.Succeeded) return IdentityErrors.ToError(linked);
+
+        return user.Id;
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<LoginOutcome>> SignInExternalAsync(Guid userId, CancellationToken ct = default)
+    {
+        var user = await users.FindByIdAsync(userId.ToString());
+        if (user is null) return AuthErrors.UserNotFound;
+
+        // A lockout from wrong passwords also blocks Google until it ends (same account, same rule)
+        if (await users.IsLockedOutAsync(user)) return AuthErrors.LockedOut;
+
+        var allowed = await CheckCanSignInAsync(user, ct);
+        if (allowed.IsFailure) return allowed.Error;
+
+        // Google proved who they are, but a 2FA code is still needed before any real tokens
+        if (user.TwoFactorEnabled)
+            return new LoginOutcome(null, challenges.Create(user));
+
+        var session = await StartSessionAsync(user, isNewSignIn: true);
+        await unitOfWork.SaveChangesAsync(ct);
+
+        return new LoginOutcome(session.Tokens, null);
+    }
+
     // ───────────────────────────── Helpers ─────────────────────────────
+
+    /// <summary>The provider's login as Identity stores it (table AspNetUserLogins).</summary>
+    /// <param name="identity">Who the provider says the person is.</param>
+    /// <returns>Provider name, the provider's Id for the person, and the display name (the provider's name).</returns>
+    private static UserLoginInfo ToLoginInfo(ExternalIdentity identity) =>
+        new(identity.Provider, identity.ProviderKey, identity.Provider);
 
     /// <summary>The current time (UTC), from the app's clock.</summary>
     private DateTime Now => clock.GetUtcNow().UtcDateTime;

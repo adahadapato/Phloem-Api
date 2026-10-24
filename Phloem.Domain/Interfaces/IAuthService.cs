@@ -1,4 +1,5 @@
-﻿using Phloem.Domain.Shared.Results;
+﻿using Phloem.Domain.Models;
+using Phloem.Domain.Shared.Results;
 
 namespace Phloem.Domain.Interfaces;
 
@@ -35,6 +36,42 @@ public interface IAuthService
     Task<Result> SendPasswordResetAsync(string email, CancellationToken ct = default);
 
     Task<Result> ResetPasswordAsync(string email, string token, string newPassword, CancellationToken ct = default);
+
+    // ───────────────────────────── Outside sign-in (Google) ─────────────────────────────
+
+    /// <summary>
+    /// Finds the Phloem account for someone the provider has just signed in: first by the provider's login, then by
+    /// email. A match by email links the provider's login to that account, so next time it is found directly.
+    /// </summary>
+    /// <param name="identity">Who the provider says the person is.</param>
+    /// <param name="ct">Cancels the database calls.</param>
+    /// <returns>The account's Id; or <c>AuthErrors.NoAccountForExternalLogin</c> when there is no account yet (the
+    /// caller then creates one with <see cref="RegisterExternalAsync"/>); or <c>AuthErrors.ExternalEmailNotVerified</c>
+    /// when the email belongs to an account but the provider hasn't confirmed the person owns it.</returns>
+    /// <remarks>Linking also marks the account's email as confirmed: the provider has just proved it.</remarks>
+    Task<Result<Guid>> FindExternalLoginAsync(ExternalIdentity identity, CancellationToken ct = default);
+
+    /// <summary>
+    /// Sign-up through a provider: creates a login account WITHOUT a password (email already confirmed, the
+    /// provider's login linked, role <c>Customer</c>). Runs inside the caller's transaction, which also creates the
+    /// UserProfile with the same Id.
+    /// </summary>
+    /// <param name="identity">Who the provider says the person is (its email must be verified).</param>
+    /// <param name="ct">Cancels the database calls.</param>
+    /// <returns>The new user's Id; or <c>AuthErrors.ExternalEmailNotVerified</c> / <c>AuthErrors.EmailTaken</c>.</returns>
+    /// <remarks>The person can add a password later with "Forgot password", and then sign in either way.</remarks>
+    Task<Result<Guid>> RegisterExternalAsync(ExternalIdentity identity, CancellationToken ct = default);
+
+    /// <summary>
+    /// Signs in an account the provider has just vouched for (no password step). Same checks as a password login
+    /// after the password: lockout, deactivated, suspended, then 2FA.
+    /// </summary>
+    /// <param name="userId">The account, from <see cref="FindExternalLoginAsync"/> or
+    /// <see cref="RegisterExternalAsync"/>.</param>
+    /// <param name="ct">Cancels the database calls.</param>
+    /// <returns>Signed in (tokens), or RequiresTwoFactor with a challenge token, exactly like
+    /// <see cref="LoginAsync"/>; or the same errors.</returns>
+    Task<Result<LoginOutcome>> SignInExternalAsync(Guid userId, CancellationToken ct = default);
 }
 
 /// <summary>A signed-in session: short-lived access token + long-lived refresh token.</summary>

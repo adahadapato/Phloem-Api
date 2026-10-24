@@ -13,7 +13,8 @@ namespace Phloem.Presentation.Settings.Authentication;
 /// Checks the access token on every request and exposes the signed-in user:
 /// <list type="number">
 ///   <item><description><b>Authentication:</b> JWT bearer, checked against the same <see cref="JwtSettings"/> that
-///   signs the tokens (issuer, audience, key, lifetime).</description></item>
+///   signs the tokens (issuer, audience, key, lifetime). "Continue with Google" is added by
+///   <see cref="GoogleAuthSetup"/> when its keys are set.</description></item>
 ///   <item><description><b>Refusals:</b> 401 / 403 written as ProblemDetails with a <c>code</c> (no token, expired,
 ///   invalid, not allowed), the same shape as every other error.</description></item>
 ///   <item><description><b>Authorization:</b> role checks on endpoints (<c>RequireAuthorization</c>,
@@ -28,14 +29,19 @@ public static class AuthenticationSetup
 
     // ───────────────────────────── 1. Services ─────────────────────────────
 
-    /// <summary>Registers JWT authentication, authorization and <see cref="ICurrentUser"/>.</summary>
+    /// <summary>Registers JWT authentication (plus Google when its keys are set), authorization and
+    /// <see cref="ICurrentUser"/>.</summary>
     /// <param name="services">The service collection.</param>
+    /// <param name="configuration">The app's configuration (the <c>Authentication</c> section).</param>
     /// <returns>The same service collection, for chaining.</returns>
-    public static IServiceCollection AddPhloemAuthentication(this IServiceCollection services)
+    public static IServiceCollection AddPhloemAuthentication(this IServiceCollection services,
+                                                             IConfiguration configuration)
     {
-        // 1a. Authentication: JWT bearer is the only scheme
+        // 1a. Authentication: JWT bearer is the default (and only sign-in) scheme. Google only proves who someone is
+        //     on the way in; the API then hands out its own JWT, exactly as after a password login.
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer();
+                .AddJwtBearer()
+                .AddPhloemGoogle(configuration);   // off while Authentication:Google has no keys
 
         // 1b. Its rules come from JwtSettings (read when the first request arrives)
         services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)

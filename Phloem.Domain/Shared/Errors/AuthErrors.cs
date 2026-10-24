@@ -46,6 +46,32 @@ public static class AuthErrors
     public static readonly Error TwoFactorNotEnabled = Error.Validation(
         "Auth.TwoFactorNotEnabled", "Turn on two-factor sign-in first.");
 
+    // ---------- Outside sign-in (Google) ----------
+
+    /// <summary>The provider isn't set up on this server yet (its client Id / secret are empty).</summary>
+    public static readonly Error ExternalLoginUnavailable = Error.NotFound(
+        "Auth.ExternalLoginUnavailable", "Signing in with Google isn't available yet. Please use your email and password.");
+
+    /// <summary>The person cancelled on the provider's page, or the provider's answer couldn't be read.</summary>
+    public static readonly Error ExternalLoginFailed = Error.Validation(
+        "Auth.ExternalLoginFailed", "Signing in with Google didn't finish. Please try again.");
+
+    /// <summary>The provider hasn't confirmed the person owns this email, so it can't be linked or used.</summary>
+    public static readonly Error ExternalEmailNotVerified = Error.Forbidden(
+        "Auth.ExternalEmailNotVerified",
+        "Google hasn't confirmed this email address. Please sign in with your email and password instead.");
+
+    /// <summary>
+    /// No Phloem account for this outside login or email yet. Not shown to people: the sign-in step creates the
+    /// account when it gets this.
+    /// </summary>
+    public static readonly Error NoAccountForExternalLogin = Error.NotFound(
+        "Auth.NoAccountForExternalLogin", "There's no Phloem account for this sign-in yet.");
+
+    /// <summary>The one-time code from the sign-in link is unknown, already used or expired.</summary>
+    public static readonly Error InvalidLoginCode = Error.Validation(
+        "Auth.InvalidLoginCode", "This sign-in has expired. Please try again.");
+
     // ---------- Roles ----------
 
     /// <summary>A role name that isn't one of <c>Roles.All</c>.</summary>
