@@ -83,7 +83,8 @@ public static class MeEndpoints
 
         me.MapPut("/addresses/{addressId:guid}", async (Guid addressId, AddressRequest body, ISender sender,
                                                         CancellationToken ct) =>
-                (await sender.Send(new UpdateAddressCommand(addressId, body.Label, body.FullAddress, body.Country),
+                (await sender.Send(new UpdateAddressCommand(addressId, body.Label, body.FullAddress, body.Country,
+                                                            body.RecipientName, body.PhoneNumber),
                                    ct)).ToHttp())
             .WithName("UpdateMyAddress")
             .WithSummary("Change one of my delivery addresses")
@@ -158,5 +159,8 @@ public static class MeEndpoints
     /// <param name="Label">e.g. "Home", "Work".</param>
     /// <param name="FullAddress">The address as typed.</param>
     /// <param name="Country">Its country.</param>
-    public sealed record AddressRequest(string Label, string FullAddress, Country Country);
+    /// <param name="RecipientName">Who receives the food; empty = me.</param>
+    /// <param name="PhoneNumber">Who the seller calls; empty = my phone.</param>
+    public sealed record AddressRequest(string Label, string FullAddress, Country Country,
+                                        string? RecipientName = null, string? PhoneNumber = null);
 }

@@ -71,6 +71,8 @@ public class Order : Entity<Guid>
         DeliveryLabel = address.Label;
         DeliveryAddressLine = address.FullAddress;
         DeliveryCountry = address.Country;
+        DeliveryRecipientName = address.RecipientName;
+        DeliveryPhone = address.PhoneNumber?.Value;
         PlacedAtUtc = placedAtUtc;
         Status = OrderStatus.AwaitingPayment;
     }
@@ -102,6 +104,13 @@ public class Order : Entity<Guid>
 
     /// <summary>Country of the delivery address.</summary>
     public Country DeliveryCountry { get; private set; }
+
+    /// <summary>Snapshot of who receives it (the address's name); null = the customer themselves.</summary>
+    public string? DeliveryRecipientName { get; private set; }
+
+    /// <summary>Snapshot of the number the seller calls (the address's phone, e.g. "+447700900123"); null = the
+    /// customer's own phone.</summary>
+    public string? DeliveryPhone { get; private set; }
 
     /// <summary>When the customer wants it (ASAP / this evening / tomorrow). Affects the delivery fee.</summary>
     public DeliveryWindow DeliveryWindow { get; private set; }

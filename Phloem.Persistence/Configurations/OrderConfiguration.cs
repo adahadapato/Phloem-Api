@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Phloem.Domain.Entities;
+using Phloem.Persistence.Converters;
 using Phloem.Persistence.Mappings;
 
 namespace Phloem.Persistence.Configurations;
@@ -49,6 +50,8 @@ public sealed class OrderConfiguration : EntityConfiguration<Order>
         builder.Property(o => o.DeliveryLabel).IsRequired().HasMaxLength(DeliveryAddress.LabelMaxLength);
         builder.Property(o => o.DeliveryAddressLine).IsRequired().HasMaxLength(DeliveryAddress.FullAddressMaxLength);
         builder.Property(o => o.DeliveryCountry).IsRequired();
+        builder.Property(o => o.DeliveryRecipientName).HasMaxLength(DeliveryAddress.RecipientNameMaxLength);
+        builder.Property(o => o.DeliveryPhone).HasMaxLength(PhoneNumberConverter.MaxLength);
         builder.Property(o => o.DeliveryWindow).IsRequired();
 
         // ---------- Money ----------

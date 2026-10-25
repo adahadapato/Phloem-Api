@@ -2,6 +2,7 @@
 using Phloem.Domain.Interfaces;
 using Phloem.Domain.Shared.Errors;
 using Phloem.Domain.Shared.Results;
+using Phloem.Domain.ValueObjects;
 
 namespace Phloem.Application.Features.Accounts.Commands;
 
@@ -19,7 +20,8 @@ public sealed class AddAddressCommandHandler(
         var profile = await profiles.GetByIdAsync(userId, ct);
         if (profile is null) return UserProfileErrors.NotFound;
 
-        var added = profile.AddAddress(command.Label, command.FullAddress, command.Country, command.MakeDefault);
+        var added = profile.AddAddress(command.Label, command.FullAddress, command.Country, command.MakeDefault,
+                                       command.RecipientName, PhoneNumber.CreateOptional(command.PhoneNumber));
         if (added.IsFailure) return added.Error;
 
         await unitOfWork.SaveChangesAsync(ct);

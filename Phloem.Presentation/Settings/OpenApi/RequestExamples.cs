@@ -84,9 +84,10 @@ internal static class RequestExamples
         [typeof(UpdatePersonalDetailsCommand)] = new UpdatePersonalDetailsCommand(
             new DateOnly(1990, 5, 14), HomeAddress),
         [typeof(AddAddressCommand)] = new AddAddressCommand(
-            "Work", "5 Broad Street, Lagos Island, Lagos", Country.Nigeria, MakeDefault: false),
+            "Work", "5 Broad Street, Lagos Island, Lagos", Country.Nigeria, MakeDefault: false,
+            RecipientName: "Ada Okafor", PhoneNumber: "+2348031234567"),
         [typeof(MeEndpoints.AddressRequest)] = new MeEndpoints.AddressRequest(
-            "Work", "5 Broad Street, Lagos Island, Lagos", Country.Nigeria),
+            "Work", "5 Broad Street, Lagos Island, Lagos", Country.Nigeria, "Ada Okafor", "+2348031234567"),
         [typeof(ChangePasswordCommand)] = new ChangePasswordCommand(Password, NewPassword, NewPassword),
         [typeof(EnableTwoFactorCommand)] = new EnableTwoFactorCommand("123456"),
         [typeof(DisableTwoFactorCommand)] = new DisableTwoFactorCommand(Password),

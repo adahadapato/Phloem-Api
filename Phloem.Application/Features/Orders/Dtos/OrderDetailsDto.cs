@@ -28,6 +28,8 @@ namespace Phloem.Application.Features.Orders.Dtos;
 /// <param name="ViewedBySeller">True when the shop is viewing (shows Accept / Send out / Delivered).</param>
 /// <param name="DeclinedByShop">The shop couldn't make it (cancelled and refunded).</param>
 /// <param name="DeclineReason">The shop's reason, when <paramref name="DeclinedByShop"/>.</param>
+/// <param name="DeliveryRecipientName">Who receives it (the address's name, else the customer's).</param>
+/// <param name="DeliveryPhone">Who the seller calls (the address's phone, else the customer's); null if neither.</param>
 public sealed record OrderDetailsDto(
     string OrderNumber,
     string ShopName,
@@ -50,4 +52,6 @@ public sealed record OrderDetailsDto(
     bool NeedsRefund,
     bool ViewedBySeller,
     bool DeclinedByShop,
-    string? DeclineReason);
+    string? DeclineReason,
+    string DeliveryRecipientName,
+    string? DeliveryPhone);

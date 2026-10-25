@@ -18,6 +18,7 @@ public sealed class GetOrderQueryHandler(
     IDeliveryPricingRepository pricings,
     IUserProfileRepository profiles,
     IFileStorage storage,
+    IAccountService accounts,
     TimeProvider time)
     : IRequestHandler<GetOrderQuery, Result<OrderDetailsDto>>
 {
@@ -64,13 +65,21 @@ public sealed class GetOrderQueryHandler(
         var fee = LiveOrderPricing.DeliveryFee(order, vendor, pricing);
 
         var names = await profiles.GetFullNamesAsync([order.CustomerId], ct);
+        var customerName = names.GetValueOrDefault(order.CustomerId, UnknownUser);
+        // Address saved without a phone (or before phones existed): the customer's own
+        var phone = order.DeliveryPhone;
+        if (phone is null)
+        {
+            var contact = await accounts.GetContactAsync(order.CustomerId, ct);
+            phone = contact.IsSuccess ? contact.Value.PhoneNumber : null;
+        }
         var now = time.GetUtcNow().UtcDateTime;
         var secondsLeft = order.TimeLeftToCancel(now);
 
         return new OrderDetailsDto(
             order.OrderNumber,
             order.VendorName,
-            names.GetValueOrDefault(order.CustomerId, UnknownUser),
+            customerName,
             order.Status,
             lines,
             subtotal,
@@ -89,6 +98,8 @@ public sealed class GetOrderQueryHandler(
             order.NeedsRefund,
             ViewedBySeller: isSeller,
             order.DeclinedByShop,
-            order.DeclineReason);
+            order.DeclineReason,
+            order.DeliveryRecipientName ?? customerName,
+            phone);
     }
 }

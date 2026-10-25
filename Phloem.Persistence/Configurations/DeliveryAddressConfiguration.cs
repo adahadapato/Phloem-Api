@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Phloem.Domain.Entities;
+using Phloem.Persistence.Converters;
 
 namespace Phloem.Persistence.Configurations;
 
@@ -25,6 +26,11 @@ public sealed class DeliveryAddressConfiguration : EntityConfiguration<DeliveryA
         builder.Property(a => a.FullAddress).IsRequired().HasMaxLength(DeliveryAddress.FullAddressMaxLength);
         builder.Property(a => a.Country).IsRequired();
         builder.Property(a => a.IsDefault).IsRequired();
+
+        // Optional: who receives it and who to call (null = the account holder). The phone's converter and size
+        // come from PhloemDbContext.ConfigureConventions.
+        builder.Property(a => a.RecipientName).HasMaxLength(DeliveryAddress.RecipientNameMaxLength);
+        builder.Property(a => a.PhoneNumber).HasMaxLength(PhoneNumberConverter.MaxLength);
 
         builder.HasIndex(a => a.UserId);   // "my addresses"
     }

@@ -17,6 +17,8 @@ namespace Phloem.Application.Features.Orders.Dtos;
 /// <param name="DeliveryWindow">ASAP / this evening / tomorrow.</param>
 /// <param name="DeliveryLabel">Address label, e.g. "Home".</param>
 /// <param name="DeliveryAddress">Full delivery address.</param>
+/// <param name="DeliveryRecipientName">Who receives it (the address's name, else the customer's).</param>
+/// <param name="DeliveryPhone">Who to call (the address's phone, else the customer's); null if neither.</param>
 public sealed record ShopOrderSummaryDto(
     string OrderNumber,
     string CustomerName,
@@ -28,4 +30,6 @@ public sealed record ShopOrderSummaryDto(
     Currency Currency,
     DeliveryWindow DeliveryWindow,
     string DeliveryLabel,
-    string DeliveryAddress);
+    string DeliveryAddress,
+    string DeliveryRecipientName,
+    string? DeliveryPhone);

@@ -236,12 +236,19 @@ public class UserProfile : Entity<Guid>
     // ---------- Addresses ----------
 
     /// <summary>Add a delivery address. The first one becomes the default automatically.</summary>
+    /// <param name="label">"Home", "Work", "Mum's house".</param>
+    /// <param name="fullAddress">The address as typed.</param>
+    /// <param name="country">Its country.</param>
+    /// <param name="makeDefault">Make it the default (the first address always is).</param>
+    /// <param name="recipientName">Who receives the food; null = this account holder.</param>
+    /// <param name="phoneNumber">Who the seller calls; null = this account holder's phone.</param>
     /// <returns>The new address; or <see cref="UserProfileErrors.AccountDeleted"/>.</returns>
-    public Result<DeliveryAddress> AddAddress(string label, string fullAddress, Country country, bool makeDefault = false)
+    public Result<DeliveryAddress> AddAddress(string label, string fullAddress, Country country, bool makeDefault = false,
+                                              string? recipientName = null, PhoneNumber? phoneNumber = null)
     {
         if (IsDeleted) return UserProfileErrors.AccountDeleted;
 
-        var address = new DeliveryAddress(Id, label, fullAddress, country);
+        var address = new DeliveryAddress(Id, label, fullAddress, country, recipientName, phoneNumber);
         _addresses.Add(address);
 
         if (makeDefault || _addresses.Count == 1)
@@ -255,14 +262,15 @@ public class UserProfile : Entity<Guid>
     /// account's address or a deleted account's address.
     /// </summary>
     /// <returns>Success; or <see cref="UserProfileErrors.AccountDeleted"/>, <see cref="UserProfileErrors.AddressNotFound"/>.</returns>
-    public Result UpdateAddress(Guid addressId, string label, string fullAddress, Country country)
+    public Result UpdateAddress(Guid addressId, string label, string fullAddress, Country country,
+                                string? recipientName = null, PhoneNumber? phoneNumber = null)
     {
         if (IsDeleted) return UserProfileErrors.AccountDeleted;
 
         var address = FindAddress(addressId);
         if (address is null) return UserProfileErrors.AddressNotFound;
 
-        address.Update(label, fullAddress, country);
+        address.Update(label, fullAddress, country, recipientName, phoneNumber);
         return Result.Success();
     }
 

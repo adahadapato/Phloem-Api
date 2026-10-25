@@ -12,7 +12,8 @@ public sealed class GetShopOrdersQueryHandler(
     ICurrentUser currentUser,
     IVendorRepository vendors,
     IOrderRepository orders,
-    IUserProfileRepository profiles)
+    IUserProfileRepository profiles,
+    IAccountService accounts)
     : IRequestHandler<GetShopOrdersQuery, Result<PagedResult<ShopOrderSummaryDto>>>
 {
     private const string UnknownUser = "Unknown user";
@@ -33,6 +34,14 @@ public sealed class GetShopOrdersQueryHandler(
 
         var names = await profiles.GetFullNamesAsync(paged.Items.Select(o => o.CustomerId).Distinct().ToList(), ct);
 
+        // Orders whose address had no phone: the customer's own (one lookup per customer on this page)
+        var phones = new Dictionary<Guid, string?>();
+        foreach (var customerId in paged.Items.Where(o => o.DeliveryPhone is null).Select(o => o.CustomerId).Distinct())
+        {
+            var contact = await accounts.GetContactAsync(customerId, ct);
+            phones[customerId] = contact.IsSuccess ? contact.Value.PhoneNumber : null;
+        }
+
         var items = paged.Items.Select(o => new ShopOrderSummaryDto(
             o.OrderNumber,
             names.GetValueOrDefault(o.CustomerId, UnknownUser),
@@ -44,7 +53,9 @@ public sealed class GetShopOrdersQueryHandler(
             o.Currency,
             o.DeliveryWindow,
             o.DeliveryLabel,
-            o.DeliveryAddressLine)).ToList();
+            o.DeliveryAddressLine,
+            o.DeliveryRecipientName ?? names.GetValueOrDefault(o.CustomerId, UnknownUser),
+            o.DeliveryPhone ?? phones.GetValueOrDefault(o.CustomerId))).ToList();
 
         return new PagedResult<ShopOrderSummaryDto>(items, paged.TotalCount, paged.Page, paged.PageSize);
     }
