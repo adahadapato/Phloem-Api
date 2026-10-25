@@ -22,6 +22,15 @@ namespace Phloem.Application.Common.Caching;
 public static class CacheTags
 {
     /// <summary>
+    /// The current Terms and Privacy Policy.
+    /// </summary>
+    /// <remarks>
+    /// Cached by: <c>GetLegalDocumentQuery</c>.
+    /// Cleared by: <c>PublishLegalDocumentCommand</c>.
+    /// </remarks>
+    public const string LegalDocuments = "legal-documents";
+
+    /// <summary>
     /// The approved dish names sellers pick from, with their price ranges.
     /// </summary>
     /// <remarks>

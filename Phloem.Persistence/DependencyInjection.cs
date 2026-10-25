@@ -137,6 +137,7 @@ public static class DependencyInjection
         // 5c. Pricing
         services.AddScoped<IDeliveryPricingRepository, DeliveryPricingRepository>();
         services.AddScoped<ICommissionRepository, CommissionRepository>();
+        services.AddScoped<ILegalDocumentRepository, LegalDocumentRepository>();
 
         // 5d. Orders and shipping
         services.AddScoped<IOrderRepository, OrderRepository>();

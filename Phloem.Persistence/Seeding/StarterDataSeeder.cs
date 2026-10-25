@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Phloem.Domain.Entities;
+using Phloem.Domain.Enums;
 
 namespace Phloem.Persistence.Seeding;
 
@@ -13,6 +14,9 @@ namespace Phloem.Persistence.Seeding;
 ///   <item><description>Delivery pricing (with window charges)</description></item>
 ///   <item><description>Dish names (with price ranges)</description></item>
 ///   <item><description>Shipping routes (switched off, no rates)</description></item>
+///   <item><description>Legal texts: the temporary Terms and Privacy Policy (version 1, marked as drafts), from
+///   <c>legal/terms.md</c> and <c>legal/privacy.md</c> next to the JSON file. The first line "# Title" is the
+///   title; the rest is the text.</description></item>
 /// </list>
 /// </summary>
 /// <remarks>
@@ -98,10 +102,54 @@ internal static class StarterDataSeeder
             seeded.Add($"{data.ShipmentRoutes.Count} shipping routes");
         }
 
+        // 5. Legal texts (temporary drafts; admins publish the reviewed wording as version 2 and on)
+        if (!await context.LegalDocuments.IgnoreQueryFilters().AnyAsync(cancellationToken))
+        {
+            var dataFolder = Path.GetDirectoryName(FullPath(settings.StarterDataPath)) ?? string.Empty;
+            var folder = Path.Combine(dataFolder, "legal");
+            var added = 0;
+            var drafts = new[] { (LegalDocumentType.Terms, "terms.md"), (LegalDocumentType.Privacy, "privacy.md") };
+            foreach (var (type, file) in drafts)
+            {
+                var draft = await ReadLegalDraftAsync(Path.Combine(folder, file), logger, cancellationToken);
+                if (draft is null) continue;
+                var (title, content) = draft.Value;
+                context.LegalDocuments.Add(Run($"legal/{file}", () =>
+                    LegalDocument.Publish(type, 1, title, content, isDraft: true, DateTime.UtcNow)));
+                added++;
+            }
+            if (added > 0) seeded.Add($"{added} legal drafts");
+        }
+
         if (seeded.Count == 0) return;
 
         await context.SaveChangesAsync(cancellationToken);
         logger.LogInformation("Seeded starter data: {Blocks}", string.Join(", ", seeded));
+    }
+
+    /// <summary>A relative path is read from the app's folder (where the build copies Seeding/Data).</summary>
+    private static string FullPath(string path) =>
+        Path.IsPathRooted(path) ? path : Path.Combine(AppContext.BaseDirectory, path);
+
+    /// <summary>Reads a legal draft: the first "# Title" line is the title, the rest the text; null if missing.</summary>
+    private static async Task<(string Title, string Content)?> ReadLegalDraftAsync(
+        string path, ILogger logger, CancellationToken cancellationToken)
+    {
+        if (!File.Exists(path))
+        {
+            logger.LogWarning("Legal draft skipped: {Path} not found.", path);
+            return null;
+        }
+
+        var lines = await File.ReadAllLinesAsync(path, cancellationToken);
+        var titleLine = Array.FindIndex(lines, l => l.StartsWith("# ", StringComparison.Ordinal));
+        if (titleLine < 0)
+            throw new InvalidOperationException(
+                $"{path}: the first heading must be the title, e.g. \"# Terms & Conditions\".");
+
+        var title = lines[titleLine][2..].Trim();
+        var content = string.Join('\n', lines.Skip(titleLine + 1)).Trim();
+        return (title, content);
     }
 
     /// <summary>Finds and reads the JSON file; null (with a warning) if it's missing.</summary>
