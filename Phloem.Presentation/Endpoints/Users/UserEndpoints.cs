@@ -9,8 +9,8 @@ using Phloem.Presentation.Extensions;
 namespace Phloem.Presentation.Endpoints.Users;
 
 /// <summary>
-/// Admin → Users (<c>/api/admin/users</c>, Admin role only): everyone who has signed up, and suspending people who
-/// abuse Phloem.
+/// Admin → Users (<c>/api/admin/users</c>, Admin role only): everyone who has signed up, suspending people who
+/// abuse Phloem, and giving or taking roles (Admin and the staff roles).
 /// </summary>
 /// <remarks>
 /// <para>Suspending someone: they can't sign in, they're signed out everywhere, their shop is hidden and its
@@ -54,6 +54,33 @@ public static class UserEndpoints
             .WithSummary("Lift a suspension: they can sign in again and their shop comes back")
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status404NotFound);
+
+        // ───────────────────────────── Roles ─────────────────────────────
+
+        admin.MapPut("/{userId:guid}/roles/{role}", async (Guid userId, string role, ISender sender,
+                                                            CancellationToken ct) =>
+                (await sender.Send(new SetUserRoleCommand(userId, role, Grant: true), ct)).ToHttp())
+            .WithName("GrantUserRole")
+            .WithSummary("Give someone a role: Admin, CatalogManager, ShipmentManager or SupportAgent")
+            .WithDescription("Seller follows the person's shop and Customer is everyone's, so neither is set here. " +
+                             "A suspended person can't be made an admin. The new role arrives at their next sign-in " +
+                             "or token refresh.")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
+
+        admin.MapDelete("/{userId:guid}/roles/{role}", async (Guid userId, string role, ISender sender,
+                                                               CancellationToken ct) =>
+                (await sender.Send(new SetUserRoleCommand(userId, role, Grant: false), ct)).ToHttp())
+            .WithName("RemoveUserRole")
+            .WithSummary("Take a role away (signs them out everywhere so it stops working now)")
+            .WithDescription("You can't take your own Admin role, and the last admin keeps Admin.")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
 
         return api;
     }

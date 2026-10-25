@@ -50,7 +50,8 @@ public sealed class GetAdminUsersQueryHandler(
                 isSuspended ? p.SuspendedUntilUtc : null,
                 isSuspended ? p.SuspensionReason : null,
                 CanBeSuspended: !isAdmin && p.Id != currentUser.UserId,
-                PhotoUrl: p.PhotoUrl is null ? null : storage.GetPublicUrl(p.PhotoUrl)));
+                PhotoUrl: p.PhotoUrl is null ? null : storage.GetPublicUrl(p.PhotoUrl),
+                IsYou: p.Id == currentUser.UserId));
         }
 
         return new PagedResult<AdminUserDto>(items, paged.TotalCount, paged.Page, paged.PageSize);

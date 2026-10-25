@@ -82,6 +82,19 @@ public static class AuthErrors
     public static readonly Error LastAdmin = Error.Conflict(
         "Auth.LastAdmin", "This is the only admin account, so the Admin role can't be removed.");
 
+    /// <summary>An admin taking Admin away from themselves would lock themselves out; another admin must do it.</summary>
+    public static readonly Error CannotRemoveOwnAdmin = Error.Forbidden(
+        "Auth.CannotRemoveOwnAdmin", "You can't remove your own Admin role. Ask another admin to do it.");
+
+    /// <summary>Customer and Seller aren't given or taken by hand (Seller follows the person's shop).</summary>
+    public static readonly Error RoleNotAssignable = Error.Validation(
+        "Auth.RoleNotAssignable",
+        "This role can't be changed here. Seller is given when a shop is approved, and everyone is a Customer.");
+
+    /// <summary>A suspended person can't be made an admin (admins can't be suspended).</summary>
+    public static readonly Error CannotMakeSuspendedAdmin = Error.Conflict(
+        "Auth.CannotMakeSuspendedAdmin", "This person is suspended. Lift the suspension before making them an admin.");
+
     // ---------- Access (written by Presentation when a request is refused) ----------
 
     /// <summary>No access token sent.</summary>

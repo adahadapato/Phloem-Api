@@ -23,6 +23,15 @@ public static class Roles
     /// <summary>Customer support: can look up orders and users, cancel orders for customers.</summary>
     public const string SupportAgent = "SupportAgent";
 
+    /// <summary>
+    /// The roles an admin can give or take on Admin → Users. Customer (everyone has it) and Seller (it follows the
+    /// person's shop: given on approval, removed when the shop is blocked or closed) aren't in it.
+    /// </summary>
+    public static readonly IReadOnlyList<string> Assignable =
+    [
+        Admin, CatalogManager, ShipmentManager, SupportAgent
+    ];
+
     /// <summary>All roles, for seeding.</summary>
     public static readonly IReadOnlyList<string> All =
     [
