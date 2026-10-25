@@ -44,8 +44,11 @@ public sealed class PhloemDbContext(DbContextOptions<PhloemDbContext> options)
     /// <summary>Commission rate per country.</summary>
     public DbSet<Commission> Commissions => Set<Commission>();
 
-    /// <summary>Every version of the Terms and the Privacy Policy.</summary>
+    /// <summary>Every version of the Terms, the Privacy Policy and the Help page.</summary>
     public DbSet<LegalDocument> LegalDocuments => Set<LegalDocument>();
+
+    /// <summary>The "what can be sent" list shown when booking a parcel.</summary>
+    public DbSet<ParcelItemRule> ParcelItemRules => Set<ParcelItemRule>();
 
     /// <summary>Food orders (with their lines).</summary>
     public DbSet<Order> Orders => Set<Order>();

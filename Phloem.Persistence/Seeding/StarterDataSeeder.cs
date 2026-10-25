@@ -14,13 +14,15 @@ namespace Phloem.Persistence.Seeding;
 ///   <item><description>Delivery pricing (with window charges)</description></item>
 ///   <item><description>Dish names (with price ranges)</description></item>
 ///   <item><description>Shipping routes (switched off, no rates)</description></item>
-///   <item><description>Legal texts: the temporary Terms and Privacy Policy (version 1, marked as drafts), from
-///   <c>legal/terms.md</c> and <c>legal/privacy.md</c> next to the JSON file. The first line "# Title" is the
-///   title; the rest is the text.</description></item>
+///   <item><description>Texts: the temporary Terms and Privacy Policy (version 1, marked as drafts) and the Help
+///   page, from <c>legal/terms.md</c>, <c>legal/privacy.md</c> and <c>legal/help.md</c> next to the JSON file. The
+///   first line "# Title" is the title; the rest is the text. Each type is seeded only if it has no version
+///   yet.</description></item>
+///   <item><description>What can be sent: the items parcels may not contain, or only with a condition.</description></item>
 /// </list>
 /// </summary>
 /// <remarks>
-/// <para><b>Each block runs only if its table is completely empty</b> (deleted rows included), so anything an admin
+/// <para><b>Each block runs only if its table is completely empty</b> (deleted rows included; the texts per type), so anything an admin
 /// changes or removes is never brought back by a restart.</para>
 /// <para>Everything goes through the Domain's own methods, so the same rules apply as in the app. A bad value in the
 /// file stops start-up with a message naming the entry.</para>
@@ -102,23 +104,43 @@ internal static class StarterDataSeeder
             seeded.Add($"{data.ShipmentRoutes.Count} shipping routes");
         }
 
-        // 5. Legal texts (temporary drafts; admins publish the reviewed wording as version 2 and on)
-        if (!await context.LegalDocuments.IgnoreQueryFilters().AnyAsync(cancellationToken))
+        // 5. Texts: Terms and Privacy (temporary drafts; admins publish the reviewed wording as version 2 and on)
+        //    and Help. Checked per type, so a type added later (Help) is seeded on a database that has the others.
         {
             var dataFolder = Path.GetDirectoryName(FullPath(settings.StarterDataPath)) ?? string.Empty;
             var folder = Path.Combine(dataFolder, "legal");
             var added = 0;
-            var drafts = new[] { (LegalDocumentType.Terms, "terms.md"), (LegalDocumentType.Privacy, "privacy.md") };
-            foreach (var (type, file) in drafts)
+            var texts = new[]
             {
-                var draft = await ReadLegalDraftAsync(Path.Combine(folder, file), logger, cancellationToken);
-                if (draft is null) continue;
-                var (title, content) = draft.Value;
+                (LegalDocumentType.Terms, "terms.md", true),
+                (LegalDocumentType.Privacy, "privacy.md", true),
+                (LegalDocumentType.Help, "help.md", false)
+            };
+            foreach (var (type, file, isDraft) in texts)
+            {
+                if (await context.LegalDocuments.IgnoreQueryFilters().AnyAsync(d => d.Type == type, cancellationToken))
+                    continue;
+                var text = await ReadLegalDraftAsync(Path.Combine(folder, file), logger, cancellationToken);
+                if (text is null) continue;
+                var (title, content) = text.Value;
                 context.LegalDocuments.Add(Run($"legal/{file}", () =>
-                    LegalDocument.Publish(type, 1, title, content, isDraft: true, DateTime.UtcNow)));
+                    LegalDocument.Publish(type, 1, title, content, isDraft, DateTime.UtcNow)));
                 added++;
             }
-            if (added > 0) seeded.Add($"{added} legal drafts");
+            if (added > 0) seeded.Add($"{added} texts");
+        }
+
+        // 6. What can be sent (admins change the list afterwards)
+        if (!await context.ParcelItemRules.IgnoreQueryFilters().AnyAsync(cancellationToken))
+        {
+            for (var i = 0; i < data.ParcelItemRules.Count; i++)
+            {
+                var r = data.ParcelItemRules[i];
+                var position = i;
+                context.ParcelItemRules.Add(Run($"parcel rule '{r.Name}'",
+                    () => ParcelItemRule.Create(r.Kind, r.Name, r.Detail, position)));
+            }
+            if (data.ParcelItemRules.Count > 0) seeded.Add($"{data.ParcelItemRules.Count} parcel item rules");
         }
 
         if (seeded.Count == 0) return;

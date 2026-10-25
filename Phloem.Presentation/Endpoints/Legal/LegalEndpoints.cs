@@ -40,7 +40,7 @@ public static class LegalEndpoints
         legal.MapGet("/{type}", async (LegalDocumentType type, ISender sender, CancellationToken ct) =>
                 (await sender.Send(new GetLegalDocumentQuery(type), ct)).ToHttp())
             .WithName("GetLegalDocument")
-            .WithSummary("The current Terms (type=Terms) or Privacy Policy (type=Privacy), in Markdown")
+            .WithSummary("The current Terms (type=Terms), Privacy Policy (type=Privacy) or Help page (type=Help), in Markdown")
             .WithDescription("isDraft = true while the wording is temporary (show a \"Draft\" note). Headings may " +
                              "carry anchors like {#sellers} and {#parcels} so links can open a section.")
             .Produces<LegalDocumentDto>()

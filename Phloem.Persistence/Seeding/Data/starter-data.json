@@ -470,6 +470,19 @@
       "dropOffAddress": "To be confirmed",
       "dropOffHours": "To be confirmed"
     }
-  ]
+  ],
 
+  // What parcels may not contain (NotAllowed), or only with a condition (Restricted). In display order.
+  "parcelItemRules": [
+    { "kind": "NotAllowed", "name": "Fresh or frozen meat and fish", "detail": "Including bush meat and snails" },
+    { "kind": "NotAllowed", "name": "Liquids over 1 litre", "detail": "Smaller amounts must be sealed and wrapped" },
+    { "kind": "NotAllowed", "name": "Weapons", "detail": "Including knives, replicas and ammunition" },
+    { "kind": "NotAllowed", "name": "Drugs and medicines", "detail": "Unless prescribed to the person receiving them, with the prescription" },
+    { "kind": "NotAllowed", "name": "Cash, cards and valuables" },
+    { "kind": "NotAllowed", "name": "Anything flammable or explosive", "detail": "Including gas canisters, lighters and fireworks" },
+    { "kind": "NotAllowed", "name": "Anything illegal in the sending or receiving country" },
+    { "kind": "Restricted", "name": "Dried fish and dried meat", "detail": "Fully dried, sealed and labelled" },
+    { "kind": "Restricted", "name": "Palm oil and other oils", "detail": "Sealed bottles, 1 litre or less each" },
+    { "kind": "Restricted", "name": "Seeds, nuts and grains", "detail": "Shop-packed and sealed; no seeds for planting" }
+  ]
 }

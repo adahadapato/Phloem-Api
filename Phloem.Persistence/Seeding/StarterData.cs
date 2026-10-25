@@ -19,6 +19,9 @@ public sealed class StarterData
 
     /// <summary>"Send food" routes (seeded switched off, without rates).</summary>
     public List<RouteSeed> ShipmentRoutes { get; set; } = [];
+
+    /// <summary>The "what can be sent" list, in display order.</summary>
+    public List<ParcelItemRuleSeed> ParcelItemRules { get; set; } = [];
 }
 
 /// <summary>One country's commission.</summary>
@@ -100,4 +103,17 @@ public sealed class RouteSeed
 
     /// <summary>When the drop-off point is open.</summary>
     public string DropOffHours { get; set; } = string.Empty;
+}
+
+/// <summary>One line of the "what can be sent" list.</summary>
+public sealed class ParcelItemRuleSeed
+{
+    /// <summary>NotAllowed or Restricted.</summary>
+    public ParcelItemRuleKind Kind { get; set; }
+
+    /// <summary>e.g. "Fresh meat or fish".</summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>Optional condition or reason.</summary>
+    public string? Detail { get; set; }
 }

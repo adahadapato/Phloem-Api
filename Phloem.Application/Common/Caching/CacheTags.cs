@@ -22,13 +22,23 @@ namespace Phloem.Application.Common.Caching;
 public static class CacheTags
 {
     /// <summary>
-    /// The current Terms and Privacy Policy.
+    /// The current Terms, Privacy Policy and Help page.
     /// </summary>
     /// <remarks>
     /// Cached by: <c>GetLegalDocumentQuery</c>.
     /// Cleared by: <c>PublishLegalDocumentCommand</c>.
     /// </remarks>
     public const string LegalDocuments = "legal-documents";
+
+    /// <summary>
+    /// The "what can be sent" list shown when booking a parcel.
+    /// </summary>
+    /// <remarks>
+    /// Cached by: <c>GetParcelItemRulesQuery</c>.
+    /// Cleared by: <c>AddParcelItemRuleCommand</c>, <c>UpdateParcelItemRuleCommand</c>,
+    /// <c>DeleteParcelItemRuleCommand</c>, <c>ReorderParcelItemRulesCommand</c>.
+    /// </remarks>
+    public const string ParcelItemRules = "parcel-item-rules";
 
     /// <summary>
     /// The approved dish names sellers pick from, with their price ranges.

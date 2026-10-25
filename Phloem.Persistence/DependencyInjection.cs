@@ -143,6 +143,7 @@ public static class DependencyInjection
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IShipmentRouteRepository, ShipmentRouteRepository>();
         services.AddScoped<IShipmentRepository, ShipmentRepository>();
+        services.AddScoped<IParcelItemRuleRepository, ParcelItemRuleRepository>();
 
         // 5e. Sign-in (not a Domain aggregate; used by Infrastructure's Identity services)
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();

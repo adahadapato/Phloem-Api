@@ -1,6 +1,7 @@
 using Phloem.Presentation.Endpoints.Auth;
 using Phloem.Presentation.Endpoints.Commissions;
 using Phloem.Presentation.Endpoints.Legal;
+using Phloem.Presentation.Endpoints.ParcelItemRules;
 using Phloem.Presentation.Endpoints.Countries;
 using Phloem.Presentation.Endpoints.DeliveryPricings;
 using Phloem.Presentation.Endpoints.DishCatalogs;
@@ -40,6 +41,7 @@ public static class EndpointExtensions
         api.MapShipmentEndpoints();          // /api/shipments + /api/track + /api/staff/shipments
         api.MapUserEndpoints();              //                         /api/admin/users (suspend / reinstate)
         api.MapLegalEndpoints();             // /api/legal            + /api/admin/legal
+        api.MapParcelItemRuleEndpoints();    // /api/parcel-rules     + /api/admin/parcel-rules
 
         // 2. Private documents through signed links, e.g. /private-files/…?expires=…&sig=… (not in Swagger)
         app.MapPrivateFiles();
