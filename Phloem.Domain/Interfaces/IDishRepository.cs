@@ -1,5 +1,6 @@
 ﻿using Phloem.Domain.Entities;
 using Phloem.Domain.Enums;
+using Phloem.Domain.Models;
 using Phloem.Domain.Shared.Results;
 
 namespace Phloem.Domain.Interfaces;
@@ -66,4 +67,15 @@ public interface IDishRepository : IRepository<Dish>
     /// <param name="cancellationToken">Cancels the database call.</param>
     Task<IReadOnlyList<Dish>> GetOrderableInCountryAsync(
         Country country, int max, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Search predictions: the names of dishes a buyer can order right now (same rules as <see cref="SearchAsync"/>)
+    /// that contain <paramref name="text"/>, each once, with how many dishes carry it, most dishes first.
+    /// </summary>
+    /// <param name="country">Only this country; null = every country.</param>
+    /// <param name="text">What has been typed so far (trimmed, at least 2 characters).</param>
+    /// <param name="take">How many names at most (the caller re-ranks them).</param>
+    /// <param name="cancellationToken">Cancels the database call.</param>
+    Task<IReadOnlyList<DishNameMatch>> GetNameMatchesAsync(
+        Country? country, string text, int take, CancellationToken cancellationToken = default);
 }

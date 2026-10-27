@@ -53,7 +53,8 @@ public static class CacheTags
     /// Dishes buyers can see: Home and the Food listing (every page, filter and sort).
     /// </summary>
     /// <remarks>
-    /// Cached by: <c>SearchDishesQuery</c>, <c>GetPopularDishesQuery</c> (Home's "Popular in …", 30 minutes, so new
+    /// Cached by: <c>SearchDishesQuery</c>, <c>SuggestSearchQuery</c> (search predictions, 5 minutes),
+    /// <c>GetPopularDishesQuery</c> (Home's "Popular in …", 30 minutes, so new
     /// orders show up in it within half an hour).
     /// Cleared by: dish changes (<c>CreateDishCommand</c>, <c>UpdateDishCommand</c>, <c>ChangeDishPriceCommand</c>,
     /// <c>DeleteDishCommand</c>, <c>AddDishPhotoCommand</c>, <c>RemoveDishPhotoCommand</c>), shop changes that

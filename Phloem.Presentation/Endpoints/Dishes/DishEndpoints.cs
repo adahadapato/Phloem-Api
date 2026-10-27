@@ -56,6 +56,15 @@ public static class DishEndpoints
             .Produces<PagedResult<DishCardDto>>()
             .ProducesValidationProblem();
 
+        dishes.MapGet("/suggest", async ([AsParameters] SuggestSearchQuery query, ISender sender, CancellationToken ct) =>
+                (await sender.Send(query, ct)).ToHttp())
+            .WithName("SuggestSearch")
+            .WithSummary("Search predictions while typing: full dish names containing q (best first), then matching shops")
+            .WithDescription("q = at least 2 letters. country = the country shown (optional). take = dish names, 1–10 " +
+                             "(shops: up to 3 more). Kind = Dish (search for Text) | Shop (open ShopId).")
+            .Produces<IReadOnlyList<SearchSuggestionDto>>()
+            .ProducesValidationProblem();
+
         dishes.MapGet("/popular", async ([AsParameters] GetPopularDishesQuery query, ISender sender,
                                          CancellationToken ct) =>
                 (await sender.Send(query, ct)).ToHttp())

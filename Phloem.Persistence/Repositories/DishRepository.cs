@@ -2,6 +2,7 @@
 using Phloem.Domain.Entities;
 using Phloem.Domain.Enums;
 using Phloem.Domain.Interfaces;
+using Phloem.Domain.Models;
 using Phloem.Domain.Shared.Results;
 
 namespace Phloem.Persistence.Repositories;
@@ -125,4 +126,30 @@ internal sealed class DishRepository(PhloemDbContext context)
                  .OrderByDescending(d => d.Rating).ThenByDescending(d => d.RatingCount).ThenBy(d => d.Name)
                  .Take(max)
                  .ToListAsync(cancellationToken);
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Read-only, one grouped query. "Contains" uses the database's case-insensitive collation, so "jol" finds
+    /// "Jollof Rice". Same "can be ordered now" rules as the listing.
+    /// </remarks>
+    public async Task<IReadOnlyList<DishNameMatch>> GetNameMatchesAsync(Country? country, string text, int take,
+                                                                        CancellationToken cancellationToken = default)
+    {
+        var term = text.Trim();
+        var query = Set.AsNoTracking()
+            .Where(d => d.IsAvailable
+                     && !d.NeedsPriceUpdate
+                     && d.Vendor.Status == VendorStatus.Approved
+                     && !d.Vendor.IsOwnerSuspended
+                     && d.Name.Contains(term));
+        if (country is not null) query = query.Where(d => d.Country == country);
+
+        var rows = await query.GroupBy(d => d.Name)
+                              .Select(g => new { Name = g.Key, Count = g.Count() })
+                              .OrderByDescending(x => x.Count).ThenBy(x => x.Name)
+                              .Take(take)
+                              .ToListAsync(cancellationToken);
+
+        return rows.Select(r => new DishNameMatch(r.Name, r.Count)).ToList();
+    }
 }
