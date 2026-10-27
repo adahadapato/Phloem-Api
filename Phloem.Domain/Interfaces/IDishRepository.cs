@@ -57,5 +57,13 @@ public interface IDishRepository : IRepository<Dish>
         Country? country, DishCategory? category, string? search, Guid? vendorId,
         DishSort sort, PageRequest page, CancellationToken cancellationToken = default);
 
-   
+    /// <summary>
+    /// Suggestions: the dishes a buyer can order right now in one country (same rules as <see cref="SearchAsync"/>),
+    /// with photos, shop and dish-list name (for its cuisine group), best rated first.
+    /// </summary>
+    /// <param name="country">The country the buyer is shopping in.</param>
+    /// <param name="max">How many dishes at most.</param>
+    /// <param name="cancellationToken">Cancels the database call.</param>
+    Task<IReadOnlyList<Dish>> GetOrderableInCountryAsync(
+        Country country, int max, CancellationToken cancellationToken = default);
 }

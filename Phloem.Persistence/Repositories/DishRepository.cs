@@ -108,4 +108,21 @@ internal sealed class DishRepository(PhloemDbContext context)
         await Set.Include(d => d.Vendor)
                  .Where(d => d.DishCatalogId == dishCatalogId && d.Country == country)
                  .ToListAsync(cancellationToken);
+
+    /// <inheritdoc />
+    /// <remarks>Read-only; the same "can be ordered now" rules as <see cref="SearchAsync(Country?, DishCategory?, string?, Guid?, DishSort, PageRequest, CancellationToken)"/>.</remarks>
+    public async Task<IReadOnlyList<Dish>> GetOrderableInCountryAsync(Country country, int max,
+                                                                     CancellationToken cancellationToken = default) =>
+        await Set.AsNoTracking()
+                 .Include(d => d.Photos)
+                 .Include(d => d.Vendor)
+                 .Include(d => d.DishCatalog)
+                 .Where(d => d.Country == country
+                          && d.IsAvailable
+                          && !d.NeedsPriceUpdate
+                          && d.Vendor.Status == VendorStatus.Approved
+                          && !d.Vendor.IsOwnerSuspended)
+                 .OrderByDescending(d => d.Rating).ThenByDescending(d => d.RatingCount).ThenBy(d => d.Name)
+                 .Take(max)
+                 .ToListAsync(cancellationToken);
 }

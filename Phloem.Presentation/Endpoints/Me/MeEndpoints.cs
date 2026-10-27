@@ -2,6 +2,8 @@
 using Phloem.Application.Features.Accounts.Commands;
 using Phloem.Application.Features.Accounts.Dtos;
 using Phloem.Application.Features.Accounts.Queries;
+using Phloem.Application.Features.Suggestions.Dtos;
+using Phloem.Application.Features.Suggestions.Queries;
 using Phloem.Domain.Enums;
 using Phloem.Presentation.Extensions;
 
@@ -50,6 +52,16 @@ public static class MeEndpoints
             .WithName("UpdateMyPersonalDetails")
             .WithSummary("Save my date of birth and home address (needed to open a shop or send a parcel)")
             .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem();
+
+        me.MapGet("/suggestions", async ([AsParameters] GetMySuggestionsQuery query, ISender sender,
+                                          CancellationToken ct) =>
+                (await sender.Send(query, ct)).ToHttp())
+            .WithName("GetMySuggestions")
+            .WithSummary("Home: \"Order again\" and \"For you\" (new dishes picked from my orders, each with a reason)")
+            .WithDescription("country = the country Home shows (only dishes that can be ordered there now). " +
+                             "isPersonal = false when I have no orders yet: forYou is then \"Popular in …\".")
+            .Produces<SuggestionsDto>()
             .ProducesValidationProblem();
 
         // ───────────────────────────── 2. Photo ─────────────────────────────

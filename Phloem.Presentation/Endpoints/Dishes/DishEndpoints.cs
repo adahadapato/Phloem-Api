@@ -2,6 +2,8 @@ using MediatR;
 using Phloem.Application.Features.Dishes.Commands;
 using Phloem.Application.Features.Dishes.Dtos;
 using Phloem.Application.Features.Dishes.Queries;
+using Phloem.Application.Features.Suggestions.Dtos;
+using Phloem.Application.Features.Suggestions.Queries;
 using Phloem.Domain.Enums;
 using Phloem.Domain.Shared.Results;
 using Phloem.Presentation.Extensions;
@@ -52,6 +54,14 @@ public static class DishEndpoints
             .WithName("SearchDishes")
             .WithSummary("Search dishes: by country, category, text, one shop (its menu), sorted by rating or price")
             .Produces<PagedResult<DishCardDto>>()
+            .ProducesValidationProblem();
+
+        dishes.MapGet("/popular", async ([AsParameters] GetPopularDishesQuery query, ISender sender,
+                                         CancellationToken ct) =>
+                (await sender.Send(query, ct)).ToHttp())
+            .WithName("GetPopularDishes")
+            .WithSummary("Home when signed out: \"Popular in Ghana\" (most ordered lately, then best rated), with reasons")
+            .Produces<IReadOnlyList<SuggestedDishDto>>()
             .ProducesValidationProblem();
 
         dishes.MapGet("/{dishId:guid}", async (Guid dishId, ISender sender, CancellationToken ct) =>

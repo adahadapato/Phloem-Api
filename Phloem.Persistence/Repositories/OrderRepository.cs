@@ -87,6 +87,112 @@ internal sealed class OrderRepository(PhloemDbContext context)
                      .ToList();
     }
 
+    // ───────────────────────────── 3. Suggestions ("For you") ─────────────────────────────
+
+    /// <summary>Paid, not cancelled: the orders suggestions learn from.</summary>
+    private IQueryable<Order> CountedOrders() =>
+        Set.AsNoTracking().Where(o => o.PaidAtUtc != null && o.Status != OrderStatus.Cancelled);
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Read-only, one query: the lines of the customer's newest orders joined to their dishes. Deleted dishes are
+    /// read too (IgnoreQueryFilters), as they still say what the customer likes. Grouped per dish in memory (a few
+    /// dozen rows at most).
+    /// </remarks>
+    public async Task<IReadOnlyList<PurchasedDish>> GetPurchasedDishesAsync(Guid customerId, int maxOrders,
+                                                                            CancellationToken cancellationToken = default)
+    {
+        var orderIds = CountedOrders()
+            .Where(o => o.CustomerId == customerId)
+            .OrderByDescending(o => o.PlacedAtUtc)
+            .Take(maxOrders)
+            .Select(o => o.Id);
+
+        var rows = await (from l in Context.Set<OrderLine>().AsNoTracking()
+                          join o in Set.AsNoTracking() on l.OrderId equals o.Id
+                          join d in Context.Set<Dish>().AsNoTracking().IgnoreQueryFilters() on l.DishId equals d.Id
+                          // IgnoreQueryFilters (for deleted dishes) switches the filters off for the whole query,
+                          // so lines dropped at payment and deleted orders are left out by hand
+                          where orderIds.Contains(o.Id) && !l.IsDeleted && !o.IsDeleted
+                          select new
+                          {
+                              l.DishId,
+                              l.DishName,
+                              d.DishCatalogId,
+                              d.Category,
+                              d.DishCatalog.Group,
+                              o.Id,
+                              o.VendorId,
+                              o.VendorName,
+                              o.PlacedAtUtc
+                          })
+                         .ToListAsync(cancellationToken);
+
+        return rows.GroupBy(r => r.DishId)
+                   .Select(g =>
+                   {
+                       var latest = g.MaxBy(r => r.PlacedAtUtc)!;
+                       return new PurchasedDish(g.Key, latest.DishName, latest.DishCatalogId, latest.Category,
+                                                latest.Group, latest.VendorId, latest.VendorName,
+                                                g.Select(r => r.Id).Distinct().Count(), latest.PlacedAtUtc);
+                   })
+                   .OrderByDescending(p => p.LastOrderedUtc)
+                   .ToList();
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Read-only, one grouped query: the newest 2,000 matching orders are plenty to see what goes together, and keep
+    /// the count fast as Phloem grows (the nightly AI job planned for later replaces this).
+    /// </remarks>
+    public async Task<IReadOnlyList<DishPairCount>> GetAlsoOrderedAsync(IReadOnlyCollection<Guid> dishIds,
+                                                                       Country country, DateTime sinceUtc, int take,
+                                                                       CancellationToken cancellationToken = default)
+    {
+        if (dishIds.Count == 0) return [];
+        var ids = dishIds.ToList();
+
+        var orderIds = CountedOrders()
+            .Where(o => o.DeliveryCountry == country
+                     && o.PlacedAtUtc >= sinceUtc
+                     && o.Lines.Any(l => ids.Contains(l.DishId)))
+            .OrderByDescending(o => o.PlacedAtUtc)
+            .Take(2000)
+            .Select(o => o.Id);
+
+        var lines = Context.Set<OrderLine>().AsNoTracking().Where(l => orderIds.Contains(l.OrderId));
+
+        var pairs = await (from a in lines
+                           where ids.Contains(a.DishId)
+                           join b in lines on a.OrderId equals b.OrderId
+                           where !ids.Contains(b.DishId)
+                           group a by new { Bought = a.DishId, Other = b.DishId } into g
+                           orderby g.Count() descending
+                           select new { g.Key.Bought, g.Key.Other, Orders = g.Count() })
+                          .Take(take)
+                          .ToListAsync(cancellationToken);
+
+        return pairs.Select(p => new DishPairCount(p.Bought, p.Other, p.Orders)).ToList();
+    }
+
+    /// <inheritdoc />
+    /// <remarks>Read-only, one grouped query.</remarks>
+    public async Task<IReadOnlyList<Guid>> GetMostOrderedDishIdsAsync(Country country, DateTime sinceUtc, int take,
+                                                                      CancellationToken cancellationToken = default)
+    {
+        var orderIds = CountedOrders()
+            .Where(o => o.DeliveryCountry == country && o.PlacedAtUtc >= sinceUtc)
+            .Select(o => o.Id);
+
+        return await Context.Set<OrderLine>().AsNoTracking()
+            .Where(l => orderIds.Contains(l.OrderId))
+            .GroupBy(l => l.DishId)
+            .OrderByDescending(g => g.Count())
+            .Select(g => g.Key)
+            .Take(take)
+            .ToListAsync(cancellationToken);
+    }
+
     /// <inheritdoc />
     /// <remarks>Read-only. Asking for <see cref="OrderStatus.AwaitingPayment"/> returns nothing, by design.</remarks>
     public Task<PagedResult<Order>> GetForVendorAsync(Guid vendorId, OrderStatus? status, PageRequest page,

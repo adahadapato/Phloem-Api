@@ -61,6 +61,46 @@ public interface IOrderRepository : IRepository<Order>
     Task<IReadOnlyList<Guid>> GetRecentDishIdsForCustomerAsync(
         Guid customerId, int take, CancellationToken cancellationToken = default);
 
+    // ───────────────────────────── Suggestions ("For you") ─────────────────────────────
+
+    /// <summary>
+    /// Suggestions: every dish in the customer's most recent paid orders (cancelled ones left out), once each, with
+    /// its kind of food, shop, how many orders had it and when it was last bought. Deleted dishes are included
+    /// (they still say what the customer likes).
+    /// </summary>
+    /// <param name="customerId">The signed-in customer.</param>
+    /// <param name="maxOrders">How many of their newest orders to look at.</param>
+    /// <param name="cancellationToken">Cancels the database call.</param>
+    /// <returns>Most recently ordered first.</returns>
+    Task<IReadOnlyList<PurchasedDish>> GetPurchasedDishesAsync(
+        Guid customerId, int maxOrders, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Suggestions: "people who ordered X also ordered Y". Looks at every customer's paid orders (not cancelled)
+    /// delivered to the country since a date that contain any of the given dishes, and counts the OTHER dishes in them.
+    /// </summary>
+    /// <param name="dishIds">Dishes the customer has bought (X).</param>
+    /// <param name="country">Only orders delivered in this country.</param>
+    /// <param name="sinceUtc">Only orders placed since this moment.</param>
+    /// <param name="take">How many pairs at most (the most frequent).</param>
+    /// <param name="cancellationToken">Cancels the database call.</param>
+    /// <returns>Pairs, most frequent first. Y is never one of <paramref name="dishIds"/>.</returns>
+    Task<IReadOnlyList<DishPairCount>> GetAlsoOrderedAsync(
+        IReadOnlyCollection<Guid> dishIds, Country country, DateTime sinceUtc, int take,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Suggestions: the dishes in the most paid orders (not cancelled) delivered to a country since a date
+    /// ("Popular in Ghana").
+    /// </summary>
+    /// <param name="country">Only orders delivered in this country.</param>
+    /// <param name="sinceUtc">Only orders placed since this moment.</param>
+    /// <param name="take">How many dish Ids at most.</param>
+    /// <param name="cancellationToken">Cancels the database call.</param>
+    /// <returns>Dish Ids, most ordered first. Some may no longer be on sale: the caller checks.</returns>
+    Task<IReadOnlyList<Guid>> GetMostOrderedDishIdsAsync(
+        Country country, DateTime sinceUtc, int take, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Seller → "Shop orders": this shop's orders, newest first, with lines.
     /// Never includes unpaid orders. Optionally only one status (e.g. Paid = waiting to be accepted).
