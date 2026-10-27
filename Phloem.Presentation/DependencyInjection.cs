@@ -5,6 +5,7 @@ using Phloem.Presentation.Middleware;
 using Phloem.Presentation.Settings.Authentication;
 using Phloem.Presentation.Settings.Cors;
 using Phloem.Presentation.Settings.OpenApi;
+using Phloem.Presentation.Settings.RateLimiting;
 using System;
 using System.Text.Json.Serialization;
 using static Azure.Core.HttpHeader;
@@ -38,6 +39,7 @@ public static class DependencyInjection
         services.AddPhloemOpenApi(configuration);    // 2a. OpenAPI document + Swagger page
         services.AddPhloemAuthentication(configuration);   // 2b. JWT bearer (+ Google when set up), authorization, CurrentUser
         services.AddPhloemCors(configuration);             //     the website may call the API from a browser
+        services.AddPhloemRateLimiting();                  //     limits on public endpoints (Contact us)
 
         // 2c. Errors: one ProblemDetails shape for thrown exceptions AND Result failures
         services.AddProblemDetails();

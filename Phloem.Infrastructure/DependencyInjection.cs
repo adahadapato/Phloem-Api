@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Phloem.Application;
 using Phloem.Infrastructure.Services.Accounts;
 using Phloem.Infrastructure.Settings.Application;
+using Phloem.Infrastructure.Settings.Contact;
 using Phloem.Infrastructure.Settings.Email;
 using Phloem.Infrastructure.Settings.Identity;
 using Phloem.Infrastructure.Settings.Images;
@@ -20,6 +21,7 @@ namespace Phloem.Infrastructure
 
             services.AddApplicationSettings(configuration);
             services.AddEmail(configuration);
+            services.AddContact(configuration);   // Contact us details (GET /api/contact)
             services.AddStorage(configuration);
             services.AddImages(configuration);                     
             services.AddPhloemIdentity(configuration);  

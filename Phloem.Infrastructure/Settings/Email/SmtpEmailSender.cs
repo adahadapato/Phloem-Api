@@ -44,14 +44,27 @@ internal sealed class SmtpEmailSender(IOptions<EmailSettings> options, ILogger<S
         return SendCoreAsync(settings.TeamInbox, subject, htmlBody, settings.TeamInbox, cancellationToken);
     }
 
+    /// <inheritdoc />
+    /// <exception cref="ArgumentException">Blank subject, body or reply-to address (a bug in the caller).</exception>
+    /// <exception cref="ParseException">The reply-to address isn't a valid address.</exception>
+    /// <exception cref="Exception">Any SMTP / network failure from MailKit.</exception>
+    public Task SendToTeamAsync(string subject, string htmlBody, string replyToAddress, string replyToName,
+                                CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(replyToAddress);
+        return SendCoreAsync(options.Value.TeamInbox, subject, htmlBody, replyToAddress, cancellationToken,
+                             replyToName);
+    }
+
     /// <summary>Builds the message, connects, signs in if needed, sends and disconnects.</summary>
     /// <param name="to">Recipient.</param>
     /// <param name="subject">Subject.</param>
     /// <param name="htmlBody">HTML body.</param>
     /// <param name="replyToAddress">The Reply-To address.</param>
     /// <param name="cancellationToken">Cancels connecting / sending.</param>
+    /// <param name="replyToName">The name shown with the Reply-To address; null = Phloem's name.</param>
     private async Task SendCoreAsync(string to, string subject, string htmlBody, string replyToAddress,
-                                     CancellationToken cancellationToken)
+                                     CancellationToken cancellationToken, string? replyToName = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(subject);
         ArgumentException.ThrowIfNullOrWhiteSpace(htmlBody);
@@ -60,7 +73,7 @@ internal sealed class SmtpEmailSender(IOptions<EmailSettings> options, ILogger<S
 
         var message = new MimeMessage();
         message.From.Add(new MailboxAddress(settings.FromName, settings.FromAddress));
-        message.ReplyTo.Add(new MailboxAddress(settings.FromName, replyToAddress));
+        message.ReplyTo.Add(new MailboxAddress(replyToName ?? settings.FromName, replyToAddress));
         message.To.Add(MailboxAddress.Parse(to));
         message.Subject = subject;
         message.Body = new BodyBuilder { HtmlBody = htmlBody }.ToMessageBody();

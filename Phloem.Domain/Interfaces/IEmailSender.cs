@@ -31,4 +31,16 @@ public interface IEmailSender
     /// <param name="htmlBody">The body as HTML.</param>
     /// <param name="cancellationToken">Cancels sending.</param>
     Task SendToTeamAsync(string subject, string htmlBody, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Sends an email to the team inbox whose "Reply" goes straight to someone outside Phloem (e.g. a Contact us
+    /// message: the team presses Reply and answers the customer).
+    /// </summary>
+    /// <param name="subject">The subject line.</param>
+    /// <param name="htmlBody">The body as HTML.</param>
+    /// <param name="replyToAddress">Where the team's reply goes (the customer's address).</param>
+    /// <param name="replyToName">The name shown with it.</param>
+    /// <param name="cancellationToken">Cancels sending.</param>
+    Task SendToTeamAsync(string subject, string htmlBody, string replyToAddress, string replyToName,
+                         CancellationToken cancellationToken = default);
 }

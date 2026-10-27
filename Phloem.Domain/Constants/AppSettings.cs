@@ -462,6 +462,34 @@ public static class AppSettings
         }
     }
 
+    // ==================== Contact us ====================
+
+    /// <summary>
+    /// The contact details shown on the Contact us page (website and app), served by <c>GET /api/contact</c>.
+    /// Bound to <c>Phloem.Infrastructure.Settings.Contact.ContactSettings</c>. Every value is optional: an empty one
+    /// is simply not shown. The email shown is <see cref="Email.ReplyTo.Support"/> (one place to change it).
+    /// </summary>
+    public static class Contact
+    {
+        /// <summary>The whole section.</summary>
+        public const string Section = "Contact";
+
+        /// <summary>Phone number people can call, e.g. "+44 20 7946 0000".</summary>
+        public const string Phone = "Contact:Phone";
+
+        /// <summary>WhatsApp number (international format), e.g. "+44 7700 900000".</summary>
+        public const string WhatsApp = "Contact:WhatsApp";
+
+        /// <summary>Postal address, one line, e.g. "Phloem, 1 Example Street, London EC1A 1AA, United Kingdom".</summary>
+        public const string Address = "Contact:Address";
+
+        /// <summary>When the team answers, e.g. "Monday to Saturday, 9am to 6pm (UK time)".</summary>
+        public const string OpeningHours = "Contact:OpeningHours";
+
+        /// <summary>How soon people get an answer, e.g. "within 24 hours" (also used in the confirmation email).</summary>
+        public const string ReplyTime = "Contact:ReplyTime";
+    }
+
     // ==================== Payments ====================
 
     /// <summary>Taking payment for orders (and later shipments).</summary>

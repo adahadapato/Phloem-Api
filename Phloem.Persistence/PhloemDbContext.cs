@@ -49,6 +49,7 @@ public sealed class PhloemDbContext(DbContextOptions<PhloemDbContext> options)
 
     /// <summary>The "what can be sent" list shown when booking a parcel.</summary>
     public DbSet<ParcelItemRule> ParcelItemRules => Set<ParcelItemRule>();
+    public DbSet<ContactMessage> ContactMessages => Set<ContactMessage>();
 
     /// <summary>Food orders (with their lines).</summary>
     public DbSet<Order> Orders => Set<Order>();

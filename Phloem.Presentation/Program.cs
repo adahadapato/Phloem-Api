@@ -96,6 +96,7 @@ try
     app.UsePhloemOpenApi();
     app.UsePhloemCors();             // before authentication: browser preflights need no sign-in
     app.UsePhloemAuthentication();
+    app.UseRateLimiter();            // after authentication; per-endpoint policies (Contact us)
 
     WriteStartupDiagnostic("Registering API endpoints.");
 
