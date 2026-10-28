@@ -1,4 +1,6 @@
-﻿using MediatR;
+﻿using Phloem.Application.Features.LegalDocuments.Dtos;
+using Phloem.Application.Common.Terms;
+using MediatR;
 using Phloem.Application.Features.Accounts.Dtos;
 using Phloem.Domain.Interfaces;
 using Phloem.Domain.Shared.Errors;
@@ -11,7 +13,8 @@ public sealed class GetMyProfileQueryHandler(
     IUserProfileRepository profiles,
     IVendorRepository vendors,
     IAccountService accounts,
-    IFileStorage storage)
+    IFileStorage storage,
+    TermsGate terms)
     : IRequestHandler<GetMyProfileQuery, Result<ProfileDto>>
 {
     public async Task<Result<ProfileDto>> Handle(GetMyProfileQuery query, CancellationToken ct)
@@ -31,6 +34,9 @@ public sealed class GetMyProfileQueryHandler(
         // DB stores the path; the app needs the full link
         var photoUrl = profile.PhotoUrl is null ? null : storage.GetPublicUrl(profile.PhotoUrl);
 
-        return ProfileDto.From(profile, contact.Value, photoUrl, hasShop);
+        // "We've updated our Terms" / Privacy notice on the website and app
+        var status = await terms.GetStatusAsync(userId, ct);
+
+        return ProfileDto.From(profile, contact.Value, photoUrl, hasShop) with { Terms = TermsStatusDto.From(status) };
     }
 }

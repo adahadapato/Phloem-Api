@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using Phloem.Application.Common.Terms;
 using Microsoft.Extensions.DependencyInjection;
 using Phloem.Application.Common.Behaviors;
 using Phloem.Application.Common.Behaviours;
@@ -28,6 +29,9 @@ namespace Phloem.Application
 
             // 2. Cache: in-memory by default; a shared cache (e.g. Redis) can be added later without code changes here
             services.AddHybridCache();
+
+            // 2b. Terms: "has accepted the latest Terms?" and "record an acceptance", for the handlers
+            services.AddScoped<TermsGate>();
 
             // 3. Validators: without this, ValidationBehavior finds none and NO validation runs
             services.AddValidatorsFromAssembly(assembly, includeInternalTypes: true);

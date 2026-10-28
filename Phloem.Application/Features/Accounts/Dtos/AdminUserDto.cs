@@ -17,6 +17,8 @@ namespace Phloem.Application.Features.Accounts.Dtos;
 /// <param name="CanBeSuspended">False for admins (and for yourself): the app hides the Suspend button.</param>
 /// <param name="PhotoUrl">Their profile photo's public URL; null when they haven't added one.</param>
 /// <param name="IsYou">True for the admin looking at the list (they can't take their own Admin role away).</param>
+/// <param name="AcceptedTermsVersion">The highest Terms version they accepted; null = none recorded.</param>
+/// <param name="AcceptedTermsAt">When they first accepted that version (UTC).</param>
 public sealed record AdminUserDto(
     Guid Id,
     string FullName,
@@ -31,4 +33,6 @@ public sealed record AdminUserDto(
     string? SuspensionReason,
     bool CanBeSuspended,
     string? PhotoUrl,
-    bool IsYou);
+    bool IsYou,
+    int? AcceptedTermsVersion = null,
+    DateTime? AcceptedTermsAt = null);

@@ -1168,6 +1168,50 @@ namespace Phloem.Persistence.Migrations
                     b.ToTable("ShipmentRoutes", (string)null);
                 });
 
+            modelBuilder.Entity("Phloem.Domain.Entities.TermsAcceptance", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Context")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DocumentType")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("Reference")
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DocumentType", "Version");
+
+                    b.HasIndex("UserId", "DocumentType", "Version");
+
+                    b.ToTable("TermsAcceptances", (string)null);
+                });
+
             modelBuilder.Entity("Phloem.Domain.Entities.UserProfile", b =>
                 {
                     b.Property<Guid>("Id")

@@ -17,7 +17,8 @@ public sealed class GetAdminUsersQueryHandler(
     IUserRoleService roles,
     IVendorRepository vendors,
     IFileStorage storage,
-    TimeProvider time)
+    TimeProvider time,
+    ITermsAcceptanceRepository acceptances)
     : IRequestHandler<GetAdminUsersQuery, Result<PagedResult<AdminUserDto>>>
 {
     public async Task<Result<PagedResult<AdminUserDto>>> Handle(GetAdminUsersQuery query, CancellationToken ct)
@@ -27,6 +28,7 @@ public sealed class GetAdminUsersQueryHandler(
 
         var ids = paged.Items.Select(p => p.Id).ToList();
         var shopNames = await vendors.GetNamesByOwnerIdsAsync(ids, ct);
+        var accepted = await acceptances.GetLatestTermsAsync(ids, ct);
         var now = time.GetUtcNow().UtcDateTime;
 
         var items = new List<AdminUserDto>(paged.Items.Count);
@@ -51,7 +53,9 @@ public sealed class GetAdminUsersQueryHandler(
                 isSuspended ? p.SuspensionReason : null,
                 CanBeSuspended: !isAdmin && p.Id != currentUser.UserId,
                 PhotoUrl: p.PhotoUrl is null ? null : storage.GetPublicUrl(p.PhotoUrl),
-                IsYou: p.Id == currentUser.UserId));
+                IsYou: p.Id == currentUser.UserId,
+                AcceptedTermsVersion: accepted.TryGetValue(p.Id, out var a) ? a.Version : null,
+                AcceptedTermsAt: accepted.TryGetValue(p.Id, out var b) ? b.AcceptedAt : null));
         }
 
         return new PagedResult<AdminUserDto>(items, paged.TotalCount, paged.Page, paged.PageSize);

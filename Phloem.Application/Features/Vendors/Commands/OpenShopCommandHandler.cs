@@ -1,4 +1,6 @@
-﻿using MediatR;
+﻿using Phloem.Domain.Enums;
+using Phloem.Application.Common.Terms;
+using MediatR;
 using Phloem.Domain.Entities;
 using Phloem.Domain.Interfaces;
 using Phloem.Domain.Shared.Errors;
@@ -19,7 +21,8 @@ public sealed class OpenShopCommandHandler(
     IVendorRepository vendors,
     IAccountService accounts,
     IUnitOfWork unitOfWork,
-    TimeProvider time)                                                       // NEW
+    TimeProvider time,
+    TermsGate terms)
     : IRequestHandler<OpenShopCommand, Result<Guid>>
 {
     public async Task<Result<Guid>> Handle(OpenShopCommand command, CancellationToken ct)
@@ -60,6 +63,10 @@ public sealed class OpenShopCommandHandler(
         if (opened.IsFailure) return opened.Error;
 
         vendors.Add(opened.Value);
+
+        // Proof of "I agree to the Seller terms" (the Terms version published now), saved with the shop
+        await terms.RecordAsync(userId, LegalDocumentType.Terms, AcceptanceContext.OpenShop, null, ct);
+
         await unitOfWork.SaveChangesAsync(ct);
 
         return opened.Value.Id;

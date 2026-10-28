@@ -1,4 +1,6 @@
-﻿using MediatR;
+﻿using Phloem.Domain.Enums;
+using Phloem.Application.Common.Terms;
+using MediatR;
 using Phloem.Application.Features.Auth.Dtos;
 using Phloem.Domain.Entities;
 using Phloem.Domain.Interfaces;
@@ -17,7 +19,8 @@ public sealed class RegisterCommandHandler(
     IAuthService auth,
     IUserProfileRepository profiles,
     IUnitOfWork unitOfWork,
-    TimeProvider time)
+    TimeProvider time,
+    TermsGate terms)
     : IRequestHandler<RegisterCommand, Result<AuthTokensDto>>
 {
     private const string SignUpAddressLabel = "Home";
@@ -54,12 +57,17 @@ public sealed class RegisterCommandHandler(
             }
 
             profiles.Add(profile);
+
+            // 4. Proof of "I agree to the Terms and have read the Privacy Policy" (versions as published now)
+            await terms.RecordAsync(profile.Id, LegalDocumentType.Terms, AcceptanceContext.SignUp, null, ct);
+            await terms.RecordAsync(profile.Id, LegalDocumentType.Privacy, AcceptanceContext.SignUp, null, ct);
+
             await unitOfWork.SaveChangesAsync(ct);
 
             await transaction.CommitAsync(ct);
         }
 
-        // 4. Sign in (only after the account is definitely saved)
+        // 5. Sign in (only after the account is definitely saved)
         var login = await auth.LoginAsync(email, command.Password, ct);
         if (login.IsFailure) return login.Error;
 

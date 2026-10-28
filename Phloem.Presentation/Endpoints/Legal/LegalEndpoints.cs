@@ -56,6 +56,12 @@ public static class LegalEndpoints
                        .WithTags("Admin: Legal")
                        .RequireAuthorization(policy => policy.RequireRole(Roles.Admin));
 
+        admin.MapGet("/acceptance", async (ISender sender, CancellationToken ct) =>
+                (await sender.Send(new GetTermsAcceptanceStatsQuery(), ct)).ToHttp())
+            .WithName("GetTermsAcceptanceStats")
+            .WithSummary("How many people have accepted the current Terms version, out of everyone")
+            .Produces<TermsAcceptanceStatsDto>();
+
         admin.MapPost("/{type}", async (LegalDocumentType type, LegalDocumentRequest body, ISender sender,
                                         CancellationToken ct) =>
                 (await sender.Send(new PublishLegalDocumentCommand(type, body.Title, body.Content, body.IsDraft), ct))

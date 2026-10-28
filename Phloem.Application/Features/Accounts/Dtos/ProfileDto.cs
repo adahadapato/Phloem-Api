@@ -1,4 +1,5 @@
-﻿using Phloem.Domain.Entities;
+﻿using Phloem.Application.Features.LegalDocuments.Dtos;
+using Phloem.Domain.Entities;
 using Phloem.Domain.Enums;
 using Phloem.Domain.Interfaces;
 
@@ -32,6 +33,9 @@ public sealed record ProfileDto(
     bool NotifyShopOrders,
     IReadOnlyList<AddressDto> Addresses)
 {
+    /// <summary>Where I stand with the Terms and the Privacy Policy (filled by <c>GET /api/me</c>).</summary>
+    public TermsStatusDto? Terms { get; init; }
+
     public static ProfileDto From(UserProfile profile, AccountContact contact, string? photoUrl, bool hasShop) => new(
         profile.Id,
         profile.FirstName,

@@ -2,6 +2,7 @@
 using Phloem.Application.Features.Accounts.Commands;
 using Phloem.Application.Features.Accounts.Dtos;
 using Phloem.Application.Features.Accounts.Queries;
+using Phloem.Application.Features.LegalDocuments.Commands;
 using Phloem.Application.Features.Suggestions.Dtos;
 using Phloem.Application.Features.Suggestions.Queries;
 using Phloem.Domain.Enums;
@@ -62,6 +63,22 @@ public static class MeEndpoints
             .WithDescription("country = the country Home shows (only dishes that can be ordered there now). " +
                              "isPersonal = false when I have no orders yet: forYou is then \"Popular in …\".")
             .Produces<SuggestionsDto>()
+            .ProducesValidationProblem();
+
+        // Terms & Privacy: "We've updated our Terms" → Accept; "We've updated our Privacy Policy" → Got it
+        me.MapPost("/terms/accept", async (VersionRequest body, ISender sender, CancellationToken ct) =>
+                (await sender.Send(new AcceptTermsCommand(body.Version), ct)).ToHttp())
+            .WithName("AcceptTerms")
+            .WithSummary("Accept the latest Terms (the version shown); 409 Terms.Outdated if a newer one was published")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status409Conflict);
+
+        me.MapPost("/privacy/seen", async (VersionRequest body, ISender sender, CancellationToken ct) =>
+                (await sender.Send(new AcknowledgePrivacyCommand(body.Version), ct)).ToHttp())
+            .WithName("AcknowledgePrivacy")
+            .WithSummary("I've been shown this version of the Privacy Policy (\"Got it\")")
+            .Produces(StatusCodes.Status204NoContent)
             .ProducesValidationProblem();
 
         // ───────────────────────────── 2. Photo ─────────────────────────────
@@ -175,4 +192,7 @@ public static class MeEndpoints
     /// <param name="PhoneNumber">Who the seller calls; empty = my phone.</param>
     public sealed record AddressRequest(string Label, string FullAddress, Country Country,
                                         string? RecipientName = null, string? PhoneNumber = null);
+
+    /// <summary>Body of "accept the Terms" / "seen the Privacy Policy": the version on screen.</summary>
+    public sealed record VersionRequest(int Version);
 }

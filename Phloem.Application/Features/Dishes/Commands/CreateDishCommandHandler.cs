@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using Phloem.Application.Common.Terms;
+using MediatR;
 using Phloem.Domain.Entities;
 using Phloem.Domain.Interfaces;
 using Phloem.Domain.Shared.Errors;
@@ -11,7 +12,8 @@ public sealed class CreateDishCommandHandler(
     IVendorRepository vendors,
     IDishCatalogRepository catalog,
     IDishRepository dishes,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    TermsGate terms)
     : IRequestHandler<CreateDishCommand, Result<Guid>>
 {
     public async Task<Result<Guid>> Handle(CreateDishCommand command, CancellationToken ct)
@@ -21,6 +23,10 @@ public sealed class CreateDishCommandHandler(
 
         var vendor = await vendors.GetByOwnerIdAsync(userId, ct);
         if (vendor is null) return VendorErrors.NotFound;
+
+        // Selling waits until the latest Terms are accepted
+        var accepted = await terms.EnsureAcceptedAsync(userId, ct);
+        if (accepted.IsFailure) return accepted.Error;
 
         var name = await catalog.GetByIdAsync(command.DishCatalogId, ct);
         if (name is null) return DishCatalogErrors.NotFound;

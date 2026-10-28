@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using Phloem.Application.Common.Terms;
+using MediatR;
 using Phloem.Application.Features.Orders.Dtos;
 using Phloem.Domain.Entities;
 using Phloem.Domain.Enums;
@@ -16,7 +17,8 @@ public sealed class PlaceOrderCommandHandler(
     IDeliveryPricingRepository pricings,
     IOrderRepository orders,
     IUnitOfWork unitOfWork,
-    TimeProvider time)
+    TimeProvider time,
+    TermsGate terms)
     : IRequestHandler<PlaceOrderCommand, Result<IReadOnlyList<PlacedOrderDto>>>
 {
     /// <summary>How many times to try for an unused order number before giving up (a bug if reached).</summary>
@@ -27,7 +29,7 @@ public sealed class PlaceOrderCommandHandler(
     /// 4. <see cref="Order.Place"/> for each (all rules in Domain). 5. Save all at once.
     /// </summary>
     /// <returns>
-    /// The new orders; or the first failure: <see cref="UserProfileErrors.NotFound"/>,
+    /// The new orders; or the first failure: <see cref="TermsErrors.NotAccepted"/>, <see cref="UserProfileErrors.NotFound"/>,
     /// <see cref="UserProfileErrors.AddressNotFound"/>, <see cref="DishErrors.NotFound"/>,
     /// <see cref="DeliveryPricingErrors.NotSet"/>, <see cref="DeliveryPricingErrors.WindowNotOffered"/>,
     /// or any <see cref="OrderErrors"/> from Order.Place. Nothing is saved on failure.
@@ -37,6 +39,10 @@ public sealed class PlaceOrderCommandHandler(
     {
         var userId = currentUser.UserId
             ?? throw new InvalidOperationException("This action requires a signed-in user.");
+
+        // 0. The latest Terms must be accepted first ("We've updated our Terms" on the website / app)
+        var accepted = await terms.EnsureAcceptedAsync(userId, ct);
+        if (accepted.IsFailure) return accepted.Error;
 
         // 1. Customer, address, dishes
         var profile = await profiles.GetByIdAsync(userId, ct);
@@ -77,7 +83,12 @@ public sealed class PlaceOrderCommandHandler(
         }
 
         // 5. All orders in one save = one database transaction
-        foreach (var order in placed) orders.Add(order);
+        foreach (var order in placed)
+        {
+            orders.Add(order);
+            // "By placing your order you agree…": the Terms version, kept with each order number
+            await terms.RecordAsync(userId, LegalDocumentType.Terms, AcceptanceContext.Checkout, order.OrderNumber, ct);
+        }
         await unitOfWork.SaveChangesAsync(ct);
 
         IReadOnlyList<PlacedOrderDto> result = placed.Select(PlacedOrderDto.From).ToList();

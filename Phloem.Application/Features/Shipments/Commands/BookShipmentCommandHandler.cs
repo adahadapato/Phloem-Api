@@ -1,3 +1,5 @@
+using Phloem.Domain.Enums;
+using Phloem.Application.Common.Terms;
 using MediatR;
 using Phloem.Application.Features.Shipments.Dtos;
 using Phloem.Domain.Entities;
@@ -18,7 +20,8 @@ public sealed class BookShipmentCommandHandler(
     IShipmentRouteRepository routes,
     IShipmentRepository shipments,
     IUnitOfWork unitOfWork,
-    TimeProvider time)
+    TimeProvider time,
+    TermsGate terms)
     : IRequestHandler<BookShipmentCommand, Result<BookedShipmentDto>>
 {
     /// <summary>How many times to try for an unused tracking number before giving up (a bug if reached).</summary>
@@ -71,6 +74,10 @@ public sealed class BookShipmentCommandHandler(
         if (booked.IsFailure) return booked.Error;
 
         shipments.Add(booked.Value);
+
+        // Proof of "I accept the shipping terms" (ticked: the validator requires it), with the tracking number
+        await terms.RecordAsync(userId, LegalDocumentType.Terms, AcceptanceContext.SendParcel, trackingNumber, ct);
+
         await unitOfWork.SaveChangesAsync(ct);
 
         return BookedShipmentDto.From(booked.Value, route);

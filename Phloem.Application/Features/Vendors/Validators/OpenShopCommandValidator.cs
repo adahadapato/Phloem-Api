@@ -19,5 +19,8 @@ public sealed class OpenShopCommandValidator : AbstractValidator<OpenShopCommand
         RuleFor(x => x.BusinessPhone)
             .Must(v => string.IsNullOrWhiteSpace(v) || PhoneNumber.IsValid(v))
             .WithMessage(PhoneNumber.InvalidMessage);
+
+        RuleFor(x => x.AgreedToSellerTerms).Equal(true)
+            .WithMessage("Please read and agree to the Seller terms to open your shop.");
     }
 }
