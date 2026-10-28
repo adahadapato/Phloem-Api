@@ -55,12 +55,19 @@ Production base address: **`https://phloemapi.phloemmarket.com`** · local: **`h
   for approval, and set a logo, cover photo, delivery fee (inside the country's range) and daily order cut-off.
 - Add dishes from the **approved dish-name list** (or suggest a new name), with prices inside the admin-set range
   for that country, and photos (enhanced and resized automatically).
-- Accept, decline, send out and mark orders as delivered; see daily sales.
+- Accept, decline and send out orders with a courier (or deliver them themselves); see daily sales.
+
+**Couriers**
+- See **My deliveries** (food orders and parcels given to them): where to collect, who to call, where to go.
+- Mark each one **Delivered with a photo** of where they left it (in person, front door, neighbour, safe place or
+  reception). The photo is processed (location data removed) and kept in **private** storage; the customer sees it
+  on their order page through a short-lived link, and gets a "Delivered" email.
 
 **Parcels ("Send food to the UK")**
 - See open routes and speeds, get a price quote, check **what can be sent**, book a parcel, pay once it's weighed,
   cancel before it leaves, and track it (public tracking page by tracking number).
-- Hub staff receive and weigh parcels and move them along their journey.
+- Hub staff receive and weigh parcels, move them along their journey and give them to a courier in the
+  destination country, who delivers them with a photo.
 
 **Admin**
 - Shops: approve, reject, verify, block, review documents (through signed, expiring links).
@@ -392,6 +399,7 @@ restart. **Turn `DemoDataEnabled` off before launch.**
 | `CatalogManager` | staff | reserved for dish-list work (the dish-list endpoints are Admin-only for now) |
 | `ShipmentManager` | hub staff | `/api/staff/shipments`: receive, weigh, move parcels along |
 | `SupportAgent` | support staff | the Contact us inbox (`/api/admin/contact-messages`) |
+| `Courier` | delivery riders | `/api/deliveries`: their deliveries, and "Delivered" with a photo |
 
 Admins give and take staff roles on **Admin → Users**. An admin can't take away their own Admin role, and the last
 admin can't lose it.
@@ -497,7 +505,9 @@ Everything is under **`/api`**. The full, always-current list with request/respo
 | PUT | `/shops/mine/dishes/{id}/price` | new price (inside the range) |
 | POST / DELETE | `/shops/mine/dishes/{id}/photos[/{photoId}]` | photos |
 | GET | `/shops/mine/orders` · `/shops/mine/orders/stats` | incoming orders, daily sales |
-| POST | `/shops/mine/orders/{n}/accept` · `/decline` · `/send-out` · `/delivered` | move an order along |
+| POST | `/shops/mine/orders/{n}/accept` · `/decline` · `/send-out` (with `courierId`, or none = myself) | move an order along |
+| PUT | `/shops/mine/orders/{n}/courier` | give it to another courier |
+| GET | `/shops/mine/couriers` | me + the couriers in my country |
 </details>
 
 <details>
@@ -512,7 +522,18 @@ Everything is under **`/api`**. The full, always-current list with request/respo
 | GET 🔒 | `/shipments` · `/shipments/{trackingNumber}` | my parcels |
 | POST 🔒 | `/shipments/{trackingNumber}/cancel` · `/test-payment` | cancel / temporary test payment |
 | GET 🛡 | `/staff/shipments` · `/staff/shipments/{n}` | hub list (ShipmentManager, Admin) |
-| POST 🛡 | `/staff/shipments/{n}/receive` · `/progress` | weigh at the hub / next step |
+| POST 🛡 | `/staff/shipments/{n}/receive` · `/progress` | weigh at the hub / In transit, Arrived |
+| POST · PUT 🛡 | `/staff/shipments/{n}/out-for-delivery` · `/staff/shipments/{n}/courier` | give it to a courier / change courier |
+| GET 🛡 | `/staff/couriers?country=` | couriers in a country |
+</details>
+
+<details>
+<summary><b>Deliveries</b> — <code>/api/deliveries</code> 🔒 (couriers, and sellers delivering their own orders)</summary>
+
+| Method | Path | |
+|---|---|---|
+| GET | `/deliveries` · `/deliveries?done=true` | to deliver / delivered in the last 7 days |
+| POST | `/deliveries/orders/{n}/delivered` · `/deliveries/parcels/{n}/delivered` | multipart: `photo`, `handover`, `receivedBy`, `note` |
 </details>
 
 <details>

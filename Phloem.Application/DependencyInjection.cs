@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using Phloem.Application.Common.Terms;
+using Phloem.Application.Features.Deliveries.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Phloem.Application.Common.Behaviors;
 using Phloem.Application.Common.Behaviours;
@@ -32,6 +33,11 @@ namespace Phloem.Application
 
             // 2b. Terms: "has accepted the latest Terms?" and "record an acceptance", for the handlers
             services.AddScoped<TermsGate>();
+
+            // 2c. Deliveries: who can be a courier, proof-of-delivery photos, delivery emails
+            services.AddScoped<CourierDirectory>();
+            services.AddScoped<DeliveryPhotos>();
+            services.AddScoped<DeliveryEmails>();
 
             // 3. Validators: without this, ValidationBehavior finds none and NO validation runs
             services.AddValidatorsFromAssembly(assembly, includeInternalTypes: true);

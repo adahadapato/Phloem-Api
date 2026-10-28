@@ -57,4 +57,18 @@ internal sealed class UserProfileRepository(PhloemDbContext context)
                         .Select(p => new { p.Id, Name = p.FirstName + " " + p.LastName })
                         .ToDictionaryAsync(p => p.Id, p => p.Name, cancellationToken);
     }
+
+    /// <inheritdoc />
+    /// <remarks>Read-only, by first then last name. The soft-delete filter leaves out deleted accounts.</remarks>
+    public async Task<IReadOnlyList<UserProfile>> GetInCountryAsync(IReadOnlyCollection<Guid> userIds,
+                                                                   Domain.Enums.Country country,
+                                                                   CancellationToken cancellationToken = default)
+    {
+        if (userIds.Count == 0) return [];
+
+        return await Set.AsNoTracking()
+                        .Where(p => userIds.Contains(p.Id) && p.Country == country)
+                        .OrderBy(p => p.FirstName).ThenBy(p => p.LastName)
+                        .ToListAsync(cancellationToken);
+    }
 }

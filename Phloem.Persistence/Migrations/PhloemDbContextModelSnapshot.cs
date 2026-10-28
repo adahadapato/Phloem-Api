@@ -617,6 +617,16 @@ namespace Phloem.Persistence.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<DateTime?>("CourierAssignedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CourierId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CourierName")
+                        .HasMaxLength(101)
+                        .HasColumnType("nvarchar(101)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -715,6 +725,8 @@ namespace Phloem.Persistence.Migrations
                         .IsUnique();
 
                     b.HasIndex("PaymentReference");
+
+                    b.HasIndex("CourierId", "Status");
 
                     b.HasIndex("CustomerId", "PlacedAtUtc");
 
@@ -864,6 +876,16 @@ namespace Phloem.Persistence.Migrations
                     b.Property<DateTime?>("CancelledAtUtc")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("CourierAssignedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CourierId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CourierName")
+                        .HasMaxLength(101)
+                        .HasColumnType("nvarchar(101)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -982,6 +1004,8 @@ namespace Phloem.Persistence.Migrations
 
                     b.HasIndex("TrackingNumber")
                         .IsUnique();
+
+                    b.HasIndex("CourierId", "Status");
 
                     b.HasIndex("SenderId", "CreatedAt");
 
@@ -1699,6 +1723,11 @@ namespace Phloem.Persistence.Migrations
 
             modelBuilder.Entity("Phloem.Domain.Entities.Order", b =>
                 {
+                    b.HasOne("Phloem.Domain.Entities.UserProfile", null)
+                        .WithMany()
+                        .HasForeignKey("CourierId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Phloem.Domain.Entities.UserProfile", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId")
@@ -1711,7 +1740,44 @@ namespace Phloem.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.OwnsOne("Phloem.Domain.ValueObjects.ProofOfDelivery", "DeliveryProof", b1 =>
+                        {
+                            b1.Property<Guid>("OrderId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<DateTime>("CapturedAtUtc")
+                                .HasColumnType("datetime2");
+
+                            b1.Property<Guid>("CourierId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<int>("Handover")
+                                .HasColumnType("int");
+
+                            b1.Property<string>("Note")
+                                .HasMaxLength(300)
+                                .HasColumnType("nvarchar(300)");
+
+                            b1.Property<string>("PhotoPath")
+                                .IsRequired()
+                                .HasMaxLength(300)
+                                .HasColumnType("nvarchar(300)");
+
+                            b1.Property<string>("ReceivedBy")
+                                .HasMaxLength(100)
+                                .HasColumnType("nvarchar(100)");
+
+                            b1.HasKey("OrderId");
+
+                            b1.ToTable("Orders");
+
+                            b1.WithOwner()
+                                .HasForeignKey("OrderId");
+                        });
+
                     b.Navigation("Customer");
+
+                    b.Navigation("DeliveryProof");
                 });
 
             modelBuilder.Entity("Phloem.Domain.Entities.OrderLine", b =>
@@ -1740,6 +1806,11 @@ namespace Phloem.Persistence.Migrations
 
             modelBuilder.Entity("Phloem.Domain.Entities.Shipment", b =>
                 {
+                    b.HasOne("Phloem.Domain.Entities.UserProfile", null)
+                        .WithMany()
+                        .HasForeignKey("CourierId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Phloem.Domain.Entities.UserProfile", "Sender")
                         .WithMany()
                         .HasForeignKey("SenderId")
@@ -1751,6 +1822,43 @@ namespace Phloem.Persistence.Migrations
                         .HasForeignKey("ShipmentRouteId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.OwnsOne("Phloem.Domain.ValueObjects.ProofOfDelivery", "DeliveryProof", b1 =>
+                        {
+                            b1.Property<Guid>("ShipmentId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<DateTime>("CapturedAtUtc")
+                                .HasColumnType("datetime2");
+
+                            b1.Property<Guid>("CourierId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<int>("Handover")
+                                .HasColumnType("int");
+
+                            b1.Property<string>("Note")
+                                .HasMaxLength(300)
+                                .HasColumnType("nvarchar(300)");
+
+                            b1.Property<string>("PhotoPath")
+                                .IsRequired()
+                                .HasMaxLength(300)
+                                .HasColumnType("nvarchar(300)");
+
+                            b1.Property<string>("ReceivedBy")
+                                .HasMaxLength(100)
+                                .HasColumnType("nvarchar(100)");
+
+                            b1.HasKey("ShipmentId");
+
+                            b1.ToTable("Shipments");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ShipmentId");
+                        });
+
+                    b.Navigation("DeliveryProof");
 
                     b.Navigation("Sender");
                 });

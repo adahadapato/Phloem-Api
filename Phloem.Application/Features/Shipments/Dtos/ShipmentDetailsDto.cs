@@ -1,3 +1,4 @@
+using Phloem.Application.Features.Deliveries.Dtos;
 using Phloem.Domain.Entities;
 using Phloem.Domain.Enums;
 
@@ -32,6 +33,8 @@ namespace Phloem.Application.Features.Shipments.Dtos;
 /// <param name="CanCancel">Whether Cancel should show.</param>
 /// <param name="CanPay">Weighed and waiting for payment ("Pay now").</param>
 /// <param name="NeedsRefund">Paid, then cancelled.</param>
+/// <param name="CourierName">Who is delivering it (or delivered it); null until it's out for delivery.</param>
+/// <param name="DeliveryProof">The photo and handover details; null until delivered.</param>
 public sealed record ShipmentDetailsDto(
     string TrackingNumber,
     Country FromCountry,
@@ -60,13 +63,16 @@ public sealed record ShipmentDetailsDto(
     IReadOnlyList<ShipmentEventDto> Timeline,
     bool CanCancel,
     bool CanPay,
-    bool NeedsRefund)
+    bool NeedsRefund,
+    string? CourierName,
+    DeliveryProofDto? DeliveryProof)
 {
     /// <summary>Maps a shipment (with items and timeline).</summary>
     /// <param name="s">The shipment.</param>
     /// <param name="route">Its route, for the drop-off hub; null if the route no longer exists.</param>
+    /// <param name="proof">The proof of delivery with a fresh photo link (DeliveryPhotos.ToDtoAsync); null if none.</param>
     /// <returns>The DTO.</returns>
-    public static ShipmentDetailsDto From(Shipment s, ShipmentRoute? route) => new(
+    public static ShipmentDetailsDto From(Shipment s, ShipmentRoute? route, DeliveryProofDto? proof) => new(
         s.TrackingNumber,
         s.FromCountry,
         s.ToCountry,
@@ -94,5 +100,7 @@ public sealed record ShipmentDetailsDto(
         s.Timeline.Select(ShipmentEventDto.WithNote).ToList(),
         s.CanCancel,
         CanPay: s.Status == ShipmentStatus.ReceivedAtHub,
-        s.NeedsRefund);
+        s.NeedsRefund,
+        s.CourierName,
+        proof);
 }

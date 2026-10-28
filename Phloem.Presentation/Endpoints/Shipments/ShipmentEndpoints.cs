@@ -193,7 +193,31 @@ public static class ShipmentEndpoints
                     (await sender.Send(new UpdateShipmentProgressCommand(trackingNumber, body.NewStatus, body.Note),
                                        ct)).ToHttp())
             .WithName("UpdateShipmentProgress")
-            .WithSummary("Next step of the journey: InTransit, ArrivedInDestination, OutForDelivery or Delivered")
+            .WithSummary("Next step of the journey: InTransit or ArrivedInDestination")
+            .WithDescription("Out for delivery: POST …/out-for-delivery with a courier. Delivered: the courier, with " +
+                             "a photo (POST /api/deliveries/parcels/{trackingNumber}/delivered).")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
+
+        staff.MapPost("/{trackingNumber}/out-for-delivery",
+                async (string trackingNumber, OutForDeliveryRequest body, ISender sender, CancellationToken ct) =>
+                    (await sender.Send(new SendOutShipmentCommand(trackingNumber, body.CourierId, body.Note), ct))
+                        .ToHttp())
+            .WithName("SendOutShipment")
+            .WithSummary("Give an arrived parcel to a courier (ArrivedInDestination → OutForDelivery)")
+            .WithDescription("courierId from GET /api/staff/couriers?country={destination}. The courier is emailed.")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
+
+        staff.MapPut("/{trackingNumber}/courier",
+                async (string trackingNumber, ChangeCourierRequest body, ISender sender, CancellationToken ct) =>
+                    (await sender.Send(new ChangeShipmentCourierCommand(trackingNumber, body.CourierId), ct)).ToHttp())
+            .WithName("ChangeShipmentCourier")
+            .WithSummary("Give a parcel that's out for delivery to another courier")
             .Produces(StatusCodes.Status204NoContent)
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status404NotFound)
@@ -207,4 +231,10 @@ public static class ShipmentEndpoints
 
     /// <summary>Body of "next step" (the parcel comes from the URL). <see cref="Note"/> is optional.</summary>
     public sealed record ProgressRequest(ShipmentStatus NewStatus, string? Note);
+
+    /// <summary>Body of "out for delivery": the courier, and an optional timeline note.</summary>
+    public sealed record OutForDeliveryRequest(Guid CourierId, string? Note);
+
+    /// <summary>Body of "change courier".</summary>
+    public sealed record ChangeCourierRequest(Guid CourierId);
 }

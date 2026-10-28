@@ -17,6 +17,13 @@ public interface IImageProcessor
 
     /// <summary>Profile photos and shop logos: no enhancement; strip GPS, shrink to max ~800 px.</summary>
     Task<Result<ProcessedImage>> ProcessSimpleImageAsync(Stream upload, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Proof-of-delivery photos (a front door, a parcel on a step): upright, shrink to max ~1600 px so details stay
+    /// readable, WebP, ALL metadata removed (the phone's GPS would give away the exact spot). No blur check: a
+    /// slightly soft photo at night is still proof.
+    /// </summary>
+    Task<Result<ProcessedImage>> ProcessDeliveryPhotoAsync(Stream upload, CancellationToken cancellationToken = default);
 }
 
 /// <summary>What the pipeline produces. Streams are owned by the caller: dispose after saving.</summary>

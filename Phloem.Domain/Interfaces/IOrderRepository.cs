@@ -147,4 +147,15 @@ public interface IOrderRepository : IRepository<Order>
     /// <param name="cancellationToken">Cancels the database call.</param>
     Task<int> CountDeclinedForVendorSinceAsync(
         Guid vendorId, DateTime sinceUtc, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Courier → "My deliveries": the orders given to this courier, read-only, with lines. Either the ones still out
+    /// for delivery (oldest first: deliver those first), or the ones they delivered since a time (newest first).
+    /// </summary>
+    /// <param name="courierId">The courier (or a seller delivering their own orders).</param>
+    /// <param name="deliveredSinceUtc">Null = still out for delivery; otherwise delivered since this time.</param>
+    /// <param name="take">How many at most.</param>
+    /// <param name="cancellationToken">Cancels the database call.</param>
+    Task<IReadOnlyList<Order>> GetForCourierAsync(
+        Guid courierId, DateTime? deliveredSinceUtc, int take, CancellationToken cancellationToken = default);
 }

@@ -71,6 +71,12 @@ public sealed class OrderConfiguration : EntityConfiguration<Order>
         builder.Property(o => o.DeclineReason).HasMaxLength(Order.DeclineReasonMaxLength);
         builder.Property(o => o.DeliveredAtUtc);
 
+        // ---------- Courier & proof of delivery ----------
+        builder.HasCourier(o => o.CourierId);
+        builder.Property(o => o.CourierName).HasMaxLength(ProofOfDeliveryMapping.CourierNameMaxLength);
+        builder.Property(o => o.CourierAssignedAtUtc);
+        builder.OwnsOne(o => o.DeliveryProof, proof => proof.MapProofOfDelivery());
+
         // ---------- Lines ----------
         builder.HasMany(o => o.Lines)
                .WithOne()
@@ -91,5 +97,6 @@ public sealed class OrderConfiguration : EntityConfiguration<Order>
         builder.HasIndex(o => new { o.VendorId, o.Status, o.PaidAtUtc });       // shop orders + daily sales
         builder.HasIndex(o => new { o.Status, o.PlacedAtUtc });                 // unpaid orders (weekly price email)
         builder.HasIndex(o => o.PaymentReference);                              // payment callbacks look orders up by it
+        builder.HasIndex(o => new { o.CourierId, o.Status });                   // courier → "My deliveries"
     }
 }

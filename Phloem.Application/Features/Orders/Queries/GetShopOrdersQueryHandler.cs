@@ -55,7 +55,9 @@ public sealed class GetShopOrdersQueryHandler(
             o.DeliveryLabel,
             o.DeliveryAddressLine,
             o.DeliveryRecipientName ?? names.GetValueOrDefault(o.CustomerId, UnknownUser),
-            o.DeliveryPhone ?? phones.GetValueOrDefault(o.CustomerId))).ToList();
+            o.DeliveryPhone ?? phones.GetValueOrDefault(o.CustomerId),
+            o.CourierName,
+            DeliveringMyself: o.CourierId == userId)).ToList();
 
         return new PagedResult<ShopOrderSummaryDto>(items, paged.TotalCount, paged.Page, paged.PageSize);
     }

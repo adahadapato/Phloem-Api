@@ -232,7 +232,7 @@ jobs:
           # --------------------------------------------------------
           # Phloem Email
           #
-          # no-reply@phloem.app
+          # no-reply@phloemmarket.com (IONOS: smtp.ionos.co.uk:587, StartTls)
           #     Sends every system email; replies go to the
           #     Support / Sellers / Shipping addresses.
           # --------------------------------------------------------

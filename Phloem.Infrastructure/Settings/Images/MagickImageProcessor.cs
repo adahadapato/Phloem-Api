@@ -115,6 +115,34 @@ internal sealed class MagickImageProcessor(IOptions<ImageSettings> options, ILog
         return new ProcessedImage(full, null, OutputContentType, dimensions, full.Length, Hash(full));
     }
 
+    /// <inheritdoc />
+    /// <remarks>
+    /// Read (≤ limit) → check format → decode (upright, metadata removed) → white behind transparency → shrink so the
+    /// longest side ≤ <see cref="ImageSettings.DeliveryPhotoMaxSide"/> (never enlarged) → WebP → SHA-256.
+    /// </remarks>
+    public async Task<Result<ProcessedImage>> ProcessDeliveryPhotoAsync(Stream upload,
+                                                                       CancellationToken cancellationToken = default)
+    {
+        var settings = options.Value;
+
+        var bytes = await ReadLimitedAsync(upload, settings.MaxDeliveryPhotoBytes, cancellationToken);
+        if (bytes is null) return ImageErrors.TooLarge(settings.MaxDeliveryPhotoBytes);
+
+        var decoded = Decode(bytes);
+        if (decoded.IsFailure) return decoded.Error;
+
+        using var original = decoded.Value;
+        using var image = OnWhite(original);
+        var maxSide = (uint)settings.DeliveryPhotoMaxSide;
+        if (image.Width > maxSide || image.Height > maxSide)
+            image.Resize(new MagickGeometry(maxSide, maxSide));                // fits inside, keeps the shape
+
+        var full = Encode(image, settings.WebpQuality);
+        var dimensions = ImageDimensions.Create((int)image.Width, (int)image.Height);
+
+        return new ProcessedImage(full, null, OutputContentType, dimensions, full.Length, Hash(full));
+    }
+
     // =====================================================================
     // Steps
     // =====================================================================

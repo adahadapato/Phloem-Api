@@ -19,6 +19,8 @@ namespace Phloem.Application.Features.Orders.Dtos;
 /// <param name="DeliveryAddress">Full delivery address.</param>
 /// <param name="DeliveryRecipientName">Who receives it (the address's name, else the customer's).</param>
 /// <param name="DeliveryPhone">Who to call (the address's phone, else the customer's); null if neither.</param>
+/// <param name="CourierName">Who is delivering it; null until it's sent out.</param>
+/// <param name="DeliveringMyself">The seller is delivering it themselves (show "Delivered", which takes a photo).</param>
 public sealed record ShopOrderSummaryDto(
     string OrderNumber,
     string CustomerName,
@@ -32,4 +34,6 @@ public sealed record ShopOrderSummaryDto(
     string DeliveryLabel,
     string DeliveryAddress,
     string DeliveryRecipientName,
-    string? DeliveryPhone);
+    string? DeliveryPhone,
+    string? CourierName,
+    bool DeliveringMyself);

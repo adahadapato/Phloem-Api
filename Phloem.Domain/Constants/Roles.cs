@@ -24,17 +24,23 @@ public static class Roles
     public const string SupportAgent = "SupportAgent";
 
     /// <summary>
+    /// Delivers food orders and parcels in their own country: sees "My deliveries" and marks each one delivered with
+    /// a photo. Sellers and parcel staff pick a courier when an order or parcel goes out for delivery.
+    /// </summary>
+    public const string Courier = "Courier";
+
+    /// <summary>
     /// The roles an admin can give or take on Admin → Users. Customer (everyone has it) and Seller (it follows the
     /// person's shop: given on approval, removed when the shop is blocked or closed) aren't in it.
     /// </summary>
     public static readonly IReadOnlyList<string> Assignable =
     [
-        Admin, CatalogManager, ShipmentManager, SupportAgent
+        Admin, CatalogManager, ShipmentManager, SupportAgent, Courier
     ];
 
     /// <summary>All roles, for seeding.</summary>
     public static readonly IReadOnlyList<string> All =
     [
-        Admin, Customer, Seller, CatalogManager, ShipmentManager, SupportAgent
+        Admin, Customer, Seller, CatalogManager, ShipmentManager, SupportAgent, Courier
     ];
 }

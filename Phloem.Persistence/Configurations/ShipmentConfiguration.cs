@@ -81,6 +81,12 @@ public sealed class ShipmentConfiguration : EntityConfiguration<Shipment>
         builder.Property(s => s.DeliveredAtUtc);
         builder.Property(s => s.CancelledAtUtc);
 
+        // ---------- Courier & proof of delivery ----------
+        builder.HasCourier(s => s.CourierId);
+        builder.Property(s => s.CourierName).HasMaxLength(ProofOfDeliveryMapping.CourierNameMaxLength);
+        builder.Property(s => s.CourierAssignedAtUtc);
+        builder.OwnsOne(s => s.DeliveryProof, proof => proof.MapProofOfDelivery());
+
         // ---------- Items & timeline ----------
         builder.HasMany(s => s.Items)
                .WithOne()
@@ -111,5 +117,6 @@ public sealed class ShipmentConfiguration : EntityConfiguration<Shipment>
         builder.HasIndex(s => new { s.SenderId, s.CreatedAt });                                 // "My shipments"
         builder.HasIndex(s => new { s.Status, s.FromCountry, s.ToCountry, s.CreatedAt });       // staff list + filters
         builder.HasIndex(s => s.PaymentReference);                                              // payment callbacks
+        builder.HasIndex(s => new { s.CourierId, s.Status });                                   // courier → "My deliveries"
     }
 }

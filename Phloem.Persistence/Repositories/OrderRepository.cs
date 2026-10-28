@@ -232,6 +232,22 @@ internal sealed class OrderRepository(PhloemDbContext context)
                 .ToListAsync(cancellationToken);
 
     /// <inheritdoc />
+    /// <remarks>Read-only, with lines (for "Jollof Rice ×2" on the delivery card).</remarks>
+    public async Task<IReadOnlyList<Order>> GetForCourierAsync(Guid courierId, DateTime? deliveredSinceUtc, int take,
+                                                               CancellationToken cancellationToken = default)
+    {
+        var query = WithChildren(Set.AsNoTracking()).Where(o => o.CourierId == courierId);
+
+        query = deliveredSinceUtc is { } since
+            ? query.Where(o => o.Status == OrderStatus.Delivered && o.DeliveredAtUtc >= since)
+                   .OrderByDescending(o => o.DeliveredAtUtc)
+            : query.Where(o => o.Status == OrderStatus.OutForDelivery)
+                   .OrderBy(o => o.CourierAssignedAtUtc);
+
+        return await query.Take(take).ToListAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
     public Task<int> CountDeclinedForVendorSinceAsync(Guid vendorId, DateTime sinceUtc,
                                                       CancellationToken cancellationToken = default) =>
         Set.AsNoTracking()

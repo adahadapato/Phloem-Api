@@ -1,4 +1,6 @@
 using MediatR;
+using Phloem.Application.Features.Deliveries.Dtos;
+using Phloem.Application.Features.Deliveries.Queries;
 using Phloem.Application.Features.Dishes.Dtos;
 using Phloem.Application.Features.Orders.Commands;
 using Phloem.Application.Features.Orders.Dtos;
@@ -14,8 +16,9 @@ namespace Phloem.Presentation.Endpoints.Orders;
 /// <list type="number">
 ///   <item><description><b>Buyers</b> (<c>/api/orders</c>): check the basket, place orders, pay, follow and cancel
 ///   them. Checking the basket works for guests; everything else needs sign-in.</description></item>
-///   <item><description><b>My shop</b> (<c>/api/shops/mine/orders</c>): the seller's incoming orders: accept, send out,
-///   mark delivered. "mine" comes from the token, never the URL.</description></item>
+///   <item><description><b>My shop</b> (<c>/api/shops/mine/orders</c>): the seller's incoming orders: accept, decline,
+///   send out with a courier (or themselves), change the courier. "mine" comes from the token, never the URL.
+///   "Delivered" is done by the courier, with a photo (<c>/api/deliveries</c>).</description></item>
 /// </list>
 /// </summary>
 /// <remarks>
@@ -210,27 +213,45 @@ public static class OrderEndpoints
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict);
 
-        shopOrders.MapPost("/{orderNumber}/send-out", async (string orderNumber, ISender sender,
-                                                             CancellationToken ct) =>
-                (await sender.Send(new SendOutOrderCommand(orderNumber), ct)).ToHttp())
+        shopOrders.MapPost("/{orderNumber}/send-out", async (string orderNumber, CourierRequest? body,
+                                                             ISender sender, CancellationToken ct) =>
+                (await sender.Send(new SendOutOrderCommand(orderNumber, body?.CourierId), ct)).ToHttp())
             .WithName("SendOutShopOrder")
-            .WithSummary("The order has left the kitchen (Preparing → OutForDelivery)")
+            .WithSummary("The order has left the kitchen with a courier (Preparing → OutForDelivery)")
+            .WithDescription("courierId from GET /api/shops/mine/couriers; leave it out (or send my own Id) to " +
+                             "deliver it myself. The courier marks it delivered with a photo.")
             .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict);
 
-        shopOrders.MapPost("/{orderNumber}/delivered", async (string orderNumber, ISender sender,
-                                                              CancellationToken ct) =>
-                (await sender.Send(new MarkOrderDeliveredCommand(orderNumber), ct)).ToHttp())
-            .WithName("MarkShopOrderDelivered")
-            .WithSummary("Delivered (OutForDelivery → Delivered): commission taken, earnings added to my balance")
+        shopOrders.MapPut("/{orderNumber}/courier", async (string orderNumber, CourierRequest body, ISender sender,
+                                                           CancellationToken ct) =>
+                (await sender.Send(new ChangeOrderCourierCommand(orderNumber, body.CourierId), ct)).ToHttp())
+            .WithName("ChangeShopOrderCourier")
+            .WithSummary("Give an order that's out for delivery to another courier (null = I'll deliver it myself)")
             .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict);
+
+        // ───────────────────────────── 3. Couriers ─────────────────────────────
+
+        api.MapGet("/shops/mine/couriers", async (ISender sender, CancellationToken ct) =>
+                (await sender.Send(new GetShopCouriersQuery(), ct)).ToHttp())
+            .RequireAuthorization()
+            .WithTags("My shop orders")
+            .WithName("GetMyShopCouriers")
+            .WithSummary("Who can deliver my orders: me first (\"I'll deliver it myself\"), then couriers in my country")
+            .Produces<IReadOnlyList<CourierOptionDto>>()
+            .ProducesProblem(StatusCodes.Status404NotFound);
     }
 
     // ═════════════════════════════ Request bodies ═════════════════════════════
 
     /// <summary>Body of "decline" (the order comes from the URL): why, shown to the buyer.</summary>
     public sealed record DeclineRequest(string Reason);
+
+    /// <summary>Body of "send out" / "change courier": the courier; null = the seller delivers it.</summary>
+    public sealed record CourierRequest(Guid? CourierId);
 }

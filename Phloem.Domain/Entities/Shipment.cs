@@ -20,7 +20,8 @@ namespace Phloem.Domain.Entities;
 ///   <item><see cref="ReceiveAtHub"/>: staff weigh it; the FINAL price is set from the real weight.</item>
 ///   <item><see cref="MarkPaid"/>: the sender pays the final price.</item>
 ///   <item><see cref="MarkInTransit"/> → <see cref="MarkArrivedInDestination"/> →
-///   <see cref="MarkOutForDelivery"/> → <see cref="MarkDelivered"/> (ShipmentManager staff).</item>
+///   <see cref="MarkOutForDelivery"/> (ShipmentManager staff, who choose a courier) → <see cref="MarkDelivered"/>
+///   (that courier, with a photo: <see cref="DeliveryProof"/>).</item>
 /// </list></para>
 ///
 /// <para><b>Cancelling:</b> allowed until it's in transit. If it was paid, <see cref="NeedsRefund"/>.</para>
@@ -183,6 +184,20 @@ public class Shipment : Entity<Guid>
 
     /// <summary>When it was cancelled; null if not cancelled.</summary>
     public DateTime? CancelledAtUtc { get; private set; }
+
+    // ---------- Delivery (courier) ----------
+
+    /// <summary>The courier delivering it in the destination country; null until it's out for delivery.</summary>
+    public Guid? CourierId { get; private set; }
+
+    /// <summary>Snapshot of the courier's name; null until it's out for delivery.</summary>
+    public string? CourierName { get; private set; }
+
+    /// <summary>When the current courier was given the parcel; null until it's out for delivery.</summary>
+    public DateTime? CourierAssignedAtUtc { get; private set; }
+
+    /// <summary>The photo and handover details recorded on delivery; null until delivered.</summary>
+    public ProofOfDelivery? DeliveryProof { get; private set; }
 
     /// <summary>The tracking timeline, oldest first.</summary>
     public virtual IReadOnlyCollection<ShipmentEvent> Timeline => _timeline.OrderBy(e => e.OccurredAtUtc).ToList();
@@ -356,22 +371,64 @@ public class Shipment : Entity<Guid>
     public Result MarkArrivedInDestination(DateTime utcNow, string? note = null) =>
         MoveTo(ShipmentStatus.ArrivedInDestination, ShipmentStatus.InTransit, utcNow, note);
 
-    /// <summary>With the local courier (ArrivedInDestination → OutForDelivery).</summary>
+    /// <summary>With a local courier (ArrivedInDestination → OutForDelivery).</summary>
+    /// <param name="courierId">The courier (the Application layer checked the role and country).</param>
+    /// <param name="courierName">Their name, kept as a snapshot.</param>
     /// <param name="utcNow">The current time.</param>
-    /// <param name="note">Optional detail.</param>
+    /// <param name="note">Optional detail; the timeline says "With our courier, {name}" when blank.</param>
     /// <returns>Success; or <see cref="ShipmentErrors.InvalidStatusChange"/>.</returns>
-    public Result MarkOutForDelivery(DateTime utcNow, string? note = null) =>
-        MoveTo(ShipmentStatus.OutForDelivery, ShipmentStatus.ArrivedInDestination, utcNow, note);
-
-    /// <summary>Delivered to the recipient (OutForDelivery → Delivered).</summary>
-    /// <param name="utcNow">The current time.</param>
-    /// <param name="note">Optional detail, e.g. "Signed for by A. Mensah".</param>
-    /// <returns>Success; or <see cref="ShipmentErrors.InvalidStatusChange"/>.</returns>
-    public Result MarkDelivered(DateTime utcNow, string? note = null)
+    /// <exception cref="ArgumentException">Empty courier Id or blank name.</exception>
+    public Result MarkOutForDelivery(Guid courierId, string courierName, DateTime utcNow, string? note = null)
     {
-        var moved = MoveTo(ShipmentStatus.Delivered, ShipmentStatus.OutForDelivery, utcNow, note);
-        if (moved.IsSuccess) DeliveredAtUtc = utcNow;
-        return moved;
+        CheckCourier(courierId, courierName);
+
+        var text = string.IsNullOrWhiteSpace(note) ? CourierNote(courierName) : note;
+        var moved = MoveTo(ShipmentStatus.OutForDelivery, ShipmentStatus.ArrivedInDestination, utcNow, text);
+        if (moved.IsFailure) return moved;
+
+        SetCourier(courierId, courierName, utcNow);
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Gives a parcel that's out for delivery to another courier (recorded in the timeline). The same courier again
+    /// changes nothing.
+    /// </summary>
+    /// <param name="courierId">The new courier.</param>
+    /// <param name="courierName">Their name.</param>
+    /// <param name="utcNow">The current time.</param>
+    /// <returns>Success; or <see cref="DeliveryErrors.NotOutForDelivery"/>.</returns>
+    /// <exception cref="ArgumentException">Empty courier Id or blank name.</exception>
+    public Result ChangeCourier(Guid courierId, string courierName, DateTime utcNow)
+    {
+        CheckCourier(courierId, courierName);
+        if (Status != ShipmentStatus.OutForDelivery) return DeliveryErrors.NotOutForDelivery;
+        if (CourierId == courierId) return Result.Success();
+
+        SetCourier(courierId, courierName, utcNow);
+        AddEvent(Status, utcNow, CourierNote(courierName));
+        return Result.Success();
+    }
+
+    /// <summary>The courier delivered it, with a photo (OutForDelivery → Delivered).</summary>
+    /// <param name="proof">The photo and handover details, taken by THIS parcel's courier.</param>
+    /// <returns>
+    /// Success; or <see cref="DeliveryErrors.NotYourDelivery"/> (someone other than the courier),
+    /// <see cref="ShipmentErrors.InvalidStatusChange"/>.
+    /// </returns>
+    /// <remarks>The timeline step says how it was handed over, e.g. "Left at the front door".</remarks>
+    /// <exception cref="ArgumentNullException">No proof: a photo is always required.</exception>
+    public Result MarkDelivered(ProofOfDelivery proof)
+    {
+        ArgumentNullException.ThrowIfNull(proof);
+        if (CourierId != proof.CourierId) return DeliveryErrors.NotYourDelivery;
+
+        var moved = MoveTo(ShipmentStatus.Delivered, ShipmentStatus.OutForDelivery, proof.CapturedAtUtc, proof.Describe());
+        if (moved.IsFailure) return moved;
+
+        DeliveryProof = proof;
+        DeliveredAtUtc = proof.CapturedAtUtc;
+        return Result.Success();
     }
 
     // =====================================================================
@@ -409,6 +466,28 @@ public class Shipment : Entity<Guid>
 
     private void AddEvent(ShipmentStatus status, DateTime utcNow, string? note) =>
         _timeline.Add(new ShipmentEvent(Id, status, utcNow, note));
+
+    /// <exception cref="ArgumentException">Empty courier Id or blank name.</exception>
+    private static void CheckCourier(Guid courierId, string courierName)
+    {
+        if (courierId == Guid.Empty) throw new ArgumentException("A courier is required.", nameof(courierId));
+        ArgumentException.ThrowIfNullOrWhiteSpace(courierName);
+    }
+
+    private void SetCourier(Guid courierId, string courierName, DateTime utcNow)
+    {
+        var name = courierName.Trim();
+        CourierId = courierId;
+        CourierName = name.Length <= UserProfile.FullNameMaxLength ? name : name[..UserProfile.FullNameMaxLength];
+        CourierAssignedAtUtc = utcNow;
+    }
+
+    /// <summary>"With our courier, Kwame Asante" (cut to fit a timeline note).</summary>
+    private static string CourierNote(string courierName)
+    {
+        var note = $"With our courier, {courierName.Trim()}";
+        return note.Length <= ShipmentEvent.NoteMaxLength ? note : note[..ShipmentEvent.NoteMaxLength];
+    }
 
     /// <exception cref="ArgumentOutOfRangeException">Weight outside <see cref="MinWeightKg"/>–<see cref="MaxWeightKg"/>.</exception>
     private static void CheckWeight(decimal weightKg)

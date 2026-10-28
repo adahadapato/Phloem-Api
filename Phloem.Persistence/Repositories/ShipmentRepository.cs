@@ -62,4 +62,20 @@ internal sealed class ShipmentRepository(PhloemDbContext context)
 
         return ToPagedAsync(query.OrderByDescending(s => s.CreatedAt), page, cancellationToken);
     }
+
+    /// <inheritdoc />
+    /// <remarks>Read-only, with items and timeline.</remarks>
+    public async Task<IReadOnlyList<Shipment>> GetForCourierAsync(Guid courierId, DateTime? deliveredSinceUtc, int take,
+                                                                  CancellationToken cancellationToken = default)
+    {
+        var query = WithChildren(Set.AsNoTracking()).Where(s => s.CourierId == courierId);
+
+        query = deliveredSinceUtc is { } since
+            ? query.Where(s => s.Status == ShipmentStatus.Delivered && s.DeliveredAtUtc >= since)
+                   .OrderByDescending(s => s.DeliveredAtUtc)
+            : query.Where(s => s.Status == ShipmentStatus.OutForDelivery)
+                   .OrderBy(s => s.CourierAssignedAtUtc);
+
+        return await query.Take(take).ToListAsync(cancellationToken);
+    }
 }

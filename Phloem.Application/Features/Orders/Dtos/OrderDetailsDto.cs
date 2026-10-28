@@ -1,4 +1,5 @@
-﻿using Phloem.Domain.Enums;
+﻿using Phloem.Application.Features.Deliveries.Dtos;
+using Phloem.Domain.Enums;
 
 namespace Phloem.Application.Features.Orders.Dtos;
 
@@ -30,6 +31,10 @@ namespace Phloem.Application.Features.Orders.Dtos;
 /// <param name="DeclineReason">The shop's reason, when <paramref name="DeclinedByShop"/>.</param>
 /// <param name="DeliveryRecipientName">Who receives it (the address's name, else the customer's).</param>
 /// <param name="DeliveryPhone">Who the seller calls (the address's phone, else the customer's); null if neither.</param>
+/// <param name="CourierName">Who is delivering it (or delivered it); null until it's sent out.</param>
+/// <param name="DeliveryProof">The photo and handover details; null until delivered.</param>
+/// <param name="CanMarkDelivered">The viewer is this order's courier and it's out for delivery (the seller delivering
+/// it themselves): show "Delivered" (take a photo).</param>
 public sealed record OrderDetailsDto(
     string OrderNumber,
     string ShopName,
@@ -54,4 +59,7 @@ public sealed record OrderDetailsDto(
     bool DeclinedByShop,
     string? DeclineReason,
     string DeliveryRecipientName,
-    string? DeliveryPhone);
+    string? DeliveryPhone,
+    string? CourierName,
+    DeliveryProofDto? DeliveryProof,
+    bool CanMarkDelivered);

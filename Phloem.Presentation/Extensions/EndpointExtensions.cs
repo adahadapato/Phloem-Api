@@ -4,6 +4,7 @@ using Phloem.Presentation.Endpoints.ContactUs;
 using Phloem.Presentation.Endpoints.Legal;
 using Phloem.Presentation.Endpoints.ParcelItemRules;
 using Phloem.Presentation.Endpoints.Countries;
+using Phloem.Presentation.Endpoints.Deliveries;
 using Phloem.Presentation.Endpoints.DeliveryPricings;
 using Phloem.Presentation.Endpoints.DishCatalogs;
 using Phloem.Presentation.Endpoints.Dishes;
@@ -44,6 +45,7 @@ public static class EndpointExtensions
         api.MapLegalEndpoints();             // /api/legal            + /api/admin/legal
         api.MapParcelItemRuleEndpoints();    // /api/parcel-rules     + /api/admin/parcel-rules
         api.MapContactEndpoints();           // /api/contact          + /api/admin/contact-messages
+        api.MapDeliveryEndpoints();          // /api/deliveries       + /api/staff/couriers
 
         // 2. Private documents through signed links, e.g. /private-files/…?expires=…&sig=… (not in Swagger)
         app.MapPrivateFiles();

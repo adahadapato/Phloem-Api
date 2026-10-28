@@ -28,6 +28,14 @@ public sealed class ImageSettings
     [Range(100, 4000)]
     public int SimpleImageMaxSide { get; set; } = 800;
 
+    /// <summary>Largest proof-of-delivery photo upload in bytes (default 10 MB: phone cameras take big photos).</summary>
+    [Range(1, 50 * 1024 * 1024)]
+    public long MaxDeliveryPhotoBytes { get; set; } = 10 * 1024 * 1024;
+
+    /// <summary>Proof-of-delivery photos are shrunk so their longest side is at most this (default 1600 px).</summary>
+    [Range(400, 4000)]
+    public int DeliveryPhotoMaxSide { get; set; } = 1600;
+
     /// <summary>WebP quality 1–100 (default 82: visually clean, small files).</summary>
     [Range(1, 100)]
     public int WebpQuality { get; set; } = 82;

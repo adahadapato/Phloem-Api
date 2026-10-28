@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Phloem.Domain.Enums;
 using Phloem.Domain.Interfaces;
 using Phloem.Domain.Shared.Errors;
@@ -29,8 +29,6 @@ public sealed class UpdateShipmentProgressCommandHandler(
         {
             ShipmentStatus.InTransit => shipment.MarkInTransit(now, command.Note),
             ShipmentStatus.ArrivedInDestination => shipment.MarkArrivedInDestination(now, command.Note),
-            ShipmentStatus.OutForDelivery => shipment.MarkOutForDelivery(now, command.Note),
-            ShipmentStatus.Delivered => shipment.MarkDelivered(now, command.Note),
             _ => throw new InvalidOperationException($"{command.NewStatus} isn't a journey step.")
         };
         if (moved.IsFailure) return moved;

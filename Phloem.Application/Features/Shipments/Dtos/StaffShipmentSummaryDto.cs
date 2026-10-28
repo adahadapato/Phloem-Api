@@ -21,6 +21,7 @@ namespace Phloem.Application.Features.Shipments.Dtos;
 /// <param name="Price">Final price once weighed, otherwise the estimate.</param>
 /// <param name="Currency">Origin currency.</param>
 /// <param name="BookedAt">When booked (UTC).</param>
+/// <param name="CourierName">Who is delivering it (or delivered it); null until it's out for delivery.</param>
 public sealed record StaffShipmentSummaryDto(
     string TrackingNumber,
     Country FromCountry,
@@ -34,7 +35,8 @@ public sealed record StaffShipmentSummaryDto(
     decimal? WeighedWeightKg,
     decimal Price,
     Currency Currency,
-    DateTime BookedAt)
+    DateTime BookedAt,
+    string? CourierName)
 {
     /// <summary>Maps a shipment (with items).</summary>
     /// <param name="s">The shipment.</param>
@@ -52,5 +54,6 @@ public sealed record StaffShipmentSummaryDto(
         s.WeighedWeightKg,
         s.FinalPrice ?? s.EstimatedPrice,
         s.Currency,
-        s.CreatedAt);
+        s.CreatedAt,
+        s.CourierName);
 }

@@ -395,6 +395,12 @@ public static class AppSettings
         /// <summary>Longest side for profile photos / logos, in pixels.</summary>
         public const string SimpleImageMaxSide = "Images:SimpleImageMaxSide";
 
+        /// <summary>Largest proof-of-delivery photo upload in bytes.</summary>
+        public const string MaxDeliveryPhotoBytes = "Images:MaxDeliveryPhotoBytes";
+
+        /// <summary>Longest side for proof-of-delivery photos, in pixels.</summary>
+        public const string DeliveryPhotoMaxSide = "Images:DeliveryPhotoMaxSide";
+
         /// <summary>WebP quality, 1–100.</summary>
         public const string WebpQuality = "Images:WebpQuality";
 

@@ -58,4 +58,19 @@ internal sealed class UserRoleService(UserManager<ApplicationUser> users) : IUse
         var user = await users.FindByIdAsync(userId.ToString());
         return user is null ? [] : (await users.GetRolesAsync(user)).ToArray();
     }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyCollection<Guid>> GetUserIdsInRoleAsync(string role, CancellationToken ct = default)
+    {
+        if (!Roles.All.Contains(role)) return [];
+        return (await users.GetUsersInRoleAsync(role)).Select(u => u.Id).ToArray();
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> IsInRoleAsync(Guid userId, string role, CancellationToken ct = default)
+    {
+        if (!Roles.All.Contains(role)) return false;
+        var user = await users.FindByIdAsync(userId.ToString());
+        return user is not null && await users.IsInRoleAsync(user, role);
+    }
 }

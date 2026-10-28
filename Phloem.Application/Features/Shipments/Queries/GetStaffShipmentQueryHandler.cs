@@ -1,4 +1,5 @@
 using MediatR;
+using Phloem.Application.Features.Deliveries.Common;
 using Phloem.Application.Features.Shipments.Dtos;
 using Phloem.Domain.Interfaces;
 using Phloem.Domain.Shared.Errors;
@@ -7,7 +8,8 @@ using Phloem.Domain.Shared.Results;
 namespace Phloem.Application.Features.Shipments.Queries;
 
 /// <summary>Handles <see cref="GetStaffShipmentQuery"/>.</summary>
-public sealed class GetStaffShipmentQueryHandler(IShipmentRepository shipments, IShipmentRouteRepository routes)
+public sealed class GetStaffShipmentQueryHandler(IShipmentRepository shipments, IShipmentRouteRepository routes,
+                                          DeliveryPhotos photos)
     : IRequestHandler<GetStaffShipmentQuery, Result<ShipmentDetailsDto>>
 {
     /// <summary>Any shipment's full details.</summary>
@@ -20,6 +22,7 @@ public sealed class GetStaffShipmentQueryHandler(IShipmentRepository shipments, 
         if (shipment is null) return ShipmentErrors.NotFound;
 
         var route = await routes.GetByIdAsync(shipment.ShipmentRouteId, ct);
-        return ShipmentDetailsDto.From(shipment, route);
+        var proof = await photos.ToDtoAsync(shipment.DeliveryProof, shipment.CourierName, ct);
+        return ShipmentDetailsDto.From(shipment, route, proof);
     }
 }

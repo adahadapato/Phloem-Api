@@ -21,7 +21,8 @@ internal static class ApplicationRoleSeeder
         [Roles.Seller] = "Runs an approved shop: dishes, prices and orders",
         [Roles.CatalogManager] = "Reviews dish-name suggestions and edits the dish list",
         [Roles.ShipmentManager] = "Receives parcels at the hub and moves them along their journey",
-        [Roles.SupportAgent] = "Looks up orders and users, and cancels orders for customers"
+        [Roles.SupportAgent] = "Looks up orders and users, and cancels orders for customers",
+        [Roles.Courier] = "Delivers food orders and parcels, with a photo as proof of delivery"
     };
 
     /// <summary>Creates the missing roles.</summary>

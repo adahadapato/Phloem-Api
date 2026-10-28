@@ -2,6 +2,7 @@
 using Phloem.Domain.Models;
 using Phloem.Domain.Shared.Errors;
 using Phloem.Domain.Shared.Results;
+using Phloem.Domain.ValueObjects;
 
 namespace Phloem.Domain.Entities;
 
@@ -21,7 +22,8 @@ namespace Phloem.Domain.Entities;
 ///   <item><see cref="PrepareForPayment"/>: "Pay" tapped. Prices are refreshed to today's and
 ///   out-of-stock lines are dropped. The total is now what the customer will be charged.</item>
 ///   <item><see cref="MarkPaid"/>: the payment provider confirmed. The seller now sees the order.</item>
-///   <item><see cref="StartPreparing"/> → <see cref="SendOut"/> → <see cref="MarkDelivered"/>.</item>
+///   <item><see cref="StartPreparing"/> → <see cref="SendOut"/> (with a courier, or the seller themselves) →
+///   <see cref="MarkDelivered"/> by that courier, with a photo (<see cref="DeliveryProof"/>).</item>
 /// </list></para>
 ///
 /// <para><b>Cancelling.</b> Unpaid: any time. Paid: within <see cref="CancelWindow"/> of payment,
@@ -157,6 +159,23 @@ public class Order : Entity<Guid>
 
     /// <summary>When the order was delivered; null until then.</summary>
     public DateTime? DeliveredAtUtc { get; private set; }
+
+    // ---------- Delivery (courier) ----------
+
+    /// <summary>
+    /// Who is delivering it (a user with the Courier role, or the seller delivering it themselves); null until it's
+    /// sent out.
+    /// </summary>
+    public Guid? CourierId { get; private set; }
+
+    /// <summary>Snapshot of the courier's name, shown to the customer ("Kwame is on his way"); null until sent out.</summary>
+    public string? CourierName { get; private set; }
+
+    /// <summary>When the current courier was given the order; null until sent out.</summary>
+    public DateTime? CourierAssignedAtUtc { get; private set; }
+
+    /// <summary>The photo and handover details recorded on delivery; null until delivered.</summary>
+    public ProofOfDelivery? DeliveryProof { get; private set; }
 
     /// <summary>
     /// What Phloem kept from the dishes, worked out when the order was delivered (snapshot).
@@ -442,28 +461,68 @@ public class Order : Entity<Guid>
     /// <returns>Success; or <see cref="OrderErrors.InvalidStatusChange"/>.</returns>
     public Result StartPreparing() => MoveTo(OrderStatus.Preparing, from: OrderStatus.Paid);
 
-    /// <summary>The order leaves the kitchen (Preparing → OutForDelivery).</summary>
+    /// <summary>The order leaves the kitchen with its courier (Preparing → OutForDelivery).</summary>
+    /// <param name="courierId">The courier (the Application layer checked the role and country), or the seller.</param>
+    /// <param name="courierName">Their name, kept as a snapshot.</param>
+    /// <param name="utcNow">The current time.</param>
     /// <returns>Success; or <see cref="OrderErrors.InvalidStatusChange"/>.</returns>
-    public Result SendOut() => MoveTo(OrderStatus.OutForDelivery, from: OrderStatus.Preparing);
+    /// <exception cref="ArgumentException">Empty courier Id or blank name.</exception>
+    public Result SendOut(Guid courierId, string courierName, DateTime utcNow)
+    {
+        CheckCourier(courierId, courierName);
+
+        var moved = MoveTo(OrderStatus.OutForDelivery, from: OrderStatus.Preparing);
+        if (moved.IsFailure) return moved;
+
+        SetCourier(courierId, courierName, utcNow);
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Gives an order that's already out for delivery to another courier (e.g. the first one's bike broke down).
+    /// Giving it to the same courier again changes nothing.
+    /// </summary>
+    /// <param name="courierId">The new courier.</param>
+    /// <param name="courierName">Their name.</param>
+    /// <param name="utcNow">The current time.</param>
+    /// <returns>Success; or <see cref="DeliveryErrors.NotOutForDelivery"/>.</returns>
+    /// <exception cref="ArgumentException">Empty courier Id or blank name.</exception>
+    public Result ChangeCourier(Guid courierId, string courierName, DateTime utcNow)
+    {
+        CheckCourier(courierId, courierName);
+        if (Status != OrderStatus.OutForDelivery) return DeliveryErrors.NotOutForDelivery;
+        if (CourierId == courierId) return Result.Success();
+
+        SetCourier(courierId, courierName, utcNow);
+        return Result.Success();
+    }
 
 
     /// <summary>
-    /// The order arrived (OutForDelivery → Delivered). Works out and stores the commission and the
-    /// seller's earnings; the Application layer then credits <see cref="SellerEarnings"/> to the shop.
+    /// The courier delivered it, with a photo (OutForDelivery → Delivered). Stores the proof, and works out the
+    /// commission and the seller's earnings; the Application layer then credits <see cref="SellerEarnings"/> to the shop.
     /// </summary>
-    /// <param name="utcNow">The current time.</param>
+    /// <param name="proof">The photo and handover details, taken by THIS order's courier.</param>
     /// <param name="commission">The country's rate; null = no rate set (0%).</param>
-    /// <returns>Success; or <see cref="OrderErrors.InvalidStatusChange"/>.</returns>
+    /// <returns>
+    /// Success; or <see cref="DeliveryErrors.NotYourDelivery"/> (someone other than the courier),
+    /// <see cref="OrderErrors.InvalidStatusChange"/>.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">No proof: a photo is always required.</exception>
     /// <exception cref="InvalidOperationException">The rate is for a different country (a bug).</exception>
-    public Result MarkDelivered(DateTime utcNow, Commission? commission)
+    public Result MarkDelivered(ProofOfDelivery proof, Commission? commission)
     {
+        ArgumentNullException.ThrowIfNull(proof);
         if (commission is not null && commission.Country != DeliveryCountry)
             throw new InvalidOperationException($"This commission is for {commission.Country}, not {DeliveryCountry}.");
+
+        if (CourierId != proof.CourierId) return DeliveryErrors.NotYourDelivery;
 
         var moved = MoveTo(OrderStatus.Delivered, from: OrderStatus.OutForDelivery);
         if (moved.IsFailure) return moved;
 
-        DeliveredAtUtc = utcNow;
+        DeliveryProof = proof;
+        DeliveredAtUtc = proof.CapturedAtUtc;
         CommissionAmount = commission?.AmountOn(Subtotal) ?? 0m;
         SellerEarnings = Total - CommissionAmount;
         return Result.Success();
@@ -484,6 +543,21 @@ public class Order : Entity<Guid>
     }
 
     private void RecalculateSubtotal() => Subtotal = _lines.Sum(l => l.LineTotal);
+
+    /// <exception cref="ArgumentException">Empty courier Id or blank name.</exception>
+    private static void CheckCourier(Guid courierId, string courierName)
+    {
+        if (courierId == Guid.Empty) throw new ArgumentException("A courier is required.", nameof(courierId));
+        ArgumentException.ThrowIfNullOrWhiteSpace(courierName);
+    }
+
+    private void SetCourier(Guid courierId, string courierName, DateTime utcNow)
+    {
+        var name = courierName.Trim();
+        CourierId = courierId;
+        CourierName = name.Length <= UserProfile.FullNameMaxLength ? name : name[..UserProfile.FullNameMaxLength];
+        CourierAssignedAtUtc = utcNow;
+    }
 
     /// <summary>Moves one step forward, only from the expected status.</summary>
     private Result MoveTo(OrderStatus to, OrderStatus from)

@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Phloem.Application.Features.Deliveries.Common;
 using Phloem.Application.Features.Orders.Common;
 using Phloem.Application.Features.Orders.Dtos;
 using Phloem.Domain.Entities;
@@ -19,6 +20,7 @@ public sealed class GetOrderQueryHandler(
     IUserProfileRepository profiles,
     IFileStorage storage,
     IAccountService accounts,
+    DeliveryPhotos photos,
     TimeProvider time)
     : IRequestHandler<GetOrderQuery, Result<OrderDetailsDto>>
 {
@@ -75,6 +77,7 @@ public sealed class GetOrderQueryHandler(
         }
         var now = time.GetUtcNow().UtcDateTime;
         var secondsLeft = order.TimeLeftToCancel(now);
+        var proof = await photos.ToDtoAsync(order.DeliveryProof, order.CourierName, ct);
 
         return new OrderDetailsDto(
             order.OrderNumber,
@@ -100,6 +103,9 @@ public sealed class GetOrderQueryHandler(
             order.DeclinedByShop,
             order.DeclineReason,
             order.DeliveryRecipientName ?? customerName,
-            phone);
+            phone,
+            order.CourierName,
+            proof,
+            CanMarkDelivered: order.Status == OrderStatus.OutForDelivery && order.CourierId == userId);
     }
 }

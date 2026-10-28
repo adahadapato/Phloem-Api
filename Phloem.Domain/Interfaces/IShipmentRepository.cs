@@ -40,4 +40,15 @@ public interface IShipmentRepository : IRepository<Shipment>
     Task<PagedResult<Shipment>> GetPagedAsync(
         ShipmentStatus? status, Country? fromCountry, Country? toCountry, PageRequest page,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Courier → "My deliveries": the parcels given to this courier, read-only, with items. Either the ones still out
+    /// for delivery (oldest first), or the ones they delivered since a time (newest first).
+    /// </summary>
+    /// <param name="courierId">The courier.</param>
+    /// <param name="deliveredSinceUtc">Null = still out for delivery; otherwise delivered since this time.</param>
+    /// <param name="take">How many at most.</param>
+    /// <param name="cancellationToken">Cancels the database call.</param>
+    Task<IReadOnlyList<Shipment>> GetForCourierAsync(
+        Guid courierId, DateTime? deliveredSinceUtc, int take, CancellationToken cancellationToken = default);
 }
