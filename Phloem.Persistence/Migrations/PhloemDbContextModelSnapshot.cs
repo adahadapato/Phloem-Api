@@ -737,6 +737,61 @@ namespace Phloem.Persistence.Migrations
                     b.ToTable("Orders", (string)null);
                 });
 
+            modelBuilder.Entity("Phloem.Domain.Entities.OrderEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ActorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("ActorKind")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsRebuilt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("StatusAfter")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorId", "OccurredAtUtc");
+
+                    b.HasIndex("OrderId", "OccurredAtUtc");
+
+                    b.ToTable("OrderEvents", (string)null);
+                });
+
             modelBuilder.Entity("Phloem.Domain.Entities.OrderLine", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1934,6 +1989,15 @@ namespace Phloem.Persistence.Migrations
                     b.Navigation("DeliveryProof");
                 });
 
+            modelBuilder.Entity("Phloem.Domain.Entities.OrderEvent", b =>
+                {
+                    b.HasOne("Phloem.Domain.Entities.Order", null)
+                        .WithMany("Events")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Phloem.Domain.Entities.OrderLine", b =>
                 {
                     b.HasOne("Phloem.Domain.Entities.Dish", null)
@@ -2278,6 +2342,8 @@ namespace Phloem.Persistence.Migrations
 
             modelBuilder.Entity("Phloem.Domain.Entities.Order", b =>
                 {
+                    b.Navigation("Events");
+
                     b.Navigation("Lines");
                 });
 

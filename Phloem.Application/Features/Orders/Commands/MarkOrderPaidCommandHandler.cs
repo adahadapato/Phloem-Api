@@ -3,11 +3,13 @@ using Microsoft.Extensions.Logging;
 using Phloem.Domain.Interfaces;
 using Phloem.Domain.Shared.Errors;
 using Phloem.Domain.Shared.Results;
+using Phloem.Domain.ValueObjects;
 
 namespace Phloem.Application.Features.Orders.Commands;
 
 /// <summary>Handles <see cref="MarkOrderPaidCommand"/>.</summary>
 public sealed class MarkOrderPaidCommandHandler(
+    ICurrentUser currentUser,
     IOrderRepository orders,
     IUnitOfWork unitOfWork,
     TimeProvider time,
@@ -21,7 +23,9 @@ public sealed class MarkOrderPaidCommandHandler(
         var order = await orders.GetByOrderNumberAsync(command.OrderNumber.Trim(), ct);
         if (order is null) return OrderErrors.NotFound;
 
-        var paid = order.MarkPaid(command.PaymentReference, time.GetUtcNow().UtcDateTime);
+        // The customer (test payment) or Phloem itself (a payment provider's confirmation)
+        var by = currentUser.UserId == order.CustomerId ? OrderActor.Customer(order.CustomerId) : OrderActor.System;
+        var paid = order.MarkPaid(command.PaymentReference, time.GetUtcNow().UtcDateTime, by);
         if (paid.IsFailure) return paid;
 
         await unitOfWork.SaveChangesAsync(ct);

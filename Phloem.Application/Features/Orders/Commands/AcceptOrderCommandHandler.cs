@@ -3,6 +3,7 @@ using Phloem.Domain.Enums;
 using Phloem.Domain.Interfaces;
 using Phloem.Domain.Shared.Errors;
 using Phloem.Domain.Shared.Results;
+using Phloem.Domain.ValueObjects;
 
 namespace Phloem.Application.Features.Orders.Commands;
 
@@ -11,7 +12,8 @@ public sealed class AcceptOrderCommandHandler(
     ICurrentUser currentUser,
     IVendorRepository vendors,
     IOrderRepository orders,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    TimeProvider time)
     : IRequestHandler<AcceptOrderCommand, Result>
 {
     /// <summary>Only the order's own shop can accept it, and only once it's paid.</summary>
@@ -30,7 +32,7 @@ public sealed class AcceptOrderCommandHandler(
         if (order is null || order.VendorId != vendor.Id || order.Status == OrderStatus.AwaitingPayment)
             return OrderErrors.NotFound;
 
-        var moved = order.StartPreparing();
+        var moved = order.StartPreparing(time.GetUtcNow().UtcDateTime, OrderActor.Seller(userId));
         if (moved.IsFailure) return moved;
 
         await unitOfWork.SaveChangesAsync(ct);

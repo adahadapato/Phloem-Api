@@ -129,6 +129,26 @@ public static class DbSeeder
                 throw;
             }
 
+            // 3c. Timelines for orders placed before timelines existed
+            logger.LogInformation(
+                "Database initialization STEP 3c: starting order timeline rebuild.");
+
+            try
+            {
+                await OrderTimelineSeeder.SeedAsync(context, logger, cancellationToken);
+
+                logger.LogInformation(
+                    "Database initialization STEP 3c: order timeline rebuild completed.");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(
+                    ex,
+                    "Database initialization STEP 3c FAILED: order timeline rebuild.");
+
+                throw;
+            }
+
             // 4. Starter data
             logger.LogInformation(
                 "Database initialization STEP 4: starting starter data seeding.");

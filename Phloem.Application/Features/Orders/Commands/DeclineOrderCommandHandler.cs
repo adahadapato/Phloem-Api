@@ -6,6 +6,7 @@ using Phloem.Domain.Enums;
 using Phloem.Domain.Interfaces;
 using Phloem.Domain.Shared.Errors;
 using Phloem.Domain.Shared.Results;
+using Phloem.Domain.ValueObjects;
 
 namespace Phloem.Application.Features.Orders.Commands;
 
@@ -42,7 +43,7 @@ public sealed class DeclineOrderCommandHandler(
             return OrderErrors.NotFound;
 
         var now = time.GetUtcNow().UtcDateTime;
-        var declined = order.DeclineByShop(command.Reason, now);
+        var declined = order.DeclineByShop(command.Reason, now, OrderActor.Seller(userId));
         if (declined.IsFailure) return declined;
 
         await unitOfWork.SaveChangesAsync(ct);

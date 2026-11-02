@@ -9,6 +9,7 @@ using Phloem.Domain.Interfaces;
 using Phloem.Domain.Interfaces.Identity;
 using Phloem.Domain.Shared.Errors;
 using Phloem.Domain.Shared.Results;
+using Phloem.Domain.ValueObjects;
 
 namespace Phloem.Application.Features.Accounts.Commands;
 
@@ -59,7 +60,7 @@ public sealed class SuspendUserCommandHandler(
         {
             vendor.SetOwnerSuspended(true);
             foreach (var order in await orders.GetUnfinishedForVendorAsync(vendor.Id, ct))
-                if (order.CancelBecauseShopSuspended(now)) cancelled.Add(order);
+                if (order.CancelBecauseShopSuspended(now, OrderActor.Staff(adminId))) cancelled.Add(order);
         }
 
         // 3. Signed out everywhere

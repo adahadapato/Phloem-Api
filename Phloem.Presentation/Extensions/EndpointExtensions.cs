@@ -42,6 +42,7 @@ public static class EndpointExtensions
         api.MapDeliveryPricingEndpoints();   // /api/delivery-windows + /api/admin/delivery-pricing
         api.MapShipmentRouteEndpoints();     //                         /api/admin/shipment-routes
         api.MapOrderEndpoints();             // /api/orders           + /api/shops/mine/orders
+        api.MapAdminOrderEndpoints();        //                         /api/admin/orders (read-only)
         api.MapShipmentEndpoints();          // /api/shipments + /api/track + /api/staff/shipments
         api.MapUserEndpoints();              //                         /api/admin/users (suspend / reinstate)
         api.MapStaffEndpoints();             //                         /api/admin/staff + /api/admin/audit

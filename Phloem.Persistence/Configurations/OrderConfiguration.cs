@@ -87,6 +87,16 @@ public sealed class OrderConfiguration : EntityConfiguration<Order>
                .HasField("_lines")
                .UsePropertyAccessMode(PropertyAccessMode.Field);
 
+        // ---------- Timeline (loaded only where it's shown) ----------
+        builder.HasMany(o => o.Events)
+               .WithOne()
+               .HasForeignKey(e => e.OrderId)
+               .IsRequired()
+               .OnDelete(DeleteBehavior.Cascade);
+        builder.Navigation(o => o.Events)
+               .HasField("_events")
+               .UsePropertyAccessMode(PropertyAccessMode.Field);
+
         // ---------- Calculated, not columns ----------
         builder.Ignore(o => o.Total);
         builder.Ignore(o => o.IsPaid);

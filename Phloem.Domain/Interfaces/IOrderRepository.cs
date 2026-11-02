@@ -158,4 +158,19 @@ public interface IOrderRepository : IRepository<Order>
     /// <param name="cancellationToken">Cancels the database call.</param>
     Task<IReadOnlyList<Order>> GetForCourierAsync(
         Guid courierId, DateTime? deliveredSinceUtc, int take, CancellationToken cancellationToken = default);
+
+    // ───────────────────────────── Timeline + Admin → Orders ─────────────────────────────
+
+    /// <summary>One order with its lines AND its timeline (read-only), for the pages that show the timeline.</summary>
+    /// <param name="orderNumber">The order number.</param>
+    /// <param name="cancellationToken">Stops the query.</param>
+    Task<Order?> GetWithTimelineAsync(string orderNumber, CancellationToken cancellationToken = default);
+
+    /// <summary>Admin → Orders: one page, newest first (read-only, with lines).</summary>
+    /// <param name="filter">Country, shop, status, dates, search.</param>
+    /// <param name="coveredCountries">Only these countries (staff); null = every country.</param>
+    /// <param name="page">Which page and how many per page.</param>
+    /// <param name="cancellationToken">Stops the query.</param>
+    Task<PagedResult<Order>> GetAdminPagedAsync(AdminOrderFilter filter, IReadOnlyCollection<Country>? coveredCountries,
+                                               PageRequest page, CancellationToken cancellationToken = default);
 }

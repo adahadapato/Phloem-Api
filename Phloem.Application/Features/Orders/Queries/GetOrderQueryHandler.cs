@@ -21,6 +21,7 @@ public sealed class GetOrderQueryHandler(
     IFileStorage storage,
     IAccountService accounts,
     DeliveryPhotos photos,
+    OrderTimeline timeline,
     TimeProvider time)
     : IRequestHandler<GetOrderQuery, Result<OrderDetailsDto>>
 {
@@ -37,7 +38,7 @@ public sealed class GetOrderQueryHandler(
         var userId = currentUser.UserId
             ?? throw new InvalidOperationException("This action requires a signed-in user.");
 
-        var order = await orders.GetByOrderNumberAsync(query.OrderNumber.Trim(), ct);
+        var order = await orders.GetWithTimelineAsync(query.OrderNumber.Trim(), ct);
         if (order is null) return OrderErrors.NotFound;
 
         // Who's looking: the customer, or the shop (paid orders only)
@@ -78,6 +79,7 @@ public sealed class GetOrderQueryHandler(
         var now = time.GetUtcNow().UtcDateTime;
         var secondsLeft = order.TimeLeftToCancel(now);
         var proof = await photos.ToDtoAsync(order.DeliveryProof, order.CourierName, ct);
+        var steps = await timeline.BuildAsync(order, forStaff: false, ct);
 
         return new OrderDetailsDto(
             order.OrderNumber,
@@ -106,6 +108,7 @@ public sealed class GetOrderQueryHandler(
             phone,
             order.CourierName,
             proof,
-            CanMarkDelivered: order.Status == OrderStatus.OutForDelivery && order.CourierId == userId);
+            CanMarkDelivered: order.Status == OrderStatus.OutForDelivery && order.CourierId == userId,
+            Timeline: steps);
     }
 }

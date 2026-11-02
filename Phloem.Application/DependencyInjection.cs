@@ -1,6 +1,7 @@
 ﻿using FluentValidation;
 using Phloem.Application.Common.Terms;
 using Phloem.Application.Features.Deliveries.Common;
+using Phloem.Application.Features.Orders.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Phloem.Application.Common.Behaviors;
 using Phloem.Application.Common.Behaviours;
@@ -40,6 +41,7 @@ namespace Phloem.Application
             // 2c. Deliveries: who can be a courier, proof-of-delivery photos, delivery emails
             services.AddScoped<CourierDirectory>();
             services.AddScoped<DeliveryPhotos>();
+            services.AddScoped<OrderTimeline>();
             services.AddScoped<DeliveryEmails>();
 
             // 2d. Two-person approval: what's being applied, the approval emails, blocking a shop

@@ -56,6 +56,8 @@ public class Order : Entity<Guid>
 
     private readonly List<OrderLine> _lines = new();
 
+    private readonly List<OrderEvent> _events = new();
+
     /// <summary>Required by EF Core.</summary>
     protected Order() { }
 
@@ -198,6 +200,12 @@ public class Order : Entity<Guid>
     /// <summary>The dishes in this order.</summary>
     public virtual IReadOnlyCollection<OrderLine> Lines => _lines.AsReadOnly();
 
+    /// <summary>
+    /// The order's timeline, oldest first: every change with when, who and a note. Each method below adds its line in
+    /// the same save as the change. Loaded only where it's shown (order pages), not for every order read.
+    /// </summary>
+    public virtual IReadOnlyCollection<OrderEvent> Events => _events.OrderBy(e => e.OccurredAtUtc).ToList();
+
     // =====================================================================
     // Placing
     // =====================================================================
@@ -254,6 +262,8 @@ public class Order : Entity<Guid>
         foreach (var (dish, quantity) in list)
             order.AddLine(dish, quantity);
 
+        order.Record(OrderEventKind.Placed, utcNow, OrderActor.Customer(customer.Id),
+                     $"{order._lines.Sum(l => l.Quantity)} item(s) from {vendor.Name}");
         return order;
     }
 
@@ -283,7 +293,8 @@ public class Order : Entity<Guid>
     /// </remarks>
     /// <exception cref="ArgumentNullException">currentDishes is null.</exception>
     /// <exception cref="ArgumentOutOfRangeException">Negative fee.</exception>
-    public Result<IReadOnlyList<string>> PrepareForPayment(IReadOnlyCollection<Dish> currentDishes, decimal deliveryFee)
+    public Result<IReadOnlyList<string>> PrepareForPayment(IReadOnlyCollection<Dish> currentDishes, decimal deliveryFee,
+                                                           DateTime utcNow)
     {
         ArgumentNullException.ThrowIfNull(currentDishes);
         ArgumentOutOfRangeException.ThrowIfNegative(deliveryFee);
@@ -308,6 +319,9 @@ public class Order : Entity<Guid>
         RecalculateSubtotal();
 
         IReadOnlyList<string> dropped = outOfStock.Select(l => l.DishName).ToList();
+        if (dropped.Count > 0)
+            Record(OrderEventKind.ItemsRemoved, utcNow, OrderActor.System,
+                   $"Sold out, taken off before payment: {string.Join(", ", dropped)}");
         return Result<IReadOnlyList<string>>.Success(dropped);
     }
 
@@ -321,7 +335,7 @@ public class Order : Entity<Guid>
     /// reference succeeds and changes nothing, because payment callbacks are often sent twice.
     /// </returns>
     /// <exception cref="ArgumentException">Blank payment reference.</exception>
-    public Result MarkPaid(string paymentReference, DateTime utcNow)
+    public Result MarkPaid(string paymentReference, DateTime utcNow, OrderActor by)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(paymentReference);
         var reference = paymentReference.Trim();
@@ -332,6 +346,7 @@ public class Order : Entity<Guid>
         Status = OrderStatus.Paid;
         PaidAtUtc = utcNow;
         PaymentReference = reference;
+        Record(OrderEventKind.Paid, utcNow, by, $"Payment reference {reference}");
         return Result.Success();
     }
 
@@ -403,13 +418,15 @@ public class Order : Entity<Guid>
     /// <param name="utcNow">The current time.</param>
     /// <returns>Success; or <see cref="OrderErrors.CancelWindowPassed"/>.</returns>
     /// <remarks>If the order was paid, <see cref="NeedsRefund"/> becomes true; the Payments feature refunds it.</remarks>
-    public Result Cancel(DateTime utcNow)
+    public Result Cancel(DateTime utcNow, OrderActor by)
     {
         if (Status == OrderStatus.Cancelled) return Result.Success();
         if (!CanCancel(utcNow)) return OrderErrors.CancelWindowPassed;
 
+        var wasPaid = IsPaid;
         Status = OrderStatus.Cancelled;
         CancelledAtUtc = utcNow;
+        Record(OrderEventKind.Cancelled, utcNow, by, wasPaid ? "Paid: needs a refund" : null);
         return Result.Success();
     }
 
@@ -420,12 +437,14 @@ public class Order : Entity<Guid>
     /// </summary>
     /// <param name="utcNow">The current time.</param>
     /// <returns>True when this call cancelled the order.</returns>
-    public bool CancelBecauseShopSuspended(DateTime utcNow)
+    public bool CancelBecauseShopSuspended(DateTime utcNow, OrderActor by)
     {
         if (Status is not (OrderStatus.AwaitingPayment or OrderStatus.Paid or OrderStatus.Preparing)) return false;
 
         Status = OrderStatus.Cancelled;
         CancelledAtUtc = utcNow;
+        Record(OrderEventKind.CancelledShopSuspended, utcNow, by,
+               IsPaid ? "The shop's owner was suspended. Paid: needs a refund" : "The shop's owner was suspended");
         return true;
     }
 
@@ -438,7 +457,7 @@ public class Order : Entity<Guid>
     /// <returns>Success; or <see cref="OrderErrors.CannotDecline"/> (not paid, or already accepted).</returns>
     /// <exception cref="ArgumentException">Blank reason.</exception>
     /// <exception cref="ArgumentOutOfRangeException">Reason longer than <see cref="DeclineReasonMaxLength"/>.</exception>
-    public Result DeclineByShop(string reason, DateTime utcNow)
+    public Result DeclineByShop(string reason, DateTime utcNow, OrderActor by)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(reason);
         var text = reason.Trim();
@@ -450,6 +469,7 @@ public class Order : Entity<Guid>
         CancelledAtUtc = utcNow;
         DeclinedByShop = true;
         DeclineReason = text;
+        Record(OrderEventKind.Declined, utcNow, by, text);
         return Result.Success();
     }
 
@@ -459,7 +479,12 @@ public class Order : Entity<Guid>
 
     /// <summary>The seller accepts a paid order and starts cooking (Paid → Preparing).</summary>
     /// <returns>Success; or <see cref="OrderErrors.InvalidStatusChange"/>.</returns>
-    public Result StartPreparing() => MoveTo(OrderStatus.Preparing, from: OrderStatus.Paid);
+    public Result StartPreparing(DateTime utcNow, OrderActor by)
+    {
+        var moved = MoveTo(OrderStatus.Preparing, from: OrderStatus.Paid);
+        if (moved.IsSuccess) Record(OrderEventKind.Accepted, utcNow, by, null);
+        return moved;
+    }
 
     /// <summary>The order leaves the kitchen with its courier (Preparing → OutForDelivery).</summary>
     /// <param name="courierId">The courier (the Application layer checked the role and country), or the seller.</param>
@@ -467,7 +492,7 @@ public class Order : Entity<Guid>
     /// <param name="utcNow">The current time.</param>
     /// <returns>Success; or <see cref="OrderErrors.InvalidStatusChange"/>.</returns>
     /// <exception cref="ArgumentException">Empty courier Id or blank name.</exception>
-    public Result SendOut(Guid courierId, string courierName, DateTime utcNow)
+    public Result SendOut(Guid courierId, string courierName, DateTime utcNow, OrderActor by)
     {
         CheckCourier(courierId, courierName);
 
@@ -475,6 +500,7 @@ public class Order : Entity<Guid>
         if (moved.IsFailure) return moved;
 
         SetCourier(courierId, courierName, utcNow);
+        Record(OrderEventKind.SentOut, utcNow, by, $"Courier: {CourierName}");
         return Result.Success();
     }
 
@@ -487,13 +513,15 @@ public class Order : Entity<Guid>
     /// <param name="utcNow">The current time.</param>
     /// <returns>Success; or <see cref="DeliveryErrors.NotOutForDelivery"/>.</returns>
     /// <exception cref="ArgumentException">Empty courier Id or blank name.</exception>
-    public Result ChangeCourier(Guid courierId, string courierName, DateTime utcNow)
+    public Result ChangeCourier(Guid courierId, string courierName, DateTime utcNow, OrderActor by)
     {
         CheckCourier(courierId, courierName);
         if (Status != OrderStatus.OutForDelivery) return DeliveryErrors.NotOutForDelivery;
         if (CourierId == courierId) return Result.Success();
 
+        var previous = CourierName;
         SetCourier(courierId, courierName, utcNow);
+        Record(OrderEventKind.CourierChanged, utcNow, by, $"Courier: {CourierName} (was {previous})");
         return Result.Success();
     }
 
@@ -525,6 +553,7 @@ public class Order : Entity<Guid>
         DeliveredAtUtc = proof.CapturedAtUtc;
         CommissionAmount = commission?.AmountOn(Subtotal) ?? 0m;
         SellerEarnings = Total - CommissionAmount;
+        Record(OrderEventKind.Delivered, proof.CapturedAtUtc, OrderActor.Courier(proof.CourierId), proof.Describe());
         return Result.Success();
     }
 
@@ -543,6 +572,53 @@ public class Order : Entity<Guid>
     }
 
     private void RecalculateSubtotal() => Subtotal = _lines.Sum(l => l.LineTotal);
+
+    /// <summary>Adds a line to the timeline, with the status the order has now.</summary>
+    private void Record(OrderEventKind kind, DateTime utcNow, OrderActor by, string? note) =>
+        _events.Add(new OrderEvent(Id, kind, Status, utcNow, by, note));
+
+    // =====================================================================
+    // Older orders (placed before the timeline existed)
+    // =====================================================================
+
+    /// <summary>
+    /// Builds the timeline of an order placed before timelines existed, from the dates it kept: placed, paid,
+    /// sent out (last courier), delivered, cancelled or declined. Every line is marked as rebuilt. Does nothing when
+    /// the order already has a timeline (the caller loads it first).
+    /// </summary>
+    /// <param name="shopOwnerId">The shop's owner (who accepted, declined or sent it out).</param>
+    /// <returns>How many lines were added.</returns>
+    public int RebuildTimeline(Guid shopOwnerId)
+    {
+        if (_events.Count > 0) return 0;
+
+        var customer = OrderActor.Customer(CustomerId);
+        var seller = shopOwnerId == Guid.Empty ? OrderActor.System : OrderActor.Seller(shopOwnerId);
+        var added = new List<OrderEvent>
+        {
+            new(Id, OrderEventKind.Placed, OrderStatus.AwaitingPayment, PlacedAtUtc, customer, null, isRebuilt: true)
+        };
+
+        if (PaidAtUtc is { } paid)
+            added.Add(new(Id, OrderEventKind.Paid, OrderStatus.Paid, paid, customer,
+                          PaymentReference is null ? null : $"Payment reference {PaymentReference}", isRebuilt: true));
+
+        if (CourierAssignedAtUtc is { } sent)
+            added.Add(new(Id, OrderEventKind.SentOut, OrderStatus.OutForDelivery, sent, seller,
+                          CourierName is null ? null : $"Courier: {CourierName}", isRebuilt: true));
+
+        if (DeliveredAtUtc is { } delivered)
+            added.Add(new(Id, OrderEventKind.Delivered, OrderStatus.Delivered, delivered,
+                          CourierId is { } c ? OrderActor.Courier(c) : seller, DeliveryProof?.Describe(), isRebuilt: true));
+
+        if (Status == OrderStatus.Cancelled && CancelledAtUtc is { } cancelled)
+            added.Add(DeclinedByShop
+                ? new(Id, OrderEventKind.Declined, OrderStatus.Cancelled, cancelled, seller, DeclineReason, isRebuilt: true)
+                : new(Id, OrderEventKind.Cancelled, OrderStatus.Cancelled, cancelled, customer, null, isRebuilt: true));
+
+        _events.AddRange(added);
+        return added.Count;
+    }
 
     /// <exception cref="ArgumentException">Empty courier Id or blank name.</exception>
     private static void CheckCourier(Guid courierId, string courierName)

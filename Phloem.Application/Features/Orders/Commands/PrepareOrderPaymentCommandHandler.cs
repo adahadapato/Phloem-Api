@@ -49,7 +49,7 @@ public sealed class PrepareOrderPaymentCommandHandler(
 
         var current = await dishes.GetByIdsAsync(order.Lines.Select(l => l.DishId).ToList(), ct);
 
-        var prepared = order.PrepareForPayment(current, fee.Value);
+        var prepared = order.PrepareForPayment(current, fee.Value, time.GetUtcNow().UtcDateTime);
         if (prepared.IsFailure) return prepared.Error;
 
         await unitOfWork.SaveChangesAsync(ct);

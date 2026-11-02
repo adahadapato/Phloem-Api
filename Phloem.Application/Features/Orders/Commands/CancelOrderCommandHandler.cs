@@ -2,6 +2,7 @@
 using Phloem.Domain.Interfaces;
 using Phloem.Domain.Shared.Errors;
 using Phloem.Domain.Shared.Results;
+using Phloem.Domain.ValueObjects;
 
 namespace Phloem.Application.Features.Orders.Commands;
 
@@ -24,7 +25,7 @@ public sealed class CancelOrderCommandHandler(
         var order = await orders.GetByOrderNumberAsync(command.OrderNumber.Trim(), ct);
         if (order is null || order.CustomerId != userId) return OrderErrors.NotFound;
 
-        var cancelled = order.Cancel(time.GetUtcNow().UtcDateTime);
+        var cancelled = order.Cancel(time.GetUtcNow().UtcDateTime, OrderActor.Customer(userId));
         if (cancelled.IsFailure) return cancelled;
 
         await unitOfWork.SaveChangesAsync(ct);

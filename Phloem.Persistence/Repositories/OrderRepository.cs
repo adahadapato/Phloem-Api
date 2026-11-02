@@ -285,4 +285,45 @@ internal sealed class OrderRepository(PhloemDbContext context)
         var query = Set.Where(o => o.VendorId == vendorId && o.Status != OrderStatus.AwaitingPayment);
         return status is null ? query : query.Where(o => o.Status == status);
     }
+
+    // ───────────────────────────── Timeline + Admin → Orders ─────────────────────────────
+
+    /// <inheritdoc />
+    public Task<Order?> GetWithTimelineAsync(string orderNumber, CancellationToken cancellationToken = default)
+    {
+        var number = orderNumber.Trim();
+        return WithChildren(Set.AsNoTracking())
+               .Include(o => o.Events)
+               .FirstOrDefaultAsync(o => o.OrderNumber == number, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    /// <remarks>The search matches the order number exactly (or its start), or part of the shop's or customer's
+    /// name; the customer is only joined for the search, never loaded.</remarks>
+    public Task<PagedResult<Order>> GetAdminPagedAsync(AdminOrderFilter filter,
+                                                      IReadOnlyCollection<Country>? coveredCountries,
+                                                      PageRequest page, CancellationToken cancellationToken = default)
+    {
+        IQueryable<Order> query = Set.AsNoTracking();
+
+        if (coveredCountries is not null)
+        {
+            var covered = coveredCountries.ToList();
+            query = query.Where(o => covered.Contains(o.DeliveryCountry));
+        }
+        if (filter.Country is { } country) query = query.Where(o => o.DeliveryCountry == country);
+        if (filter.ShopId is { } shopId) query = query.Where(o => o.VendorId == shopId);
+        if (filter.Status is { } status) query = query.Where(o => o.Status == status);
+        if (filter.FromUtc is { } from) query = query.Where(o => o.PlacedAtUtc >= from);
+        if (filter.ToUtc is { } to) query = query.Where(o => o.PlacedAtUtc < to);
+        if (!string.IsNullOrWhiteSpace(filter.Search))
+        {
+            var term = filter.Search.Trim();
+            query = query.Where(o => o.OrderNumber.StartsWith(term)
+                                  || o.VendorName.Contains(term)
+                                  || (o.Customer.FirstName + " " + o.Customer.LastName).Contains(term));
+        }
+
+        return ToPagedAsync(WithChildren(query).OrderByDescending(o => o.PlacedAtUtc), page, cancellationToken);
+    }
 }

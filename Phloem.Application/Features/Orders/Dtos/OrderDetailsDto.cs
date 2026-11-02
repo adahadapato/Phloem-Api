@@ -35,6 +35,7 @@ namespace Phloem.Application.Features.Orders.Dtos;
 /// <param name="DeliveryProof">The photo and handover details; null until delivered.</param>
 /// <param name="CanMarkDelivered">The viewer is this order's courier and it's out for delivery (the seller delivering
 /// it themselves): show "Delivered" (take a photo).</param>
+/// <param name="Timeline">Every step so far, oldest first, with who did it (first name and role).</param>
 public sealed record OrderDetailsDto(
     string OrderNumber,
     string ShopName,
@@ -62,4 +63,5 @@ public sealed record OrderDetailsDto(
     string? DeliveryPhone,
     string? CourierName,
     DeliveryProofDto? DeliveryProof,
-    bool CanMarkDelivered);
+    bool CanMarkDelivered,
+    IReadOnlyList<OrderEventDto>? Timeline = null);

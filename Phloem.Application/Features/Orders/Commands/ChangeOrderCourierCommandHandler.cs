@@ -4,6 +4,7 @@ using Phloem.Domain.Enums;
 using Phloem.Domain.Interfaces;
 using Phloem.Domain.Shared.Errors;
 using Phloem.Domain.Shared.Results;
+using Phloem.Domain.ValueObjects;
 
 namespace Phloem.Application.Features.Orders.Commands;
 
@@ -40,7 +41,8 @@ public sealed class ChangeOrderCourierCommandHandler(
         if (courier.IsFailure) return courier.Error;
 
         var previous = order.CourierId;
-        var changed = order.ChangeCourier(courier.Value.Id, courier.Value.Name, time.GetUtcNow().UtcDateTime);
+        var changed = order.ChangeCourier(courier.Value.Id, courier.Value.Name, time.GetUtcNow().UtcDateTime,
+                                          OrderActor.Seller(userId));
         if (changed.IsFailure) return changed;
 
         await unitOfWork.SaveChangesAsync(ct);

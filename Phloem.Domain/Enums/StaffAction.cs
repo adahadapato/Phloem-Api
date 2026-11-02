@@ -53,5 +53,8 @@ public enum StaffAction
     ShopBlocked = 15,
 
     /// <summary>Unblocked a shop.</summary>
-    ShopUnblocked = 16
+    ShopUnblocked = 16,
+
+    /// <summary>Opened an order's details (customer, address, phone, timeline).</summary>
+    OrderViewed = 17
 }
