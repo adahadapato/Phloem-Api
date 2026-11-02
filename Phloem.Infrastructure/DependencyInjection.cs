@@ -2,7 +2,9 @@
 using Microsoft.Extensions.DependencyInjection;
 using Phloem.Application;
 using Phloem.Infrastructure.Services.Accounts;
+using Phloem.Infrastructure.Services.Approvals;
 using Phloem.Infrastructure.Settings.Application;
+using Phloem.Infrastructure.Settings.Approvals;
 using Phloem.Infrastructure.Settings.Contact;
 using Phloem.Infrastructure.Settings.Email;
 using Phloem.Infrastructure.Settings.Identity;
@@ -22,12 +24,14 @@ namespace Phloem.Infrastructure
             services.AddApplicationSettings(configuration);
             services.AddEmail(configuration);
             services.AddContact(configuration);   // Contact us details (GET /api/contact)
+            services.AddApprovals(configuration); // two-person approval: how long changes may wait
             services.AddStorage(configuration);
             services.AddImages(configuration);                     
             services.AddPhloemIdentity(configuration);  
 
             // Background tasks
             services.AddHostedService<SuspensionExpiryService>();   // hourly: lift suspensions that have ended
+            services.AddHostedService<ApprovalExpiryService>();     // every 15 min: expire changes nobody decided
 
             // Add infrastructure layer services here
 

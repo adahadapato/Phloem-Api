@@ -68,8 +68,10 @@ public static class LegalEndpoints
                 (await sender.Send(new PublishLegalDocumentCommand(type, body.Title, body.Content, body.IsDraft), ct))
                     .ToHttp())
             .WithName("PublishLegalDocument")
-            .WithSummary("Publish a new version (the old ones are kept); returns the new version number")
-            .Produces<int>()
+            .WithSummary("Publish a new version (old ones are kept). Terms and Privacy wait for another owner's approval")
+            .WithDescription("Help is published at once (Version set). Terms and Privacy come back with " +
+                             "WaitingForApproval = true and go live when another owner approves them on Approvals.")
+            .Produces<LegalPublishResultDto>()
             .ProducesValidationProblem();
     }
 

@@ -72,6 +72,9 @@ public sealed class PhloemDbContext(DbContextOptions<PhloemDbContext> options)
     /// <summary>The staff audit log.</summary>
     public DbSet<StaffAuditEntry> StaffAuditEntries => Set<StaffAuditEntry>();
 
+    /// <summary>Changes waiting for (or decided by) a second person.</summary>
+    public DbSet<PendingChange> PendingChanges => Set<PendingChange>();
+
     /// <summary>Identity's tables first, then every configuration in this assembly.</summary>
     /// <param name="builder">The model builder.</param>
     protected override void OnModelCreating(ModelBuilder builder)

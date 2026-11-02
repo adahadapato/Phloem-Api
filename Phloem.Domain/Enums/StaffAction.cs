@@ -35,5 +35,23 @@ public enum StaffAction
     RolePermissionsChanged = 9,
 
     /// <summary>Opened one of a shop's documents (ID, licence, certificate).</summary>
-    ShopDocumentOpened = 10
+    ShopDocumentOpened = 10,
+
+    /// <summary>Proposed a change that needs a second person.</summary>
+    ChangeProposed = 11,
+
+    /// <summary>Approved someone else's change.</summary>
+    ChangeApproved = 12,
+
+    /// <summary>Rejected someone else's change.</summary>
+    ChangeRejected = 13,
+
+    /// <summary>Took back their own proposal.</summary>
+    ChangeWithdrawn = 14,
+
+    /// <summary>Blocked a shop (a second person must confirm).</summary>
+    ShopBlocked = 15,
+
+    /// <summary>Unblocked a shop.</summary>
+    ShopUnblocked = 16
 }

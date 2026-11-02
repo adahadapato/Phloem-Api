@@ -4,6 +4,9 @@ using Phloem.Application.Features.Deliveries.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Phloem.Application.Common.Behaviors;
 using Phloem.Application.Common.Behaviours;
+using Phloem.Application.Common.Approvals;
+using Phloem.Application.Features.Approvals.Common;
+using Phloem.Application.Features.Vendors.Common;
 
 namespace Phloem.Application
 {
@@ -38,6 +41,11 @@ namespace Phloem.Application
             services.AddScoped<CourierDirectory>();
             services.AddScoped<DeliveryPhotos>();
             services.AddScoped<DeliveryEmails>();
+
+            // 2d. Two-person approval: what's being applied, the approval emails, blocking a shop
+            services.AddScoped<ApprovalContext>();
+            services.AddScoped<ApprovalEmails>();
+            services.AddScoped<ShopBlocking>();
 
             // 3. Validators: without this, ValidationBehavior finds none and NO validation runs
             services.AddValidatorsFromAssembly(assembly, includeInternalTypes: true);

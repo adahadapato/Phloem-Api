@@ -153,6 +153,7 @@ public static class DependencyInjection
         // 5f. Staff access
         services.AddScoped<IStaffCountryRepository, StaffCountryRepository>();
         services.AddScoped<IStaffAuditRepository, StaffAuditRepository>();
+        services.AddScoped<IPendingChangeRepository, PendingChangeRepository>();
 
         return services;
     }

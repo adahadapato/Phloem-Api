@@ -496,6 +496,21 @@ public static class AppSettings
         public const string ReplyTime = "Contact:ReplyTime";
     }
 
+    // ==================== Approvals ====================
+
+    /// <summary>Two-person approval: how long changes may wait for a second person.</summary>
+    public static class Approvals
+    {
+        /// <summary>The whole section.</summary>
+        public const string Section = "Approvals";
+
+        /// <summary>Days a proposal (e.g. new Terms) waits before it expires. Default 7.</summary>
+        public const string ProposalDays = "Approvals:ProposalDays";
+
+        /// <summary>Hours a shop block waits for confirmation before the shop is unblocked. Default 24.</summary>
+        public const string BlockConfirmHours = "Approvals:BlockConfirmHours";
+    }
+
     // ==================== Payments ====================
 
     /// <summary>Taking payment for orders (and later shipments).</summary>
