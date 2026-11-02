@@ -10,6 +10,7 @@ namespace Phloem.Application.Features.Vendors.Commands;
 
 /// <summary>Rejects, saves, emails the shop the reason. Fixing the details sends it back for review.</summary>
 public sealed class RejectShopCommandHandler(
+    ICurrentUser currentUser,
     IVendorRepository vendors,
     IUnitOfWork unitOfWork,
     IEmailSender email,
@@ -19,7 +20,8 @@ public sealed class RejectShopCommandHandler(
     public async Task<Result> Handle(RejectShopCommand command, CancellationToken ct)
     {
         var vendor = await vendors.GetByIdAsync(command.ShopId, ct);
-        if (vendor is null) return VendorErrors.NotFound;
+        // Not found, or a shop in a country this person doesn't cover: answer the same way
+        if (vendor is null || !currentUser.CoversCountry(vendor.Country)) return VendorErrors.NotFound;
 
         var rejected = vendor.Reject(command.Reason);
         if (rejected.IsFailure) return rejected;

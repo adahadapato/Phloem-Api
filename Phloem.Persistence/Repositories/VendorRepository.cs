@@ -48,9 +48,17 @@ internal sealed class VendorRepository(PhloemDbContext context)
     /// </remarks>
     public Task<PagedResult<Vendor>> GetPagedAsync(VendorStatus? status, Country? country, string? search,
                                                     PageRequest page, CancellationToken cancellationToken = default,
-                                                    bool visibleToBuyersOnly = false)
+                                                    bool visibleToBuyersOnly = false,
+                                                    IReadOnlyCollection<Country>? coveredCountries = null)
     {
         IQueryable<Vendor> query = Set.AsNoTracking();
+
+        // Staff: only their countries
+        if (coveredCountries is not null)
+        {
+            var covered = coveredCountries.ToList();
+            query = query.Where(v => covered.Contains(v.Country));
+        }
 
         // Buyers: approved shops whose owner isn't suspended (same rule as Vendor.IsVisibleToBuyers)
         if (visibleToBuyersOnly) query = query.Where(v => v.Status == VendorStatus.Approved && !v.IsOwnerSuspended);
@@ -87,11 +95,20 @@ internal sealed class VendorRepository(PhloemDbContext context)
 
     /// <inheritdoc />
     public async Task<IReadOnlyDictionary<VendorStatus, int>> CountByStatusAsync(
-        CancellationToken cancellationToken = default) =>
-        await Set.AsNoTracking()
+        CancellationToken cancellationToken = default, IReadOnlyCollection<Country>? coveredCountries = null)
+    {
+        IQueryable<Vendor> query = Set.AsNoTracking();
+        if (coveredCountries is not null)
+        {
+            var covered = coveredCountries.ToList();
+            query = query.Where(v => covered.Contains(v.Country));
+        }
+
+        return await query
                  .GroupBy(v => v.Status)
                  .Select(g => new { Status = g.Key, Count = g.Count() })
                  .ToDictionaryAsync(g => g.Status, g => g.Count, cancellationToken);
+    }
 
     /// <inheritdoc />
     public async Task<IReadOnlyDictionary<Guid, string>> GetNamesByOwnerIdsAsync(

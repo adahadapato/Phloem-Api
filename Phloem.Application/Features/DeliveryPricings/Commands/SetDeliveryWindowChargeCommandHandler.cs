@@ -7,6 +7,7 @@ namespace Phloem.Application.Features.DeliveryPricings.Commands;
 
 /// <summary>Handles <see cref="SetDeliveryWindowChargeCommand"/>.</summary>
 public sealed class SetDeliveryWindowChargeCommandHandler(
+    ICurrentUser currentUser,
     IDeliveryPricingRepository pricings,
     IUnitOfWork unitOfWork)
     : IRequestHandler<SetDeliveryWindowChargeCommand, Result>
@@ -14,6 +15,8 @@ public sealed class SetDeliveryWindowChargeCommandHandler(
     /// <summary>Sets the charge, or returns <see cref="DeliveryPricingErrors.NotSet"/> if the country has no pricing.</summary>
     public async Task<Result> Handle(SetDeliveryWindowChargeCommand command, CancellationToken ct)
     {
+        if (!currentUser.CoversCountry(command.Country)) return StaffErrors.CountryNotCovered;
+
         var pricing = await pricings.GetByCountryAsync(command.Country, ct);
         if (pricing is null) return DeliveryPricingErrors.NotSet;
 

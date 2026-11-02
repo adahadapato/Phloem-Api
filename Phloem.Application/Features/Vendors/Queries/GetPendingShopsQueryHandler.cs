@@ -6,6 +6,7 @@ using Phloem.Domain.Shared.Results;
 namespace Phloem.Application.Features.Vendors.Queries;
 
 public sealed class GetPendingShopsQueryHandler(
+    ICurrentUser currentUser,
     IVendorRepository vendors,
     IUserProfileRepository profiles,
     IFileStorage storage)
@@ -15,7 +16,10 @@ public sealed class GetPendingShopsQueryHandler(
 
     public async Task<Result<IReadOnlyList<AdminShopDto>>> Handle(GetPendingShopsQuery query, CancellationToken ct)
     {
-        var pending = await vendors.GetPendingApprovalAsync(ct);
+        // A short list, so the country filter is done here
+        var pending = (await vendors.GetPendingApprovalAsync(ct))
+            .Where(v => currentUser.CoversCountry(v.Country))
+            .ToList();
 
         var owners = await profiles.GetFullNamesAsync(pending.Select(v => v.OwnerId).Distinct().ToList(), ct);
         IReadOnlyList<AdminShopDto> items = pending

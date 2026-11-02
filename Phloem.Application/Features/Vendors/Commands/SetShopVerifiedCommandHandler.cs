@@ -6,6 +6,7 @@ using Phloem.Domain.Shared.Results;
 namespace Phloem.Application.Features.Vendors.Commands;
 
 public sealed class SetShopVerifiedCommandHandler(
+    ICurrentUser currentUser,
     IVendorRepository vendors,
     IUnitOfWork unitOfWork,
     TimeProvider time)
@@ -14,7 +15,8 @@ public sealed class SetShopVerifiedCommandHandler(
     public async Task<Result> Handle(SetShopVerifiedCommand command, CancellationToken ct)
     {
         var vendor = await vendors.GetByIdAsync(command.ShopId, ct);
-        if (vendor is null) return VendorErrors.NotFound;
+        // Not found, or a shop in a country this person doesn't cover: answer the same way
+        if (vendor is null || !currentUser.CoversCountry(vendor.Country)) return VendorErrors.NotFound;
 
         if (command.Verified)
         {

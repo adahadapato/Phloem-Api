@@ -96,4 +96,24 @@ public static class Roles
         Courier => "Courier",
         _ => role
     };
+
+    /// <summary>What the role is for, shown on the admin screens (and stored with the role when it's first
+    /// created).</summary>
+    /// <param name="role">The stored role name.</param>
+    /// <returns>The description; null when the role is unknown.</returns>
+    public static string? Description(string role) => role switch
+    {
+        Admin => "Owners: everything, in every country",
+        Customer => "Orders food and sends parcels (every signed-up user)",
+        Seller => "Runs an approved shop: dishes, prices and orders",
+        CountryManager => "Runs one country: shops, dish list, pricing, orders and parcels",
+        SupportAgent => "Support: Contact messages, orders, team emails, chats and problem reports",
+        CatalogManager => "Shops & catalogue: approves shops and their documents, edits the dish list",
+        ShipmentManager => "Parcel hub: receives and weighs parcels and moves them along their journey",
+        Finance => "Payments, refunds, seller withdrawals and commission",
+        Content => "Search engine text and AI prompts",
+        Technical => "Settings and system health; no customer data",
+        Courier => "Delivers food orders and parcels, with a photo as proof of delivery",
+        _ => null
+    };
 }

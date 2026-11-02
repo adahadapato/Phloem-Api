@@ -75,10 +75,20 @@ public interface IAuthService
 }
 
 /// <summary>A signed-in session: short-lived access token + long-lived refresh token.</summary>
+/// <param name="AccessToken">The JWT.</param>
+/// <param name="AccessTokenExpiresAt">When the JWT stops working.</param>
+/// <param name="RefreshToken">The refresh token (shown once).</param>
+/// <param name="RefreshTokenExpiresAt">When the refresh token stops working.</param>
+/// <param name="UserId">Who signed in.</param>
+/// <param name="Roles">Their roles.</param>
+/// <param name="Permissions">Their staff permissions ("*" = every permission, Admin); empty when not staff. Exactly
+/// what the token carries, so the website and app can show the right menus.</param>
+/// <param name="Countries">The countries they cover as staff ("*" = every country); empty when not staff.</param>
 public sealed record AuthTokens(
     string AccessToken, DateTime AccessTokenExpiresAt,
     string RefreshToken, DateTime RefreshTokenExpiresAt,
-    Guid UserId, IReadOnlyCollection<string> Roles);
+    Guid UserId, IReadOnlyCollection<string> Roles,
+    IReadOnlyCollection<string> Permissions, IReadOnlyCollection<string> Countries);
 
 /// <summary>Login either finishes (Tokens) or needs a 2FA code first (ChallengeToken).</summary>
 public sealed record LoginOutcome(AuthTokens? Tokens, string? ChallengeToken)

@@ -3,6 +3,7 @@ using Phloem.Application.Features.Accounts.Dtos;
 using Phloem.Domain.Constants;
 using Phloem.Domain.Interfaces;
 using Phloem.Domain.Shared.Results;
+using Phloem.Application.Common.Authorization;
 
 namespace Phloem.Application.Features.Accounts.Queries;
 
@@ -24,7 +25,8 @@ public sealed class GetAdminUsersQueryHandler(
     public async Task<Result<PagedResult<AdminUserDto>>> Handle(GetAdminUsersQuery query, CancellationToken ct)
     {
         var page = new PageRequest { Page = query.Page, PageSize = query.PageSize };
-        var paged = await profiles.GetPagedAsync(query.Search?.Trim(), page, ct, query.SuspendedOnly);
+        var paged = await profiles.GetPagedAsync(query.Search?.Trim(), page, ct, query.SuspendedOnly,
+                                                 currentUser.CountryLimit());
 
         var ids = paged.Items.Select(p => p.Id).ToList();
         var shopNames = await vendors.GetNamesByOwnerIdsAsync(ids, ct);

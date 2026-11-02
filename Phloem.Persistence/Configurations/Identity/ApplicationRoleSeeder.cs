@@ -18,22 +18,6 @@ namespace Phloem.Persistence.Configurations.Identity;
 /// </remarks>
 internal static class ApplicationRoleSeeder
 {
-    /// <summary>What each role can do, shown on the admin screens.</summary>
-    private static readonly IReadOnlyDictionary<string, string> Descriptions = new Dictionary<string, string>
-    {
-        [Roles.Admin] = "Owners: everything, in every country",
-        [Roles.Customer] = "Orders food and sends parcels (every signed-up user)",
-        [Roles.Seller] = "Runs an approved shop: dishes, prices and orders",
-        [Roles.CountryManager] = "Runs one country: shops, dish list, pricing, orders and parcels",
-        [Roles.SupportAgent] = "Support: Contact messages, orders, team emails, chats and problem reports",
-        [Roles.CatalogManager] = "Shops & catalogue: approves shops and their documents, edits the dish list",
-        [Roles.ShipmentManager] = "Parcel hub: receives and weighs parcels and moves them along their journey",
-        [Roles.Finance] = "Payments, refunds, seller withdrawals and commission",
-        [Roles.Content] = "Search engine text and AI prompts",
-        [Roles.Technical] = "Settings and system health; no customer data",
-        [Roles.Courier] = "Delivers food orders and parcels, with a photo as proof of delivery"
-    };
-
     /// <summary>Creates the missing roles and gives new job roles their starting permissions.</summary>
     /// <param name="roleManager">Identity's role manager.</param>
     /// <param name="logger">Start-up log.</param>
@@ -46,7 +30,7 @@ internal static class ApplicationRoleSeeder
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var description = Descriptions.GetValueOrDefault(roleName);
+            var description = Roles.Description(roleName);
             var role = await roleManager.FindByNameAsync(roleName);
 
             // 1. New role

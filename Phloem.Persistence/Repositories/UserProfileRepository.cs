@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Phloem.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
 using Phloem.Domain.Entities;
 using Phloem.Domain.Interfaces;
 using Phloem.Domain.Shared.Results;
@@ -18,10 +19,18 @@ internal sealed class UserProfileRepository(PhloemDbContext context)
     /// <remarks>Read-only list, newest first. Search matches first name, last name or "first last".</remarks>
     public Task<PagedResult<UserProfile>> GetPagedAsync(string? search, PageRequest page,
                                                          CancellationToken cancellationToken = default,
-                                                         bool suspendedOnly = false)
+                                                         bool suspendedOnly = false,
+                                                         IReadOnlyCollection<Country>? coveredCountries = null)
     {
         IQueryable<UserProfile> query = Set.AsNoTracking();
         if (suspendedOnly) query = query.Where(p => p.SuspendedAtUtc != null);
+
+        // Staff: only people in their countries
+        if (coveredCountries is not null)
+        {
+            var covered = coveredCountries.ToList();
+            query = query.Where(p => covered.Contains(p.Country));
+        }
 
         if (!string.IsNullOrWhiteSpace(search))
         {

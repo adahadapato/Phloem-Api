@@ -1,4 +1,5 @@
-﻿using Phloem.Domain.Entities;
+﻿using Phloem.Domain.Enums;
+using Phloem.Domain.Entities;
 using Phloem.Domain.Shared.Results;
 
 namespace Phloem.Domain.Interfaces;
@@ -9,10 +10,12 @@ public interface IUserProfileRepository : IRepository<UserProfile>
 
     /// <summary>
     /// Admin dashboard → Users tab: everyone who has signed up, newest first.
-    /// Search matches the full name; <paramref name="suspendedOnly"/> shows only suspended people.
+    /// Search matches the full name; <paramref name="suspendedOnly"/> shows only suspended people;
+    /// <paramref name="coveredCountries"/> limits staff to people in their countries (null = every country).
     /// </summary>
     Task<PagedResult<UserProfile>> GetPagedAsync(
-        string? search, PageRequest page, CancellationToken cancellationToken = default, bool suspendedOnly = false);
+        string? search, PageRequest page, CancellationToken cancellationToken = default, bool suspendedOnly = false,
+        IReadOnlyCollection<Country>? coveredCountries = null);
 
     /// <summary>Hourly expiry task: people whose suspension end date has passed (tracked, for <c>Reinstate</c>).</summary>
     /// <param name="utcNow">The current time.</param>

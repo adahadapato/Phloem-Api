@@ -22,7 +22,7 @@ namespace Phloem.Presentation.Endpoints.Shops;
 ///   <item><description><b>My shop</b> (<c>/api/shops</c>): the signed-in user's own shop. "mine" is found from the
 ///   token, never from the URL, so nobody can change another shop.</description></item>
 ///   <item><description><b>Admin</b> (<c>/api/admin/shops</c>): review, approve, verify and block shops.
-///   Needs permission <c>shops.manage</c>, every country (Admin has it).</description></item>
+///   Needs permission <c>shops.manage</c>; staff see only shops in their countries.</description></item>
 /// </list>
 /// </summary>
 /// <remarks>Buyers and "My shop" share the <c>/api/shops</c> prefix: <c>{shopId}</c> only matches a Guid, so it never
@@ -195,7 +195,7 @@ public static class ShopEndpoints
     {
         var admin = api.MapGroup("/admin/shops")
                        .WithTags("Admin: Shops")
-                       .RequirePermission(Permissions.Shops.Manage);
+                       .RequirePermission(Permissions.Shops.Manage, CountryRule.RecordCountry);
 
         // ───────────────────────────── 1. Lists ─────────────────────────────
 

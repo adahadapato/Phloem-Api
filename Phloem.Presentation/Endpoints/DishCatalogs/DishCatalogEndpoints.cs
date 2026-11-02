@@ -15,7 +15,8 @@ namespace Phloem.Presentation.Endpoints.DishCatalogs;
 /// <list type="number">
 ///   <item><description><b>Sellers</b> (<c>/api/dish-catalog</c>): the name picker and "Can't find your dish?".</description></item>
 ///   <item><description><b>Admin</b> (<c>/api/admin/dish-catalog</c>): review suggested names and set price ranges.
-///   Needs permission <c>catalog.manage</c>, every country (Admin has it).</description></item>
+///   Needs permission <c>catalog.manage</c>. Price ranges: only in the person's countries. Approving or
+///   rejecting a dish NAME affects every country, so that needs every country.</description></item>
 /// </list>
 /// </summary>
 public static class DishCatalogEndpoints
@@ -62,7 +63,7 @@ public static class DishCatalogEndpoints
     {
         var admin = api.MapGroup("/admin/dish-catalog")
                        .WithTags("Admin: Dish catalog")
-                       .RequirePermission(Permissions.Catalog.Manage);
+                       .RequirePermission(Permissions.Catalog.Manage, CountryRule.RecordCountry);
 
         // ───────────────────────────── 1. Lists ─────────────────────────────
 
@@ -83,6 +84,7 @@ public static class DishCatalogEndpoints
         admin.MapPost("/{dishCatalogId:guid}/approve", async (Guid dishCatalogId, ISender sender,
                                                               CancellationToken ct) =>
                 (await sender.Send(new ApproveDishNameCommand(dishCatalogId), ct)).ToHttp())
+            .RequirePermission(Permissions.Catalog.Manage)   // a dish name is shared by every country
             .WithName("ApproveDishName")
             .WithSummary("Approve a suggested name (sellers can use it once it has a price range)")
             .Produces(StatusCodes.Status204NoContent)
@@ -92,6 +94,7 @@ public static class DishCatalogEndpoints
         admin.MapPost("/{dishCatalogId:guid}/reject", async (Guid dishCatalogId, ISender sender,
                                                              CancellationToken ct) =>
                 (await sender.Send(new RejectDishNameCommand(dishCatalogId), ct)).ToHttp())
+            .RequirePermission(Permissions.Catalog.Manage)   // a dish name is shared by every country
             .WithName("RejectDishName")
             .WithSummary("Reject a suggested name")
             .Produces(StatusCodes.Status204NoContent)

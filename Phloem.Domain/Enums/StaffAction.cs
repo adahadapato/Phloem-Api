@@ -29,5 +29,11 @@ public enum StaffAction
     ContactMessageUpdated = 7,
 
     /// <summary>Opened a parcel's details (sender, recipient, address, items).</summary>
-    ParcelViewed = 8
+    ParcelViewed = 8,
+
+    /// <summary>Changed what a job role is allowed to do (Admin only).</summary>
+    RolePermissionsChanged = 9,
+
+    /// <summary>Opened one of a shop's documents (ID, licence, certificate).</summary>
+    ShopDocumentOpened = 10
 }

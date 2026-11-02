@@ -20,6 +20,9 @@ public interface IAccountService
 
     // ---------- Two-factor (recommended for admins and sellers) ----------
     Task<Result<TwoFactorStatus>> GetTwoFactorStatusAsync(Guid userId, CancellationToken ct = default);
+
+    /// <summary>When the person last signed in (password, Google or 2FA); null if never or unknown.</summary>
+    Task<DateTime?> GetLastSignInAsync(Guid userId, CancellationToken ct = default);
     Task<Result<TwoFactorSetup>> GetTwoFactorSetupAsync(Guid userId, CancellationToken ct = default);
 
     /// <summary>Turns 2FA on after checking a code from the authenticator app; returns recovery codes.</summary>

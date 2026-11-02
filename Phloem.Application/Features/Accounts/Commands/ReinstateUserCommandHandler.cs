@@ -25,7 +25,8 @@ public sealed class ReinstateUserCommandHandler(
     public async Task<Result> Handle(ReinstateUserCommand command, CancellationToken ct)
     {
         var profile = await profiles.GetByIdAsync(command.UserId, ct);
-        if (profile is null) return UserProfileErrors.NotFound;
+        // Not found, or someone in a country this person doesn't cover: answer the same way
+        if (profile is null || !currentUser.CoversCountry(profile.Country)) return UserProfileErrors.NotFound;
 
         var wasSuspended = profile.SuspendedAtUtc is not null;
         profile.Reinstate();

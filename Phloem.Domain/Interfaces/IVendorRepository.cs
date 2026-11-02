@@ -25,17 +25,21 @@ public interface IVendorRepository : IRepository<Vendor>
     /// <summary>
     /// Vendors list page (buyers: <paramref name="visibleToBuyersOnly"/> = approved shops whose owner isn't
     /// suspended) and Admin "Active sellers" (any status). Optional filters: status, country, name search.
+    /// <paramref name="coveredCountries"/> limits staff to their countries (null = every country).
     /// </summary>
     Task<PagedResult<Vendor>> GetPagedAsync(
         VendorStatus? status, Country? country, string? search, PageRequest page,
-        CancellationToken cancellationToken = default, bool visibleToBuyersOnly = false);
+        CancellationToken cancellationToken = default, bool visibleToBuyersOnly = false,
+        IReadOnlyCollection<Country>? coveredCountries = null);
 
     /// <summary>Home page → "Top sellers": best-rated approved shops, optionally in one country.</summary>
     Task<IReadOnlyList<Vendor>> GetTopRatedAsync(
         Country? country, int count, CancellationToken cancellationToken = default);
 
-    /// <summary>Admin dashboard totals: how many shops in each status (closed shops excluded).</summary>
-    Task<IReadOnlyDictionary<VendorStatus, int>> CountByStatusAsync(CancellationToken cancellationToken = default);
+    /// <summary>Admin dashboard totals: how many shops in each status (closed shops excluded), only in
+    /// <paramref name="coveredCountries"/> when given (null = every country).</summary>
+    Task<IReadOnlyDictionary<VendorStatus, int>> CountByStatusAsync(
+        CancellationToken cancellationToken = default, IReadOnlyCollection<Country>? coveredCountries = null);
 
     /// <summary>
     /// Admin lists: shop names for a whole list of owners in ONE query (owner Id → shop name).

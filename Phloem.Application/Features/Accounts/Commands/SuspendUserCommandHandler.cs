@@ -41,7 +41,8 @@ public sealed class SuspendUserCommandHandler(
             ?? throw new InvalidOperationException("This action requires a signed-in admin.");
 
         var profile = await profiles.GetByIdAsync(command.UserId, ct);
-        if (profile is null) return UserProfileErrors.NotFound;
+        // Not found, or someone in a country this person doesn't cover: answer the same way
+        if (profile is null || !currentUser.CoversCountry(profile.Country)) return UserProfileErrors.NotFound;
 
         if ((await roles.GetRolesAsync(command.UserId, ct)).Contains(Roles.Admin, StringComparer.OrdinalIgnoreCase))
             return UserProfileErrors.CannotSuspendAdmin;

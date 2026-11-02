@@ -105,6 +105,10 @@ internal sealed class AccountService(
     }
 
     /// <inheritdoc />
+    public async Task<DateTime?> GetLastSignInAsync(Guid userId, CancellationToken ct = default) =>
+        (await FindAsync(userId))?.LastLoginAt;
+
+    /// <inheritdoc />
     /// <remarks>Creates the user's authenticator key the first time; afterwards returns the same key until 2FA is
     /// switched off.</remarks>
     public async Task<Result<TwoFactorSetup>> GetTwoFactorSetupAsync(Guid userId, CancellationToken ct = default)

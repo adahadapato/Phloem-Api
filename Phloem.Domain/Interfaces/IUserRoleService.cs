@@ -26,4 +26,18 @@ public interface IUserRoleService
     /// <param name="ct">Cancels the database call.</param>
     /// <returns>False for an unknown user or role.</returns>
     Task<bool> IsInRoleAsync(Guid userId, string role, CancellationToken ct = default);
+
+    /// <summary>The permissions a job role holds (unknown ones left out); empty for Admin and non-staff roles.</summary>
+    /// <param name="role">A job role name.</param>
+    /// <param name="ct">Cancels the database calls.</param>
+    /// <returns>Its permissions, in <c>Permissions.All</c> order.</returns>
+    Task<IReadOnlyList<string>> GetRolePermissionsAsync(string role, CancellationToken ct = default);
+
+    /// <summary>Replaces a job role's permissions with exactly this list (saved at once).</summary>
+    /// <param name="role">A job role name.</param>
+    /// <param name="permissions">Known permissions only.</param>
+    /// <param name="ct">Cancels the database calls.</param>
+    /// <returns>Success; or <c>StaffErrors.NotAJobRole</c> / <c>StaffErrors.UnknownPermission</c>.</returns>
+    Task<Result> SetRolePermissionsAsync(string role, IReadOnlyCollection<string> permissions,
+                                         CancellationToken ct = default);
 }

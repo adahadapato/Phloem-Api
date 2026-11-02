@@ -6,6 +6,7 @@ using Phloem.Domain.Interfaces;
 using Phloem.Domain.Models;
 using Phloem.Domain.Shared.Results;
 using System.Net;
+using Phloem.Domain.Shared.Errors;
 
 namespace Phloem.Application.Features.DeliveryPricings.Commands;
 
@@ -15,6 +16,7 @@ namespace Phloem.Application.Features.DeliveryPricings.Commands;
 /// 4. email each adjusted seller once. A failed email is logged and never undoes the change.
 /// </summary>
 public sealed class SetDeliveryPricingCommandHandler(
+    ICurrentUser currentUser,
     IDeliveryPricingRepository pricings,
     IVendorRepository vendors,
     IEmailSender email,
@@ -26,6 +28,8 @@ public sealed class SetDeliveryPricingCommandHandler(
     public async Task<Result<int>> Handle(SetDeliveryPricingCommand command, CancellationToken ct)
     {
         // 1. Create the country's pricing the first time, otherwise change its range
+        if (!currentUser.CoversCountry(command.Country)) return StaffErrors.CountryNotCovered;
+
         var pricing = await pricings.GetByCountryAsync(command.Country, ct);
         if (pricing is null)
         {

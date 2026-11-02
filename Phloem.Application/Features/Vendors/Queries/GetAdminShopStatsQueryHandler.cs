@@ -3,15 +3,16 @@ using Phloem.Application.Features.Vendors.Dtos;
 using Phloem.Domain.Enums;
 using Phloem.Domain.Interfaces;
 using Phloem.Domain.Shared.Results;
+using Phloem.Application.Common.Authorization;
 
 namespace Phloem.Application.Features.Vendors.Queries;
 
-public sealed class GetAdminShopStatsQueryHandler(IVendorRepository vendors)
+public sealed class GetAdminShopStatsQueryHandler(ICurrentUser currentUser, IVendorRepository vendors)
     : IRequestHandler<GetAdminShopStatsQuery, Result<AdminShopStatsDto>>
 {
     public async Task<Result<AdminShopStatsDto>> Handle(GetAdminShopStatsQuery query, CancellationToken ct)
     {
-        var counts = await vendors.CountByStatusAsync(ct);
+        var counts = await vendors.CountByStatusAsync(ct, currentUser.CountryLimit());
         int Count(VendorStatus status) => counts.GetValueOrDefault(status);
 
         var pending = Count(VendorStatus.PendingApproval);

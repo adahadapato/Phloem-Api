@@ -14,6 +14,7 @@ namespace Phloem.Application.Features.Vendors.Commands;
 /// shop. The owner sees the role at their next token refresh.
 /// </summary>
 public sealed class ApproveShopCommandHandler(
+    ICurrentUser currentUser,
     IVendorRepository vendors,
     IUserRoleService roles,
     IUnitOfWork unitOfWork,
@@ -25,7 +26,8 @@ public sealed class ApproveShopCommandHandler(
     public async Task<Result> Handle(ApproveShopCommand command, CancellationToken ct)
     {
         var vendor = await vendors.GetByIdAsync(command.ShopId, ct);
-        if (vendor is null) return VendorErrors.NotFound;
+        // Not found, or a shop in a country this person doesn't cover: answer the same way
+        if (vendor is null || !currentUser.CoversCountry(vendor.Country)) return VendorErrors.NotFound;
 
         await using (var transaction = await unitOfWork.BeginTransactionAsync(ct))
         {

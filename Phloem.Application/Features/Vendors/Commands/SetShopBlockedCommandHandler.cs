@@ -12,6 +12,7 @@ namespace Phloem.Application.Features.Vendors.Commands;
 /// otherwise back to waiting for review. Shop and role change in ONE transaction.
 /// </summary>
 public sealed class SetShopBlockedCommandHandler(
+    ICurrentUser currentUser,
     IVendorRepository vendors,
     IUserRoleService roles,
     IUnitOfWork unitOfWork)
@@ -20,7 +21,8 @@ public sealed class SetShopBlockedCommandHandler(
     public async Task<Result> Handle(SetShopBlockedCommand command, CancellationToken ct)
     {
         var vendor = await vendors.GetByIdAsync(command.ShopId, ct);
-        if (vendor is null) return VendorErrors.NotFound;
+        // Not found, or a shop in a country this person doesn't cover: answer the same way
+        if (vendor is null || !currentUser.CoversCountry(vendor.Country)) return VendorErrors.NotFound;
 
         await using var transaction = await unitOfWork.BeginTransactionAsync(ct);
 

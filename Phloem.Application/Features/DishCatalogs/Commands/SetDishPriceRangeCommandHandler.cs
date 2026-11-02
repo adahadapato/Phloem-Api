@@ -15,6 +15,7 @@ namespace Phloem.Application.Features.DishCatalogs.Commands;
 /// Emails go out AFTER the save, and a failed email never undoes the admin's change.
 /// </summary>
 public sealed class SetDishPriceRangeCommandHandler(
+    ICurrentUser currentUser,
     IDishCatalogRepository catalog,
     IDishRepository dishes,
     IEmailSender email,
@@ -24,6 +25,8 @@ public sealed class SetDishPriceRangeCommandHandler(
 {
     public async Task<Result<int>> Handle(SetDishPriceRangeCommand command, CancellationToken ct)
     {
+        if (!currentUser.CoversCountry(command.Country)) return StaffErrors.CountryNotCovered;
+
         var item = await catalog.GetByIdAsync(command.DishCatalogId, ct);
         if (item is null) return DishCatalogErrors.NotFound;
 

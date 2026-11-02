@@ -14,6 +14,7 @@ using Phloem.Presentation.Endpoints.ShipmentRoutes;
 using Phloem.Presentation.Endpoints.Shipments;
 using Phloem.Presentation.Endpoints.Shops;
 using Phloem.Presentation.Endpoints.Users;
+using Phloem.Presentation.Endpoints.Staff;
 
 namespace Phloem.Presentation.Extensions;
 
@@ -42,6 +43,7 @@ public static class EndpointExtensions
         api.MapOrderEndpoints();             // /api/orders           + /api/shops/mine/orders
         api.MapShipmentEndpoints();          // /api/shipments + /api/track + /api/staff/shipments
         api.MapUserEndpoints();              //                         /api/admin/users (suspend / reinstate)
+        api.MapStaffEndpoints();             //                         /api/admin/staff + /api/admin/audit
         api.MapLegalEndpoints();             // /api/legal            + /api/admin/legal
         api.MapParcelItemRuleEndpoints();    // /api/parcel-rules     + /api/admin/parcel-rules
         api.MapContactEndpoints();           // /api/contact          + /api/admin/contact-messages

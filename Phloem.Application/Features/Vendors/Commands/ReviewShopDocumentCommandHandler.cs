@@ -25,7 +25,8 @@ public sealed class ReviewShopDocumentCommandHandler(
             ?? throw new InvalidOperationException("This action requires a signed-in user.");
 
         var vendor = await vendors.GetByIdAsync(command.ShopId, ct);
-        if (vendor is null) return VendorErrors.NotFound;
+        // Not found, or a shop in a country this person doesn't cover: answer the same way
+        if (vendor is null || !currentUser.CoversCountry(vendor.Country)) return VendorErrors.NotFound;
 
         var now = time.GetUtcNow().UtcDateTime;
         var reviewed = command.Accept

@@ -384,7 +384,7 @@ internal sealed class AuthService(
 
         var tokens = new AuthTokens(access.Value, access.ExpiresAtUtc,
                                     refresh.Value, refresh.ExpiresAtUtc,
-                                    user.Id, roles);
+                                    user.Id, roles, staff.Permissions, staff.Countries);
         return new Session(tokens, row);
     }
 

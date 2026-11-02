@@ -16,7 +16,7 @@ namespace Phloem.Presentation.Endpoints.DeliveryPricings;
 ///   <item><description><b>Buyers</b> (<c>/api/delivery-windows</c>): the "Delivery time" picker. Open to anyone:
 ///   it's only prices, and buyers may look before signing in.</description></item>
 ///   <item><description><b>Admin</b> (<c>/api/admin/delivery-pricing</c>): set the ranges and window charges.
-///   Needs permission <c>pricing.manage</c>, every country (Admin has it).</description></item>
+///   Needs permission <c>pricing.manage</c>; staff see and change only their countries.</description></item>
 /// </list>
 /// </summary>
 /// <remarks>A seller's own fee is set in <c>ShopEndpoints</c> (<c>/api/shops/mine/delivery-fee</c>).</remarks>
@@ -54,7 +54,7 @@ public static class DeliveryPricingEndpoints
     {
         var admin = api.MapGroup("/admin/delivery-pricing")
                        .WithTags("Admin: Delivery pricing")
-                       .RequirePermission(Permissions.Pricing.Manage);
+                       .RequirePermission(Permissions.Pricing.Manage, CountryRule.RecordCountry);
 
         // ───────────────────────────── 1. View ─────────────────────────────
 

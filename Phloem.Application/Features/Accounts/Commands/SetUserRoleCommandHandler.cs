@@ -12,8 +12,8 @@ namespace Phloem.Application.Features.Accounts.Commands;
 
 /// <summary>Handles <see cref="SetUserRoleCommand"/>.</summary>
 /// <remarks>
-/// <para><b>Admin</b> is only given or taken by an Admin (staff with <c>staff.manage</c> can handle job roles and
-/// Courier, but never Admin).</para>
+/// <para><b>Admin</b> is only given or taken by an Admin. Staff the owners give <c>staff.manage</c> can handle job
+/// roles and Courier, but never Admin, never their own roles, and only for people whose home country they cover.</para>
 /// <para><b>Countries:</b> someone given their first job role starts with their profile's home country, so they can
 /// work straight away; the owners can widen it on the Staff page. Someone whose last job role is taken loses their
 /// countries too.</para>
@@ -32,7 +32,8 @@ public sealed class SetUserRoleCommandHandler(
     : IRequestHandler<SetUserRoleCommand, Result>
 {
     /// <returns>Success; or <see cref="AuthErrors.RoleNotAssignable"/>, <see cref="UserProfileErrors.NotFound"/>,
-    /// <see cref="StaffErrors.OnlyAdminCanChangeAdmin"/>, <see cref="AuthErrors.CannotRemoveOwnAdmin"/>,
+    /// <see cref="StaffErrors.OnlyAdminCanChangeAdmin"/>, <see cref="StaffErrors.CannotChangeOwnAccess"/>,
+    /// <see cref="AuthErrors.CannotRemoveOwnAdmin"/>,
     /// <see cref="AuthErrors.CannotMakeSuspendedAdmin"/>, <see cref="AuthErrors.LastAdmin"/>.</returns>
     /// <exception cref="InvalidOperationException">Called without a signed-in user (endpoint misconfigured).</exception>
     public async Task<Result> Handle(SetUserRoleCommand command, CancellationToken ct)
@@ -43,10 +44,15 @@ public sealed class SetUserRoleCommandHandler(
         var role = Roles.Assignable.FirstOrDefault(r => r.Equals(command.Role, StringComparison.OrdinalIgnoreCase));
         if (role is null) return AuthErrors.RoleNotAssignable;
 
-        if (role == Roles.Admin && !currentUser.IsInRole(Roles.Admin)) return StaffErrors.OnlyAdminCanChangeAdmin;
+        var actorIsAdmin = currentUser.IsInRole(Roles.Admin);
+        if (role == Roles.Admin && !actorIsAdmin) return StaffErrors.OnlyAdminCanChangeAdmin;
 
+        // Staff with staff.manage (not owners) can't change their own roles
+        if (!actorIsAdmin && command.UserId == actorId) return StaffErrors.CannotChangeOwnAccess;
+
+        // ...and only for people in their countries (others answer "not found")
         var profile = await profiles.GetByIdAsync(command.UserId, ct);
-        if (profile is null) return UserProfileErrors.NotFound;
+        if (profile is null || !currentUser.CoversCountry(profile.Country)) return UserProfileErrors.NotFound;
 
         var target = $"{profile.GetFullName()} ({command.UserId})";
         var now = time.GetUtcNow().UtcDateTime;
