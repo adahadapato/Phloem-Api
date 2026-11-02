@@ -1,4 +1,5 @@
 using MediatR;
+using Phloem.Domain.Entities;
 using Phloem.Domain.Enums;
 using Phloem.Domain.Interfaces;
 using Phloem.Domain.Shared.Errors;
@@ -16,6 +17,7 @@ public sealed record UpdateContactMessageStatusCommand(Guid Id, ContactMessageSt
 /// <summary>Handles <see cref="UpdateContactMessageStatusCommand"/>.</summary>
 public sealed class UpdateContactMessageStatusCommandHandler(
     IContactMessageRepository messages,
+    IStaffAuditRepository audit,
     IUnitOfWork unitOfWork,
     ICurrentUser currentUser,
     TimeProvider clock)
@@ -31,6 +33,8 @@ public sealed class UpdateContactMessageStatusCommandHandler(
         if (message is null) return ContactMessageErrors.NotFound;
 
         message.SetStatus(command.Status, command.Note, staffId, clock.GetUtcNow().UtcDateTime);
+        audit.Add(StaffAuditEntry.Create(staffId, StaffAction.ContactMessageUpdated, $"Contact message {message.Id}",
+                                         detail: $"Status: {command.Status}"));
         await unitOfWork.SaveChangesAsync(ct);
         return Result.Success();
     }

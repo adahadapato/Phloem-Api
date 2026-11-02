@@ -10,7 +10,7 @@ namespace Phloem.Application.Features.Accounts.Queries;
 public sealed class GetMyTwoFactorStatusQueryHandler(ICurrentUser currentUser, IAccountService accounts)
     : IRequestHandler<GetMyTwoFactorStatusQuery, Result<TwoFactorStatusDto>>
 {
-    /// <summary>Reads the status from Identity and adds whether it's required (admins).</summary>
+    /// <summary>Reads the status from Identity and adds whether it's required (admins and staff).</summary>
     /// <exception cref="InvalidOperationException">Called without a signed-in user (endpoint misconfigured).</exception>
     public async Task<Result<TwoFactorStatusDto>> Handle(GetMyTwoFactorStatusQuery query, CancellationToken ct)
     {
@@ -23,6 +23,6 @@ public sealed class GetMyTwoFactorStatusQueryHandler(ICurrentUser currentUser, I
         return new TwoFactorStatusDto(
             status.Value.IsEnabled,
             status.Value.RecoveryCodesLeft,
-            IsRequired: currentUser.IsInRole(Roles.Admin));
+            IsRequired: Roles.Staff.Any(currentUser.IsInRole));
     }
 }

@@ -11,7 +11,8 @@ public sealed class DisableTwoFactorCommandHandler(ICurrentUser currentUser, IAc
     : IRequestHandler<DisableTwoFactorCommand, Result>
 {
     /// <summary>
-    /// Refuses admins, checks the password (so a stolen, unlocked phone can't switch it off), then disables.
+    /// Refuses admins and staff (<c>Roles.Staff</c>), checks the password (so a stolen, unlocked phone can't switch
+    /// it off), then disables.
     /// </summary>
     /// <returns>Success; or <see cref="AuthErrors.TwoFactorRequired"/>, a wrong-password error, or an Identity error.</returns>
     /// <exception cref="InvalidOperationException">Called without a signed-in user (endpoint misconfigured).</exception>
@@ -20,7 +21,7 @@ public sealed class DisableTwoFactorCommandHandler(ICurrentUser currentUser, IAc
         var userId = currentUser.UserId
             ?? throw new InvalidOperationException("This action requires a signed-in user.");
 
-        if (currentUser.IsInRole(Roles.Admin)) return AuthErrors.TwoFactorRequired;
+        if (Roles.Staff.Any(currentUser.IsInRole)) return AuthErrors.TwoFactorRequired;
 
         var password = await accounts.VerifyPasswordAsync(userId, command.Password, ct);
         if (password.IsFailure) return password;

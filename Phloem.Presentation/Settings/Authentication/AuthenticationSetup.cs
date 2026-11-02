@@ -6,6 +6,7 @@ using Phloem.Domain.Shared.Errors;
 using Phloem.Infrastructure.Settings.Identity;
 using Phloem.Presentation.Extensions;
 using Phloem.Presentation.Services;
+using Phloem.Presentation.Settings.Authorization;
 
 namespace Phloem.Presentation.Settings.Authentication;
 
@@ -17,8 +18,8 @@ namespace Phloem.Presentation.Settings.Authentication;
 ///   <see cref="GoogleAuthSetup"/> when its keys are set.</description></item>
 ///   <item><description><b>Refusals:</b> 401 / 403 written as ProblemDetails with a <c>code</c> (no token, expired,
 ///   invalid, not allowed), the same shape as every other error.</description></item>
-///   <item><description><b>Authorization:</b> role checks on endpoints (<c>RequireAuthorization</c>,
-///   <c>RequireRole</c>).</description></item>
+///   <item><description><b>Authorization:</b> staff permissions on endpoints (<c>RequirePermission</c>, see
+///   <see cref="AuthorizationSetup"/>); plain <c>RequireAuthorization()</c> for "any signed-in user".</description></item>
 ///   <item><description><b>Current user:</b> <see cref="ICurrentUser"/> for the handlers.</description></item>
 /// </list>
 /// </summary>
@@ -47,8 +48,8 @@ public static class AuthenticationSetup
         services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
                 .Configure<IOptions<JwtSettings>>((options, jwt) => Apply(options, jwt.Value));
 
-        // 1c. Authorization (role policies are added with the endpoints)
-        services.AddAuthorization();
+        // 1c. Authorization: permission policies, built on demand from "perm:…" names
+        services.AddPermissionAuthorization();
 
         // 1d. The signed-in user, for handlers
         services.AddHttpContextAccessor();

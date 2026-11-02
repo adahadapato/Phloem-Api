@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Phloem.Application.Common.Authorization;
 using Phloem.Domain.Enums;
 using Phloem.Domain.Interfaces;
 using Phloem.Domain.Shared.Errors;
@@ -8,6 +9,7 @@ namespace Phloem.Application.Features.Shipments.Commands;
 
 /// <summary>Handles <see cref="UpdateShipmentProgressCommand"/>.</summary>
 public sealed class UpdateShipmentProgressCommandHandler(
+    ICurrentUser currentUser,
     IShipmentRepository shipments,
     IUnitOfWork unitOfWork,
     TimeProvider time)
@@ -21,7 +23,8 @@ public sealed class UpdateShipmentProgressCommandHandler(
     public async Task<Result> Handle(UpdateShipmentProgressCommand command, CancellationToken ct)
     {
         var shipment = await shipments.GetByTrackingNumberAsync(command.TrackingNumber.Trim(), ct);
-        if (shipment is null) return ShipmentErrors.NotFound;
+        // Not found, or from and to countries this person doesn't cover: answer the same way
+        if (shipment is null || !currentUser.CoversParcel(shipment)) return ShipmentErrors.NotFound;
 
         var now = time.GetUtcNow().UtcDateTime;
 

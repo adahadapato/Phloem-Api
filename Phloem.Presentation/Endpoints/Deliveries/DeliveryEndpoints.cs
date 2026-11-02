@@ -7,6 +7,7 @@ using Phloem.Application.Features.Shipments.Commands;
 using Phloem.Domain.Constants;
 using Phloem.Domain.Enums;
 using Phloem.Presentation.Extensions;
+using Phloem.Presentation.Settings.Authorization;
 
 namespace Phloem.Presentation.Endpoints.Deliveries;
 
@@ -97,7 +98,7 @@ public static class DeliveryEndpoints
     {
         api.MapGet("/staff/couriers", async (Country country, ISender sender, CancellationToken ct) =>
                 (await sender.Send(new GetCouriersQuery(country), ct)).ToHttp())
-            .RequireAuthorization(policy => policy.RequireRole(Roles.ShipmentManager, Roles.Admin))
+            .RequirePermission(Permissions.Parcels.Manage, CountryRule.RecordCountry)
             .WithTags("Staff: Shipments")
             .WithName("GetCouriers")
             .WithSummary("Couriers who deliver in a country (for \"Out for delivery\"), by name")

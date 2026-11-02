@@ -1,5 +1,6 @@
 using MediatR;
 using Phloem.Application.Features.Contact.Dtos;
+using Phloem.Domain.Entities;
 using Phloem.Domain.Enums;
 using Phloem.Domain.Interfaces;
 using Phloem.Domain.Shared.Results;
@@ -16,7 +17,9 @@ public sealed record GetContactMessagesQuery(
     int PageSize = PageRequest.DefaultPageSize) : IRequest<Result<ContactInboxDto>>;
 
 /// <summary>Handles <see cref="GetContactMessagesQuery"/>.</summary>
-public sealed class GetContactMessagesQueryHandler(IContactMessageRepository messages)
+/// <remarks>The inbox shows people's messages, so every opening is written to the staff audit log.</remarks>
+public sealed class GetContactMessagesQueryHandler(IContactMessageRepository messages, ICurrentUser currentUser,
+                                                   IStaffAuditRepository audit, IUnitOfWork unitOfWork)
     : IRequestHandler<GetContactMessagesQuery, Result<ContactInboxDto>>
 {
     public async Task<Result<ContactInboxDto>> Handle(GetContactMessagesQuery query, CancellationToken ct)
@@ -24,6 +27,13 @@ public sealed class GetContactMessagesQueryHandler(IContactMessageRepository mes
         var page = new PageRequest { Page = query.Page, PageSize = query.PageSize };
         var paged = await messages.GetPageAsync(query.Status, page, ct);
         var counts = await messages.CountByStatusAsync(ct);
+
+        if (currentUser.UserId is { } actorId)
+        {
+            audit.Add(StaffAuditEntry.Create(actorId, StaffAction.ContactMessagesViewed, "Contact us inbox",
+                                             detail: $"{query.Status?.ToString() ?? "All"}, page {page.Page}"));
+            await unitOfWork.SaveChangesAsync(ct);
+        }
 
         var items = paged.Items.Select(ContactMessageDto.From).ToList();
         return new ContactInboxDto(

@@ -5,6 +5,7 @@ using Phloem.Application.Features.LegalDocuments.Queries;
 using Phloem.Domain.Constants;
 using Phloem.Domain.Enums;
 using Phloem.Presentation.Extensions;
+using Phloem.Presentation.Settings.Authorization;
 
 namespace Phloem.Presentation.Endpoints.Legal;
 
@@ -14,7 +15,7 @@ namespace Phloem.Presentation.Endpoints.Legal;
 /// <list type="number">
 ///   <item><description><b>Public</b> (<c>/api/legal/{type}</c>): the current version. No sign-in (read before
 ///   signing up).</description></item>
-///   <item><description><b>Admin</b> (<c>/api/admin/legal/{type}</c>): publish a new version. Admin role only.
+///   <item><description><b>Admin</b> (<c>/api/admin/legal/{type}</c>): publish a new version. Needs permission <c>legal.publish</c>, every country (Admin has it).
 ///   </description></item>
 /// </list>
 /// </summary>
@@ -54,7 +55,7 @@ public static class LegalEndpoints
     {
         var admin = api.MapGroup("/admin/legal")
                        .WithTags("Admin: Legal")
-                       .RequireAuthorization(policy => policy.RequireRole(Roles.Admin));
+                       .RequirePermission(Permissions.Content.PublishLegal);
 
         admin.MapGet("/acceptance", async (ISender sender, CancellationToken ct) =>
                 (await sender.Send(new GetTermsAcceptanceStatsQuery(), ct)).ToHttp())

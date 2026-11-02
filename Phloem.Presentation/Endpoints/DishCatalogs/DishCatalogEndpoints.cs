@@ -5,6 +5,7 @@ using Phloem.Application.Features.DishCatalogs.Queries;
 using Phloem.Domain.Constants;
 using Phloem.Domain.Enums;
 using Phloem.Presentation.Extensions;
+using Phloem.Presentation.Settings.Authorization;
 
 namespace Phloem.Presentation.Endpoints.DishCatalogs;
 
@@ -14,7 +15,7 @@ namespace Phloem.Presentation.Endpoints.DishCatalogs;
 /// <list type="number">
 ///   <item><description><b>Sellers</b> (<c>/api/dish-catalog</c>): the name picker and "Can't find your dish?".</description></item>
 ///   <item><description><b>Admin</b> (<c>/api/admin/dish-catalog</c>): review suggested names and set price ranges.
-///   Admin role only.</description></item>
+///   Needs permission <c>catalog.manage</c>, every country (Admin has it).</description></item>
 /// </list>
 /// </summary>
 public static class DishCatalogEndpoints
@@ -61,7 +62,7 @@ public static class DishCatalogEndpoints
     {
         var admin = api.MapGroup("/admin/dish-catalog")
                        .WithTags("Admin: Dish catalog")
-                       .RequireAuthorization(policy => policy.RequireRole(Roles.Admin));
+                       .RequirePermission(Permissions.Catalog.Manage);
 
         // ───────────────────────────── 1. Lists ─────────────────────────────
 

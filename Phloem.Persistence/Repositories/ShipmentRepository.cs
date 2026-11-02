@@ -52,9 +52,16 @@ internal sealed class ShipmentRepository(PhloemDbContext context)
 
     /// <inheritdoc />
     public Task<PagedResult<Shipment>> GetPagedAsync(ShipmentStatus? status, Country? fromCountry, Country? toCountry,
-                                                     PageRequest page, CancellationToken cancellationToken = default)
+                                                     IReadOnlyCollection<Country>? coveredCountries, PageRequest page,
+                                                     CancellationToken cancellationToken = default)
     {
         IQueryable<Shipment> query = WithChildren(Set.AsNoTracking());
+
+        if (coveredCountries is not null)
+        {
+            var covered = coveredCountries.ToList();
+            query = query.Where(s => covered.Contains(s.FromCountry) || covered.Contains(s.ToCountry));
+        }
 
         if (status is not null) query = query.Where(s => s.Status == status);
         if (fromCountry is not null) query = query.Where(s => s.FromCountry == fromCountry);

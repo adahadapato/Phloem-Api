@@ -1,4 +1,5 @@
 using MediatR;
+using Phloem.Application.Common.Authorization;
 using Microsoft.Extensions.Logging;
 using Phloem.Domain.Entities;
 using Phloem.Domain.Enums;
@@ -11,6 +12,7 @@ namespace Phloem.Application.Features.Shipments.Commands;
 
 /// <summary>Handles <see cref="ReceiveShipmentAtHubCommand"/>.</summary>
 public sealed class ReceiveShipmentAtHubCommandHandler(
+    ICurrentUser currentUser,
     IShipmentRepository shipments,
     IShipmentRouteRepository routes,
     IAccountService accounts,
@@ -33,7 +35,8 @@ public sealed class ReceiveShipmentAtHubCommandHandler(
     public async Task<Result<decimal>> Handle(ReceiveShipmentAtHubCommand command, CancellationToken ct)
     {
         var shipment = await shipments.GetByTrackingNumberAsync(command.TrackingNumber.Trim(), ct);
-        if (shipment is null) return ShipmentErrors.NotFound;
+        // Not found, or from and to countries this person doesn't cover: answer the same way
+        if (shipment is null || !currentUser.CoversParcel(shipment)) return ShipmentErrors.NotFound;
 
         var route = await routes.GetByIdAsync(shipment.ShipmentRouteId, ct);
         if (route is null) return ShipmentErrors.RouteNotFound;

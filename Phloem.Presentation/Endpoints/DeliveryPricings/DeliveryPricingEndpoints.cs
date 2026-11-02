@@ -5,6 +5,7 @@ using Phloem.Application.Features.DeliveryPricings.Queries;
 using Phloem.Domain.Constants;
 using Phloem.Domain.Enums;
 using Phloem.Presentation.Extensions;
+using Phloem.Presentation.Settings.Authorization;
 
 namespace Phloem.Presentation.Endpoints.DeliveryPricings;
 
@@ -15,7 +16,7 @@ namespace Phloem.Presentation.Endpoints.DeliveryPricings;
 ///   <item><description><b>Buyers</b> (<c>/api/delivery-windows</c>): the "Delivery time" picker. Open to anyone:
 ///   it's only prices, and buyers may look before signing in.</description></item>
 ///   <item><description><b>Admin</b> (<c>/api/admin/delivery-pricing</c>): set the ranges and window charges.
-///   Admin role only.</description></item>
+///   Needs permission <c>pricing.manage</c>, every country (Admin has it).</description></item>
 /// </list>
 /// </summary>
 /// <remarks>A seller's own fee is set in <c>ShopEndpoints</c> (<c>/api/shops/mine/delivery-fee</c>).</remarks>
@@ -53,7 +54,7 @@ public static class DeliveryPricingEndpoints
     {
         var admin = api.MapGroup("/admin/delivery-pricing")
                        .WithTags("Admin: Delivery pricing")
-                       .RequireAuthorization(policy => policy.RequireRole(Roles.Admin));
+                       .RequirePermission(Permissions.Pricing.Manage);
 
         // ───────────────────────────── 1. View ─────────────────────────────
 

@@ -5,6 +5,7 @@ using Phloem.Application.Features.ParcelItemRules.Queries;
 using Phloem.Domain.Constants;
 using Phloem.Domain.Enums;
 using Phloem.Presentation.Extensions;
+using Phloem.Presentation.Settings.Authorization;
 
 namespace Phloem.Presentation.Endpoints.ParcelItemRules;
 
@@ -15,7 +16,7 @@ namespace Phloem.Presentation.Endpoints.ParcelItemRules;
 ///   <item><description><b>Public</b> (<c>/api/parcel-rules</c>): the list, in display order. No sign-in.
 ///   </description></item>
 ///   <item><description><b>Admin</b> (<c>/api/admin/parcel-rules</c>): add, change, delete and reorder lines.
-///   Admin role only.</description></item>
+///   Needs permission <c>parcels.settings</c>, every country (Admin has it).</description></item>
 /// </list>
 /// </summary>
 public static class ParcelItemRuleEndpoints
@@ -48,7 +49,7 @@ public static class ParcelItemRuleEndpoints
     {
         var admin = api.MapGroup("/admin/parcel-rules")
                        .WithTags("Admin: What can be sent")
-                       .RequireAuthorization(policy => policy.RequireRole(Roles.Admin));
+                       .RequirePermission(Permissions.Parcels.Settings);
 
         admin.MapPost("/", async (ParcelItemRuleRequest body, ISender sender, CancellationToken ct) =>
                 (await sender.Send(new AddParcelItemRuleCommand(body.Kind, body.Name, body.Detail), ct)).ToHttp())

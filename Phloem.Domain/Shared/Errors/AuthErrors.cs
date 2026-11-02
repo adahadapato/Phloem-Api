@@ -40,7 +40,7 @@ public static class AuthErrors
 
     /// <summary>Admins must keep two-factor sign-in switched on.</summary>
     public static readonly Error TwoFactorRequired = Error.Forbidden(
-        "Auth.TwoFactorRequired", "Two-factor sign-in is required for admin accounts and can't be switched off.");
+        "Auth.TwoFactorRequired", "Two-factor sign-in is required for admin and staff accounts and can't be switched off.");
 
     /// <summary>Recovery codes only exist while two-factor sign-in is on.</summary>
     public static readonly Error TwoFactorNotEnabled = Error.Validation(

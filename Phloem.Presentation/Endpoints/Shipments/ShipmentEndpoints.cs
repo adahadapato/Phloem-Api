@@ -6,6 +6,7 @@ using Phloem.Domain.Constants;
 using Phloem.Domain.Enums;
 using Phloem.Domain.Shared.Results;
 using Phloem.Presentation.Extensions;
+using Phloem.Presentation.Settings.Authorization;
 
 namespace Phloem.Presentation.Endpoints.Shipments;
 
@@ -17,8 +18,8 @@ namespace Phloem.Presentation.Endpoints.Shipments;
 ///   <item><description><b>Senders</b> (<c>/api/shipments</c>): book, list, open, cancel. Sign-in needed.</description></item>
 ///   <item><description><b>Test payments (TEMPORARY)</b>: pay a weighed parcel without paying, while
 ///   <c>Payments:TestPaymentsEnabled</c> is true.</description></item>
-///   <item><description><b>Staff</b> (<c>/api/staff/shipments</c>, ShipmentManager or Admin): every parcel,
-///   receive at the hub (weigh), move it along its journey.</description></item>
+///   <item><description><b>Staff</b> (<c>/api/staff/shipments</c>, permission <c>parcels.manage</c>): every parcel
+///   from or to the person's countries, receive at the hub (weigh), move it along its journey.</description></item>
 /// </list>
 /// </summary>
 /// <remarks>
@@ -160,7 +161,7 @@ public static class ShipmentEndpoints
     {
         var staff = api.MapGroup("/staff/shipments")
                        .WithTags("Staff: Shipments")
-                       .RequireAuthorization(policy => policy.RequireRole(Roles.ShipmentManager, Roles.Admin));
+                       .RequirePermission(Permissions.Parcels.Manage, CountryRule.RecordCountry);
 
         staff.MapGet("/", async ([AsParameters] GetStaffShipmentsQuery query, ISender sender, CancellationToken ct) =>
                 (await sender.Send(query, ct)).ToHttp())

@@ -64,6 +64,14 @@ public sealed class PhloemDbContext(DbContextOptions<PhloemDbContext> options)
     /// <summary>Hashed refresh tokens (sign-in), managed by the Identity services.</summary>
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
+    // ---------- Staff access ----------
+
+    /// <summary>Which countries each staff member covers.</summary>
+    public DbSet<StaffCountry> StaffCountries => Set<StaffCountry>();
+
+    /// <summary>The staff audit log.</summary>
+    public DbSet<StaffAuditEntry> StaffAuditEntries => Set<StaffAuditEntry>();
+
     /// <summary>Identity's tables first, then every configuration in this assembly.</summary>
     /// <param name="builder">The model builder.</param>
     protected override void OnModelCreating(ModelBuilder builder)

@@ -86,6 +86,7 @@ internal static class IdentitySetup
         services.AddScoped<IAuthService, AuthService>();       // per request: shares the request's database context
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IUserRoleService, UserRoleService>();
+        services.AddScoped<StaffAccessReader>();               // staff permissions + countries for the token
 
         // 7. Outside sign-in (Google): one-time codes that carry the sign-in back into the app
         services.AddOptions<LoginCodeSettings>()

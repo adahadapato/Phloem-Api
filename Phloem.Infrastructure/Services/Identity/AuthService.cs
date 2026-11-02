@@ -42,6 +42,7 @@ internal sealed class AuthService(
     IUserProfileRepository profiles,
     IUnitOfWork unitOfWork,
     JwtTokenGenerator tokenGenerator,
+    StaffAccessReader staffAccess,
     TwoFactorChallenge challenges,
     IEmailSender emailSender,
     IOptions<IdentitySettings> identityOptions,
@@ -371,8 +372,9 @@ internal sealed class AuthService(
     private async Task<Session> StartSessionAsync(ApplicationUser user, bool isNewSignIn)
     {
         var roles = (await users.GetRolesAsync(user)).ToArray();
+        var staff = await staffAccess.ReadAsync(user.Id, roles);   // re-read every time: Staff page changes apply
 
-        var access = tokenGenerator.CreateAccessToken(user, roles);
+        var access = tokenGenerator.CreateAccessToken(user, roles, staff);
         var refresh = tokenGenerator.CreateRefreshToken();
 
         var row = new RefreshToken(user.Id, refresh.Value, refresh.IssuedAtUtc, refresh.ExpiresAtUtc);

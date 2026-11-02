@@ -25,6 +25,7 @@ public sealed class SuspendUserCommandHandler(
     IOrderRepository orders,
     IRefreshTokenRepository refreshTokens,
     IAccountService accounts,
+    IStaffAuditRepository audit,
     IUnitOfWork unitOfWork,
     IEmailSender email,
     TimeProvider time,
@@ -64,6 +65,12 @@ public sealed class SuspendUserCommandHandler(
         foreach (var token in await refreshTokens.GetActiveForUserAsync(command.UserId, now, ct))
             token.Revoke(now);
 
+        // 4. Staff audit log (same save)
+        audit.Add(StaffAuditEntry.Create(adminId, StaffAction.UserSuspended,
+                                         $"{profile.GetFullName()} ({command.UserId})", profile.Country,
+                                         $"Until {command.UntilUtc?.ToString("u") ?? "further notice"}: " +
+                                         command.Reason.Trim()));
+
         await unitOfWork.SaveChangesAsync(ct);
 
         logger.LogWarning("User {UserId} suspended by admin {AdminId} until {Until}: {Reason}. " +
@@ -71,7 +78,7 @@ public sealed class SuspendUserCommandHandler(
                           command.UserId, adminId, command.UntilUtc?.ToString("u") ?? "further notice",
                           command.Reason.Trim(), cancelled.Count);
 
-        // 4. Emails (never fail the request)
+        // 5. Emails (never fail the request)
         await TellThePersonAsync(command.UserId, profile.FirstName, profile.SuspendedUntilUtc,
                                  profile.SuspensionReason!, ct);
         foreach (var order in cancelled) await TellTheBuyerAsync(order, ct);

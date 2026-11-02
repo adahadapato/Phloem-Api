@@ -9,13 +9,19 @@ namespace Phloem.Persistence.Configurations.Identity;
 /// authorization policies are tied to these exact names.
 /// </summary>
 /// <remarks>
-/// No configuration class: <c>IdentityDbContext</c> maps Identity's tables itself, and the extra
-/// <see cref="Description"/> column takes its size from the <see cref="MaxLengthAttribute"/>.
+/// <para>No configuration class: <c>IdentityDbContext</c> maps Identity's tables itself, and the extra
+/// <see cref="Description"/> column takes its size from the <see cref="MaxLengthAttribute"/>.</para>
+/// <para><b>Permissions</b> of a staff job role are stored as role claims (table AspNetRoleClaims) of type
+/// <see cref="PermissionClaimType"/>, one row per permission. Admin has none stored: it holds every permission in
+/// code.</para>
 /// </remarks>
 public sealed class ApplicationRole : IdentityRole<Guid>
 {
     /// <summary>Longest description (column size).</summary>
     public const int DescriptionMaxLength = 200;
+
+    /// <summary>The role-claim type that holds one permission (value = e.g. "shops.manage").</summary>
+    public const string PermissionClaimType = "permission";
 
     /// <summary>Required by EF Core and Identity.</summary>
     public ApplicationRole() => Id = Guid.CreateVersion7();

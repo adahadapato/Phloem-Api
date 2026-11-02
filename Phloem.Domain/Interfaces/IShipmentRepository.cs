@@ -30,15 +30,19 @@ public interface IShipmentRepository : IRepository<Shipment>
         Guid senderId, PageRequest page, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Admin / ShipmentManager → Shipments: optionally one status and/or one route direction, newest first.
+    /// Admin / Parcel hub → Shipments: optionally one status and/or one route direction, newest first, limited to the
+    /// staff member's countries.
     /// </summary>
     /// <param name="status">Only this status; null = all.</param>
     /// <param name="fromCountry">Only parcels from this country; null = all.</param>
     /// <param name="toCountry">Only parcels to this country; null = all.</param>
+    /// <param name="coveredCountries">Only parcels from OR to one of these countries; null = every country (admins and
+    /// staff covering all countries). Empty matches nothing.</param>
     /// <param name="page">Which page and how many per page.</param>
     /// <param name="cancellationToken">Cancels the database call.</param>
     Task<PagedResult<Shipment>> GetPagedAsync(
-        ShipmentStatus? status, Country? fromCountry, Country? toCountry, PageRequest page,
+        ShipmentStatus? status, Country? fromCountry, Country? toCountry,
+        IReadOnlyCollection<Country>? coveredCountries, PageRequest page,
         CancellationToken cancellationToken = default);
 
     /// <summary>

@@ -6,6 +6,7 @@ using Phloem.Domain.Constants;
 using Phloem.Domain.Enums;
 using Phloem.Presentation.Extensions;
 using Phloem.Presentation.Settings.RateLimiting;
+using Phloem.Presentation.Settings.Authorization;
 
 namespace Phloem.Presentation.Endpoints.ContactUs;
 
@@ -13,8 +14,9 @@ namespace Phloem.Presentation.Endpoints.ContactUs;
 /// Contact us:
 /// <list type="bullet">
 ///   <item><description><b>Anyone</b> (<c>/api/contact</c>): the contact details, and sending a message (rate limited).</description></item>
-///   <item><description><b>Team</b> (<c>/api/admin/contact-messages</c>): the inbox and marking messages. Admins and
-///   support agents.</description></item>
+///   <item><description><b>Team</b> (<c>/api/admin/contact-messages</c>): the inbox and marking messages. Needs
+///   permission <c>contact.read</c> (Admin, Support); messages have no country, so any country is fine. Every
+///   opening and change is logged.</description></item>
 /// </list>
 /// </summary>
 public static class ContactEndpoints
@@ -63,7 +65,7 @@ public static class ContactEndpoints
     {
         var inbox = api.MapGroup("/admin/contact-messages")
                        .WithTags("Admin: Contact messages")
-                       .RequireAuthorization(policy => policy.RequireRole(Roles.Admin, Roles.SupportAgent));
+                       .RequirePermission(Permissions.Messages.Contact, CountryRule.NotCountrySpecific);
 
         inbox.MapGet("/", async ([AsParameters] GetContactMessagesQuery query, ISender sender, CancellationToken ct) =>
                 (await sender.Send(query, ct)).ToHttp())

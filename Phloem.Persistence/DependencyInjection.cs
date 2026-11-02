@@ -150,6 +150,10 @@ public static class DependencyInjection
         // 5e. Sign-in (not a Domain aggregate; used by Infrastructure's Identity services)
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
+        // 5f. Staff access
+        services.AddScoped<IStaffCountryRepository, StaffCountryRepository>();
+        services.AddScoped<IStaffAuditRepository, StaffAuditRepository>();
+
         return services;
     }
 

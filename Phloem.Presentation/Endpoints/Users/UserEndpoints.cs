@@ -5,12 +5,14 @@ using Phloem.Application.Features.Accounts.Queries;
 using Phloem.Domain.Constants;
 using Phloem.Domain.Shared.Results;
 using Phloem.Presentation.Extensions;
+using Phloem.Presentation.Settings.Authorization;
 
 namespace Phloem.Presentation.Endpoints.Users;
 
 /// <summary>
-/// Admin → Users (<c>/api/admin/users</c>, Admin role only): everyone who has signed up, suspending people who
-/// abuse Phloem, and giving or taking roles (Admin and the staff roles).
+/// Admin → Users (<c>/api/admin/users</c>, permission <c>users.manage</c>, every country): everyone who has signed
+/// up, suspending people who abuse Phloem, and giving or taking roles (also needs <c>staff.manage</c>; only an Admin
+/// can give or take Admin).
 /// </summary>
 /// <remarks>
 /// <para>Suspending someone: they can't sign in, they're signed out everywhere, their shop is hidden and its
@@ -27,7 +29,7 @@ public static class UserEndpoints
     {
         var admin = api.MapGroup("/admin/users")
                        .WithTags("Admin: Users")
-                       .RequireAuthorization(policy => policy.RequireRole(Roles.Admin));
+                       .RequirePermission(Permissions.Users.Manage);
 
         admin.MapGet("/", async ([AsParameters] GetAdminUsersQuery query, ISender sender, CancellationToken ct) =>
                 (await sender.Send(query, ct)).ToHttp())
@@ -60,11 +62,13 @@ public static class UserEndpoints
         admin.MapPut("/{userId:guid}/roles/{role}", async (Guid userId, string role, ISender sender,
                                                             CancellationToken ct) =>
                 (await sender.Send(new SetUserRoleCommand(userId, role, Grant: true), ct)).ToHttp())
+            .RequirePermission(Permissions.Staff.Manage)
             .WithName("GrantUserRole")
-            .WithSummary("Give someone a role: Admin, CatalogManager, ShipmentManager or SupportAgent")
+            .WithSummary("Give someone a role: Admin, a staff job role or Courier")
             .WithDescription("Seller follows the person's shop and Customer is everyone's, so neither is set here. " +
-                             "A suspended person can't be made an admin. The new role arrives at their next sign-in " +
-                             "or token refresh.")
+                             "Only an admin can give Admin, and a suspended person can't be made an admin. A new " +
+                             "job role starts with the person's home country. The new role arrives at their next " +
+                             "sign-in or token refresh.")
             .Produces(StatusCodes.Status204NoContent)
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status404NotFound)
@@ -73,9 +77,11 @@ public static class UserEndpoints
         admin.MapDelete("/{userId:guid}/roles/{role}", async (Guid userId, string role, ISender sender,
                                                                CancellationToken ct) =>
                 (await sender.Send(new SetUserRoleCommand(userId, role, Grant: false), ct)).ToHttp())
+            .RequirePermission(Permissions.Staff.Manage)
             .WithName("RemoveUserRole")
             .WithSummary("Take a role away (signs them out everywhere so it stops working now)")
-            .WithDescription("You can't take your own Admin role, and the last admin keeps Admin.")
+            .WithDescription("Only an admin can take Admin; you can't take your own Admin role, and the last " +
+                             "admin keeps Admin.")
             .Produces(StatusCodes.Status204NoContent)
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status403Forbidden)

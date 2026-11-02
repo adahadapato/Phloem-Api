@@ -5,13 +5,14 @@ using Phloem.Application.Features.Commissions.Queries;
 using Phloem.Domain.Constants;
 using Phloem.Domain.Enums;
 using Phloem.Presentation.Extensions;
+using Phloem.Presentation.Settings.Authorization;
 
 namespace Phloem.Presentation.Endpoints.Commissions;
 
 /// <summary>
 /// Commissions: the share Phloem keeps from each delivered order, one rate per country.
 /// <list type="number">
-///   <item><description><b>Admin</b> (<c>/api/admin/commissions</c>): view and set the rates. Admin role only.</description></item>
+///   <item><description><b>Admin</b> (<c>/api/admin/commissions</c>): view and set the rates. Needs permission <c>commission.manage</c>, every country (Admin has it).</description></item>
 /// </list>
 /// </summary>
 /// <remarks>Sellers see the effect on their payouts with the orders batch; there is no seller endpoint here yet.</remarks>
@@ -32,7 +33,7 @@ public static class CommissionEndpoints
     {
         var admin = api.MapGroup("/admin/commissions")
                        .WithTags("Admin: Commissions")
-                       .RequireAuthorization(policy => policy.RequireRole(Roles.Admin));
+                       .RequirePermission(Permissions.Finance.Commission);
 
         admin.MapGet("/", async (ISender sender, CancellationToken ct) =>
                 (await sender.Send(new GetAdminCommissionsQuery(), ct)).ToHttp())

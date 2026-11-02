@@ -1,6 +1,7 @@
 using System.Net;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Phloem.Domain.Entities;
 using Phloem.Domain.Enums;
 using Phloem.Domain.Interfaces;
 using Phloem.Domain.Shared.Errors;
@@ -14,6 +15,7 @@ public sealed class ReinstateUserCommandHandler(
     IUserProfileRepository profiles,
     IVendorRepository vendors,
     IAccountService accounts,
+    IStaffAuditRepository audit,
     IUnitOfWork unitOfWork,
     IEmailSender email,
     ILogger<ReinstateUserCommandHandler> logger)
@@ -30,6 +32,10 @@ public sealed class ReinstateUserCommandHandler(
 
         var vendor = await vendors.GetByOwnerIdAsync(command.UserId, ct);
         vendor?.SetOwnerSuspended(false);
+
+        if (wasSuspended && currentUser.UserId is { } actorId)
+            audit.Add(StaffAuditEntry.Create(actorId, StaffAction.UserReinstated,
+                                             $"{profile.GetFullName()} ({command.UserId})", profile.Country));
 
         await unitOfWork.SaveChangesAsync(ct);
         if (!wasSuspended) return Result.Success();

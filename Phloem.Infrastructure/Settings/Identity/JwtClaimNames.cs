@@ -21,4 +21,19 @@ public static class JwtClaimNames
 
     /// <summary>One claim per role, e.g. "Admin", "Seller" (see <c>Roles</c>).</summary>
     public const string Role = "role";
+
+    /// <summary>
+    /// One claim per permission the person holds, e.g. "parcels.manage" (see <c>Permissions</c>); Admin gets a single
+    /// "*". Only staff and admins have any.
+    /// </summary>
+    public const string Permission = "perm";
+
+    /// <summary>
+    /// One claim per country the staff member covers, e.g. "Ghana" (the <c>Country</c> name); "*" = every country
+    /// (always for Admin). Only staff and admins have any.
+    /// </summary>
+    public const string Country = "cty";
+
+    /// <summary>The value of <see cref="Permission"/> or <see cref="Country"/> that stands for "all".</summary>
+    public const string All = "*";
 }

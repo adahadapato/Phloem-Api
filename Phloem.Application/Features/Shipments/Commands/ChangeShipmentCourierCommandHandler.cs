@@ -1,4 +1,5 @@
 using MediatR;
+using Phloem.Application.Common.Authorization;
 using Phloem.Application.Features.Deliveries.Common;
 using Phloem.Domain.Interfaces;
 using Phloem.Domain.Shared.Errors;
@@ -8,6 +9,7 @@ namespace Phloem.Application.Features.Shipments.Commands;
 
 /// <summary>Handles <see cref="ChangeShipmentCourierCommand"/>.</summary>
 public sealed class ChangeShipmentCourierCommandHandler(
+    ICurrentUser currentUser,
     IShipmentRepository shipments,
     CourierDirectory couriers,
     DeliveryEmails emails,
@@ -20,7 +22,8 @@ public sealed class ChangeShipmentCourierCommandHandler(
     public async Task<Result> Handle(ChangeShipmentCourierCommand command, CancellationToken ct)
     {
         var shipment = await shipments.GetByTrackingNumberAsync(command.TrackingNumber.Trim(), ct);
-        if (shipment is null) return ShipmentErrors.NotFound;
+        // Not found, or from and to countries this person doesn't cover: answer the same way
+        if (shipment is null || !currentUser.CoversParcel(shipment)) return ShipmentErrors.NotFound;
 
         var courier = await couriers.FindAsync(command.CourierId, shipment.ToCountry, ct);
         if (courier.IsFailure) return courier.Error;

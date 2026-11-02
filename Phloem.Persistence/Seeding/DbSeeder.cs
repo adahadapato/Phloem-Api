@@ -105,6 +105,30 @@ public static class DbSeeder
                 throw;
             }
 
+            // 3b. Staff countries (existing staff get their home country)
+            logger.LogInformation(
+                "Database initialization STEP 3b: starting staff country seeding.");
+
+            try
+            {
+                await StaffCountrySeeder.SeedAsync(
+                    provider.GetRequiredService<UserManager<ApplicationUser>>(),
+                    context,
+                    logger,
+                    cancellationToken);
+
+                logger.LogInformation(
+                    "Database initialization STEP 3b: staff country seeding completed.");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(
+                    ex,
+                    "Database initialization STEP 3b FAILED: staff country seeding.");
+
+                throw;
+            }
+
             // 4. Starter data
             logger.LogInformation(
                 "Database initialization STEP 4: starting starter data seeding.");

@@ -11,7 +11,8 @@ namespace Phloem.Infrastructure.Settings.Identity;
 /// <summary>
 /// Makes the two tokens of a signed-in session:
 /// <list type="number">
-///   <item><description><b>Access token:</b> a signed JWT (HS256) with the user's Id, email and roles; short-lived
+///   <item><description><b>Access token:</b> a signed JWT (HS256) with the user's Id, email and roles, plus staff
+///   permissions and countries for staff; short-lived
 ///   (<see cref="JwtSettings.ExpiryMinutes"/>).</description></item>
 ///   <item><description><b>Refresh token:</b> 64 random bytes, URL-safe; long-lived
 ///   (<see cref="JwtSettings.RefreshTokenDays"/>). Only its hash is ever stored.</description></item>
@@ -31,8 +32,10 @@ internal sealed class JwtTokenGenerator(IOptions<JwtSettings> options, TimeProvi
     /// <summary>Creates a signed access token for a user.</summary>
     /// <param name="user">The signed-in user.</param>
     /// <param name="roles">The user's roles (one claim each).</param>
+    /// <param name="access">Staff permissions and countries (one claim each); <see cref="StaffAccess.None"/> for
+    /// everyone who isn't staff.</param>
     /// <returns>The token and when it expires.</returns>
-    public IssuedToken CreateAccessToken(ApplicationUser user, IEnumerable<string> roles)
+    public IssuedToken CreateAccessToken(ApplicationUser user, IEnumerable<string> roles, StaffAccess access)
     {
         var settings = options.Value;
         var now = clock.GetUtcNow().UtcDateTime;
@@ -46,6 +49,8 @@ internal sealed class JwtTokenGenerator(IOptions<JwtSettings> options, TimeProvi
         if (!string.IsNullOrWhiteSpace(user.Email))
             claims.Add(new Claim(JwtClaimNames.Email, user.Email));
         claims.AddRange(roles.Select(role => new Claim(JwtClaimNames.Role, role)));
+        claims.AddRange(access.Permissions.Select(permission => new Claim(JwtClaimNames.Permission, permission)));
+        claims.AddRange(access.Countries.Select(country => new Claim(JwtClaimNames.Country, country)));
 
         var token = Handler.CreateToken(new SecurityTokenDescriptor
         {

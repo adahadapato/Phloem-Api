@@ -5,6 +5,7 @@ using Phloem.Application.Features.ShipmentRoutes.Queries;
 using Phloem.Domain.Constants;
 using Phloem.Domain.Enums;
 using Phloem.Presentation.Extensions;
+using Phloem.Presentation.Settings.Authorization;
 
 namespace Phloem.Presentation.Endpoints.ShipmentRoutes;
 
@@ -12,7 +13,7 @@ namespace Phloem.Presentation.Endpoints.ShipmentRoutes;
 /// Shipping routes between countries (e.g. UnitedKingdom → Nigeria), each with a drop-off hub and a rate per speed.
 /// <list type="number">
 ///   <item><description><b>Admin</b> (<c>/api/admin/shipment-routes</c>): create routes, set rates, switch routes on
-///   and off. Admin role only.</description></item>
+///   and off. Needs permission <c>parcels.settings</c>, every country (Admin has it).</description></item>
 /// </list>
 /// </summary>
 /// <remarks>
@@ -37,7 +38,7 @@ public static class ShipmentRouteEndpoints
     {
         var admin = api.MapGroup("/admin/shipment-routes")
                        .WithTags("Admin: Shipping routes")
-                       .RequireAuthorization(policy => policy.RequireRole(Roles.Admin));
+                       .RequirePermission(Permissions.Parcels.Settings);
 
         // ───────────────────────────── 1. Routes ─────────────────────────────
 
