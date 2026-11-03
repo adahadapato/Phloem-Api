@@ -102,9 +102,20 @@ public static class AuthenticationSetup
         // Refusals as ProblemDetails (by default they're empty)
         options.Events = new JwtBearerEvents
         {
+            OnMessageReceived = ReadHubToken,
             OnChallenge = WriteUnauthorizedAsync,
             OnForbidden = WriteForbiddenAsync
         };
+    }
+
+    /// <summary>Live connections (<c>/hubs/…</c>) send the token as <c>?access_token=</c>: browsers can't add headers
+    /// to WebSockets. Everywhere else only the <c>Authorization</c> header counts.</summary>
+    private static Task ReadHubToken(MessageReceivedContext context)
+    {
+        var token = context.Request.Query["access_token"].ToString();
+        if (!string.IsNullOrEmpty(token) && context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+            context.Token = token;
+        return Task.CompletedTask;
     }
 
     /// <summary>401: no token, an expired one, or an invalid one, each with its own <c>code</c>.</summary>

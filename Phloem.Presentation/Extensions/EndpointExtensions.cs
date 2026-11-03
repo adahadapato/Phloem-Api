@@ -19,6 +19,8 @@ using Phloem.Presentation.Endpoints.Ai;
 using Phloem.Presentation.Endpoints.Approvals;
 using Phloem.Presentation.Endpoints.Seo;
 using Phloem.Presentation.Endpoints.Moderation;
+using Phloem.Presentation.Endpoints.Chat;
+using Phloem.Presentation.Settings.Realtime;
 
 namespace Phloem.Presentation.Extensions;
 
@@ -53,10 +55,14 @@ public static class EndpointExtensions
         api.MapAiEndpoints();                //                         /api/admin/ai (prompts, spend, call log)
         api.MapSeoEndpoints();               // /api/seo              + /api/admin/seo
         api.MapModerationEndpoints();        //                         /api/admin/moderation
+        api.MapChatEndpoints();              // /api/orders/{n}/chat + /api/me/chats + /api/admin/chats
         api.MapLegalEndpoints();             // /api/legal            + /api/admin/legal
         api.MapParcelItemRuleEndpoints();    // /api/parcel-rules     + /api/admin/parcel-rules
         api.MapContactEndpoints();           // /api/contact          + /api/admin/contact-messages
         api.MapDeliveryEndpoints();          // /api/deliveries       + /api/staff/couriers
+
+        // 1b. Live updates: /hubs/chat (not in Swagger)
+        app.MapPhloemHubs();
 
         // 2. Search engines and chat apps: /sitemap.xml, /share/shops/{id} (not in Swagger)
         app.MapSitemapAndShareLinks();

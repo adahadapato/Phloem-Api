@@ -161,6 +161,9 @@ public static class DependencyInjection
         services.AddScoped<ISeoEntryRepository, SeoEntryRepository>();
         services.AddScoped<IModerationCheckRepository, ModerationCheckRepository>();
 
+        // 5h. Order chat
+        services.AddScoped<IOrderChatRepository, OrderChatRepository>();
+
         return services;
     }
 

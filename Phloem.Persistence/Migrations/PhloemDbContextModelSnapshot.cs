@@ -259,6 +259,56 @@ namespace Phloem.Persistence.Migrations
                     b.ToTable("AiPromptVersions", (string)null);
                 });
 
+            modelBuilder.Entity("Phloem.Domain.Entities.ChatMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid>("ChatId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("HasContactDetails")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("HiddenBySender")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("PhotoPath")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid>("SenderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("SenderRole")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChatId", "CreatedAt");
+
+                    b.ToTable("ChatMessages", (string)null);
+                });
+
             modelBuilder.Entity("Phloem.Domain.Entities.Commission", b =>
                 {
                     b.Property<Guid>("Id")
@@ -961,6 +1011,101 @@ namespace Phloem.Persistence.Migrations
                     b.HasIndex("VendorId", "Status", "PaidAtUtc");
 
                     b.ToTable("Orders", (string)null);
+                });
+
+            modelBuilder.Entity("Phloem.Domain.Entities.OrderChat", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Country")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("CustomerEmailedUpToUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CustomerReadUpToUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsReported")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastCustomerMessageAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("LastSellerMessageAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("OrderNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime?>("ReportHandledAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ReportHandledBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ReportReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("ReportedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ReportedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("SellerEmailedUpToUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("SellerReadUpToUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("ShopId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ShopName")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<Guid>("ShopOwnerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId")
+                        .IsUnique();
+
+                    b.HasIndex("CustomerId", "LastCustomerMessageAtUtc");
+
+                    b.HasIndex("IsReported", "ReportHandledAtUtc");
+
+                    b.HasIndex("ShopOwnerId", "LastSellerMessageAtUtc");
+
+                    b.ToTable("OrderChats", (string)null);
                 });
 
             modelBuilder.Entity("Phloem.Domain.Entities.OrderEvent", b =>
@@ -2115,6 +2260,15 @@ namespace Phloem.Persistence.Migrations
                     b.HasOne("Phloem.Persistence.Configurations.Identity.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Phloem.Domain.Entities.ChatMessage", b =>
+                {
+                    b.HasOne("Phloem.Domain.Entities.OrderChat", null)
+                        .WithMany()
+                        .HasForeignKey("ChatId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

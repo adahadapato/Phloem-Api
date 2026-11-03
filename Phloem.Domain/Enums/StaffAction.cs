@@ -80,5 +80,11 @@ public enum StaffAction
     ContentApproved = 24,
 
     /// <summary>Rejected text in the Moderation queue (the seller sees the reason).</summary>
-    ContentRejected = 25
+    ContentRejected = 25,
+
+    /// <summary>Opened an order chat (people's private messages).</summary>
+    ChatViewed = 26,
+
+    /// <summary>Marked a reported order chat as dealt with.</summary>
+    ChatReportClosed = 27
 }

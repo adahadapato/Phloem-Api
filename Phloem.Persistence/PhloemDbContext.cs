@@ -87,6 +87,12 @@ public sealed class PhloemDbContext(DbContextOptions<PhloemDbContext> options)
     /// <summary>Checks of people's text (dishes, shop names, dish name suggestions, Contact messages).</summary>
     public DbSet<ModerationCheck> ModerationChecks => Set<ModerationCheck>();
 
+    /// <summary>Order chats (one per order) and their messages.</summary>
+    public DbSet<OrderChat> OrderChats => Set<OrderChat>();
+
+    /// <summary>Order chat messages.</summary>
+    public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
+
     /// <summary>Identity's tables first, then every configuration in this assembly.</summary>
     /// <param name="builder">The model builder.</param>
     protected override void OnModelCreating(ModelBuilder builder)

@@ -6,6 +6,10 @@ using OpenAI;
 using Phloem.Domain.Enums;
 using System.ClientModel;
 
+// Phloem's order chat has its own ChatMessage / ChatRole; here they mean the AI's
+using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
+using ChatRole = Microsoft.Extensions.AI.ChatRole;
+
 namespace Phloem.Infrastructure.Settings.Ai;
 
 /// <summary>

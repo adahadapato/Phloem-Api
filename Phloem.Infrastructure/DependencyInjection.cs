@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Phloem.Application;
 using Phloem.Infrastructure.Services.Accounts;
 using Phloem.Infrastructure.Services.Approvals;
+using Phloem.Infrastructure.Services.Chat;
 using Phloem.Infrastructure.Settings.Ai;
 using Phloem.Infrastructure.Settings.Moderation;
 using Phloem.Infrastructure.Settings.Application;
@@ -36,6 +37,7 @@ namespace Phloem.Infrastructure
             // Background tasks
             services.AddHostedService<SuspensionExpiryService>();   // hourly: lift suspensions that have ended
             services.AddHostedService<ApprovalExpiryService>();     // every 15 min: expire changes nobody decided
+            services.AddHostedService<ChatEmailService>();          // every minute: email about unseen chat messages
 
             // Add infrastructure layer services here
 

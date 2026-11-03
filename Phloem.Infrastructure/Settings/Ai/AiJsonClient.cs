@@ -12,6 +12,10 @@ using Phloem.Domain.Models;
 using Phloem.Domain.Shared.Errors;
 using Phloem.Domain.Shared.Results;
 
+// Phloem's order chat has its own ChatMessage / ChatRole; here they mean the AI's
+using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
+using ChatRole = Microsoft.Extensions.AI.ChatRole;
+
 namespace Phloem.Infrastructure.Settings.Ai;
 
 /// <summary>Implements <see cref="IAiJsonClient"/>: one checked JSON answer per call, every call logged.</summary>
