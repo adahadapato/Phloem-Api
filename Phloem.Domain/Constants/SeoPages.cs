@@ -34,27 +34,32 @@ public static class SeoPages
             "Phloem: African home-cooked food and parcels",
             "Order African home-cooked food from local cooks in the UK, Ghana and Nigeria, and send parcels between them with Phloem."),
         new("explore", "Explore dishes", "/explore",
-            "Explore: every African dish on sale in the visitor's country (United Kingdom, Ghana or Nigeria), as " +
+            "Explore. Heading: \"African dishes to order in <country>\", with an introduction naming popular " +
+            "dishes (jollof rice, waakye, egusi soup, suya), who cooks them, and delivery today or tomorrow. Below: " +
+            "every African dish on sale in the visitor's country (United Kingdom, Ghana or Nigeria), as " +
             "cards with a photo, price, rating and the shop's name. Search box with suggestions as you type, " +
             "filters by dish type (e.g. rice dishes, soups and stews, snacks), sort, and pages. Each dish can be " +
             "added to the basket and ordered for delivery today or tomorrow.",
             "Explore African dishes near you | Phloem",
             "Browse jollof rice, waakye, egusi soup and more from home cooks near you. See prices and photos, and order for delivery."),
         new("shops", "Shops", "/shops",
-            "Shops: every home cook and food business selling on Phloem in the visitor's country, as cards with " +
+            "Shops. Heading: \"African food shops in <country>\", with an introduction explaining the ✓ Verified " +
+            "badge. Below: every home cook and food business selling on Phloem in the visitor's country, as cards with " +
             "logo, name, ✓ Verified badge, star rating and number of dishes, with a search box. Each card opens " +
             "the shop's own page with its full menu.",
             "African food shops and home cooks | Phloem",
             "Find home cooks and food businesses selling African food near you, with ratings, dishes and delivery."),
         new("send-parcel", "Send a parcel", "/send-parcel",
-            "Send a parcel: book a parcel between the United Kingdom, Ghana and Nigeria. Steps on the page: choose " +
+            "Send a parcel. An introduction under the heading explains booking online, the price estimate, " +
+            "drop-off and weighing at the hub, and tracking to the door. The page lets visitors book a parcel between the United Kingdom, Ghana and Nigeria. Steps on the page: choose " +
             "the route and speed, list the items and their value, get a price estimate, add the recipient, then " +
             "drop the parcel at Phloem's hub where it is weighed and the final price set. Shows what can and " +
             "can't be sent, and every parcel gets a tracking number.",
             "Send a parcel to Ghana, Nigeria or the UK | Phloem",
             "Book a parcel between the UK, Ghana and Nigeria. Get a price estimate, check what can be sent and track it all the way."),
         new("track", "Track a parcel", "/track",
-            "Track a parcel: enter a Phloem tracking number (e.g. PHS-…) to see every step of the parcel's journey: " +
+            "Track a parcel. An introduction under the heading explains the tracking number format and the steps " +
+            "shown. Visitors enter a Phloem tracking number (e.g. PHS-…) to see every step of the parcel's journey: " +
             "booked, received and weighed at the hub, paid, in transit, arrived, out for delivery, delivered with " +
             "a photo. Also links to sending a parcel.",
             "Track your parcel | Phloem",
