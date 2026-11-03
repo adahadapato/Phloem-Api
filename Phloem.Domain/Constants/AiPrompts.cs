@@ -91,7 +91,7 @@ public static class AiPrompts
             - metaDescription: 140-160 characters. Say what people can order or do on the page, in plain words, and invite them to order or find out more.
             - keywords: 3-8 short search phrases people would really type, e.g. "jollof rice delivery London".
             - improvements: 1-5 practical tips that would make the page more useful to customers and search engines (for example "Add a photo to every dish").
-            - seoScore: a whole number from 0 to 100: how ready the page is for search engines, based only on what you were given. It is an editorial estimate, not a Google ranking.
+            - seoScore: a whole number from 0 to 100: how ready the page is for search engines, based only on what you were given. It is an editorial estimate, not a Google ranking. Do not lower the score for things the input simply doesn't mention (such as the page's code or headings you weren't shown); judge what is described.
             - scoreExplanation: one or two sentences explaining the score.
             - Use British English.
             - Only use facts from the input. Do not invent cities, opening hours, prices, awards or reviews.
