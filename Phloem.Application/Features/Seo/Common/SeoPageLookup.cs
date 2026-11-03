@@ -46,8 +46,14 @@ public sealed class SeoPageLookup(IVendorRepository vendors, IDishRepository dis
     }
 
     /// <summary>Phloem's simple title for a shop with no written text.</summary>
-    public static string ShopFallbackTitle(string name, Country country) =>
-        $"{name}: home-cooked food in {SeoWriter.CountryName(country)} | Phloem";
+    /// <remarks>Kept within Google's 60 characters: "UK" for the United Kingdom, and "| Phloem" dropped when it
+    /// doesn't fit.</remarks>
+    public static string ShopFallbackTitle(string name, Country country)
+    {
+        var place = country == Country.UnitedKingdom ? "the UK" : SeoWriter.CountryName(country);
+        var title = $"{name}: home-cooked food in {place}";
+        return title.Length + " | Phloem".Length <= 60 ? $"{title} | Phloem" : title;
+    }
 
     /// <summary>Phloem's simple description for a shop with no written text.</summary>
     public static string ShopFallbackDescription(string name, Country country) =>
