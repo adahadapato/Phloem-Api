@@ -112,6 +112,8 @@ jobs:
       # SEED_DEMO_OWNER_PASSWORD  SeedData:DemoOwnerPassword (lets the owners sign in as
       #                           the demo sellers; unset = random passwords nobody knows)
       # EMAIL_PASSWORD         Email:Password
+      # AI_API_KEY             Ai:ApiKey (Anthropic). Unset = AI stays off; every AI job
+      #                        uses its safe fallback (e.g. moderation goes to a person)
       #
       # Non-sensitive production settings remain in
       # appsettings.Production.json (committed, with "" placeholders).
@@ -133,6 +135,7 @@ jobs:
           SEED_ADMIN_PASSWORD: ${{ secrets.SEED_ADMIN_PASSWORD }}
           SEED_DEMO_OWNER_PASSWORD: ${{ secrets.SEED_DEMO_OWNER_PASSWORD }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          AI_API_KEY: ${{ secrets.AI_API_KEY }}
         run: |
           $configPath = ".\publish\appsettings.Production.json"
 
@@ -238,6 +241,20 @@ jobs:
           # --------------------------------------------------------
 
           $config.Email.Password = $env:EMAIL_PASSWORD
+
+          # --------------------------------------------------------
+          # AI (Claude). Optional: without the key AI stays off.
+          # --------------------------------------------------------
+
+          if (-not [string]::IsNullOrWhiteSpace($env:AI_API_KEY)) {
+              if ($null -eq $config.Ai) {
+                  throw "Ai configuration section was not found in appsettings.Production.json."
+              }
+              $config.Ai.ApiKey = $env:AI_API_KEY
+              Write-Host "AI key configured."
+          } else {
+              Write-Host "No AI_API_KEY secret: AI stays off."
+          }
 
           # --------------------------------------------------------
           # Save production configuration

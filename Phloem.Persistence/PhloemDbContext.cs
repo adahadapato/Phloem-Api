@@ -75,6 +75,12 @@ public sealed class PhloemDbContext(DbContextOptions<PhloemDbContext> options)
     /// <summary>Changes waiting for (or decided by) a second person.</summary>
     public DbSet<PendingChange> PendingChanges => Set<PendingChange>();
 
+    /// <summary>Saved wordings of AI prompts.</summary>
+    public DbSet<AiPromptVersion> AiPromptVersions => Set<AiPromptVersion>();
+
+    /// <summary>Every AI call (cost, checks, training data later).</summary>
+    public DbSet<AiCallLog> AiCallLogs => Set<AiCallLog>();
+
     /// <summary>Identity's tables first, then every configuration in this assembly.</summary>
     /// <param name="builder">The model builder.</param>
     protected override void OnModelCreating(ModelBuilder builder)

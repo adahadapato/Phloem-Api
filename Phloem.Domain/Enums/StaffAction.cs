@@ -56,5 +56,17 @@ public enum StaffAction
     ShopUnblocked = 16,
 
     /// <summary>Opened an order's details (customer, address, phone, timeline).</summary>
-    OrderViewed = 17
+    OrderViewed = 17,
+
+    /// <summary>Saved a new wording for an AI prompt.</summary>
+    AiPromptSaved = 18,
+
+    /// <summary>Brought back an older wording of an AI prompt.</summary>
+    AiPromptRestored = 19,
+
+    /// <summary>Put an AI prompt back to Phloem's default wording.</summary>
+    AiPromptReset = 20,
+
+    /// <summary>Opened one AI call from the log (it can hold people's text).</summary>
+    AiCallViewed = 21
 }

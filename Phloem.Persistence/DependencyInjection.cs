@@ -155,6 +155,10 @@ public static class DependencyInjection
         services.AddScoped<IStaffAuditRepository, StaffAuditRepository>();
         services.AddScoped<IPendingChangeRepository, PendingChangeRepository>();
 
+        // 5g. AI
+        services.AddScoped<IAiPromptVersionRepository, AiPromptVersionRepository>();
+        services.AddScoped<IAiCallLogRepository, AiCallLogRepository>();
+
         return services;
     }
 

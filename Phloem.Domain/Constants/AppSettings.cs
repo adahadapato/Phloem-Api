@@ -511,6 +511,55 @@ public static class AppSettings
         public const string BlockConfirmHours = "Approvals:BlockConfirmHours";
     }
 
+    // ==================== AI ====================
+
+    /// <summary>
+    /// The AI model Phloem uses (SEO text, moderation, later the chat assistant), the monthly spend cap and how long
+    /// the AI call log is kept.
+    /// </summary>
+    /// <remarks>
+    /// <para>The key is a secret: User Secrets in development, GitHub secret <c>AI_API_KEY</c> in production. With no
+    /// key (or <c>Provider</c> = <c>Off</c>) every AI job uses its safe fallback, e.g. moderation sends text to a
+    /// person.</para>
+    /// <para>Read at start-up: change and restart (redeploy).</para>
+    /// </remarks>
+    public static class Ai
+    {
+        /// <summary>The whole section.</summary>
+        public const string Section = "Ai";
+
+        /// <summary><c>Off</c>, <c>Fake</c> (fixed answers, for tests), <c>Anthropic</c> (Claude) or
+        /// <c>OpenAiCompatible</c> (your own model behind an OpenAI-style endpoint, e.g. Ollama or vLLM).</summary>
+        public const string Provider = "Ai:Provider";
+
+        /// <summary>The model, e.g. "claude-haiku-5-5".</summary>
+        public const string Model = "Ai:Model";
+
+        /// <summary>The provider's address: required for <c>OpenAiCompatible</c>; optional for Anthropic.</summary>
+        public const string Endpoint = "Ai:Endpoint";
+
+        /// <summary>The API key (secret).</summary>
+        public const string ApiKey = "Ai:ApiKey";
+
+        /// <summary>Most Phloem spends on AI in a calendar month (US dollars). Default 20.</summary>
+        public const string MonthlyCapUsd = "Ai:MonthlyCapUsd";
+
+        /// <summary>Price of a million input tokens (US dollars), to count spend. Default 0.10 (Haiku 5.5).</summary>
+        public const string InputUsdPerMillionTokens = "Ai:InputUsdPerMillionTokens";
+
+        /// <summary>Price of a million output tokens (US dollars). Default 0.50 (Haiku 5.5).</summary>
+        public const string OutputUsdPerMillionTokens = "Ai:OutputUsdPerMillionTokens";
+
+        /// <summary>Seconds to wait for one answer. Default 30.</summary>
+        public const string TimeoutSeconds = "Ai:TimeoutSeconds";
+
+        /// <summary>Months the AI call log is kept (it holds people's text). Default 12.</summary>
+        public const string LogRetentionMonths = "Ai:LogRetentionMonths";
+
+        /// <summary>Optional model per job, e.g. <c>Ai:JobModels:moderation.text</c> = a bigger model.</summary>
+        public const string JobModels = "Ai:JobModels";
+    }
+
     // ==================== Payments ====================
 
     /// <summary>Taking payment for orders (and later shipments).</summary>
