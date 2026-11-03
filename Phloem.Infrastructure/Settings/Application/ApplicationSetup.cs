@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Phloem.Domain.Interfaces;
 
 namespace Phloem.Infrastructure.Settings.Application;
 
@@ -19,6 +20,7 @@ internal static class ApplicationSetup
                           "AppSettings:ApiBaseUrl and AppSettings:WebsiteBaseUrl must not end with '/'.")
                 .ValidateOnStart();
 
+        services.AddSingleton<ISiteAddresses, SiteAddresses>();
         return services;
     }
 }

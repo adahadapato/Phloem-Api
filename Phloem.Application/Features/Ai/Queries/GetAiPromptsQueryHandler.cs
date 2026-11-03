@@ -16,7 +16,7 @@ public sealed class GetAiPromptsQueryHandler(IAiPromptVersionRepository versions
         var latest = (await versions.GetLatestForAllAsync(ct)).ToDictionary(v => v.Key);
         var names = await profiles.GetFullNamesAsync(latest.Values.Select(v => v.SavedBy).Distinct().ToList(), ct);
 
-        return AiPrompts.All.Select(p =>
+        return AiPrompts.Editable.Select(p =>
         {
             var v = latest.GetValueOrDefault(p.Key);
             return new AiPromptSummaryDto(p.Key, p.Name, p.Description, v?.Version ?? 0, v?.CreatedAt,

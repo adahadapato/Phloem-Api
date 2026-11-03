@@ -55,4 +55,8 @@ public interface IVendorRepository : IRepository<Vendor>
     /// <param name="country">The country.</param>
     /// <param name="cancellationToken">Cancels the database call.</param>
     Task<IReadOnlyList<Vendor>> GetByCountryAsync(Country country, CancellationToken cancellationToken = default);
+
+    /// <summary>Every shop buyers can see (approved, owner not suspended), as SEO needs it (read-only).</summary>
+    /// <param name="cancellationToken">Stops the query.</param>
+    Task<IReadOnlyList<Models.SeoShop>> GetVisibleForSeoAsync(CancellationToken cancellationToken = default);
 }

@@ -16,7 +16,7 @@ public sealed class GetAiPromptQueryHandler(IAiPromptVersionRepository versions,
     /// <returns>The prompt; or <see cref="AiErrors.PromptNotFound"/>.</returns>
     public async Task<Result<AiPromptDetailsDto>> Handle(GetAiPromptQuery query, CancellationToken ct)
     {
-        var p = AiPrompts.Find(query.Key.Trim());
+        var p = AiPrompts.FindEditable(query.Key.Trim());
         if (p is null) return AiErrors.PromptNotFound;
 
         var saved = await versions.GetVersionsAsync(p.Key, ct);

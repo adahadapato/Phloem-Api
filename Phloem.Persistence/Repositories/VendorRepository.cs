@@ -2,6 +2,7 @@
 using Phloem.Domain.Entities;
 using Phloem.Domain.Enums;
 using Phloem.Domain.Interfaces;
+using Phloem.Domain.Models;
 using Phloem.Domain.Shared.Results;
 
 namespace Phloem.Persistence.Repositories;
@@ -127,4 +128,15 @@ internal sealed class VendorRepository(PhloemDbContext context)
     public async Task<IReadOnlyList<Vendor>> GetByCountryAsync(Country country,
                                                                CancellationToken cancellationToken = default) =>
         await Set.Where(v => v.Country == country).ToListAsync(cancellationToken);
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<SeoShop>> GetVisibleForSeoAsync(CancellationToken cancellationToken = default) =>
+        await Set.AsNoTracking()
+                 .Where(v => v.Status == VendorStatus.Approved && !v.IsOwnerSuspended)
+                 .OrderBy(v => v.Name)
+                 .Select(v => new SeoShop(
+                     v.Id, v.Name, v.Country, v.IsVerified, v.Rating, v.RatingCount,
+                     v.CoverPhoto != null ? v.CoverPhoto.Path : v.Logo != null ? v.Logo.Path : null,
+                     v.UpdatedAt ?? v.CreatedAt))
+                 .ToListAsync(cancellationToken);
 }

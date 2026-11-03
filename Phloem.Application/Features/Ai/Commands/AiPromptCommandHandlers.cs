@@ -19,7 +19,7 @@ public sealed class SaveAiPromptCommandHandler(ICurrentUser currentUser, AiPromp
     public async Task<Result<int>> Handle(SaveAiPromptCommand command, CancellationToken ct)
     {
         var actorId = currentUser.UserId ?? throw new InvalidOperationException("This action requires a signed-in user.");
-        var definition = AiPrompts.Find(command.Key.Trim());
+        var definition = AiPrompts.FindEditable(command.Key.Trim());
         if (definition is null) return AiErrors.PromptNotFound;
 
         return await saving.SaveAsync(definition, command.Text, command.Note, actorId, StaffAction.AiPromptSaved, ct);
@@ -37,7 +37,7 @@ public sealed class RestoreAiPromptVersionCommandHandler(
     public async Task<Result<int>> Handle(RestoreAiPromptVersionCommand command, CancellationToken ct)
     {
         var actorId = currentUser.UserId ?? throw new InvalidOperationException("This action requires a signed-in user.");
-        var definition = AiPrompts.Find(command.Key.Trim());
+        var definition = AiPrompts.FindEditable(command.Key.Trim());
         if (definition is null) return AiErrors.PromptNotFound;
 
         var old = await versions.GetVersionAsync(definition.Key, command.Version, ct);
@@ -56,7 +56,7 @@ public sealed class ResetAiPromptCommandHandler(ICurrentUser currentUser, AiProm
     public async Task<Result<int>> Handle(ResetAiPromptCommand command, CancellationToken ct)
     {
         var actorId = currentUser.UserId ?? throw new InvalidOperationException("This action requires a signed-in user.");
-        var definition = AiPrompts.Find(command.Key.Trim());
+        var definition = AiPrompts.FindEditable(command.Key.Trim());
         if (definition is null) return AiErrors.PromptNotFound;
 
         return await saving.SaveAsync(definition, definition.DefaultPrompt, "Back to Phloem's default", actorId,
@@ -72,7 +72,7 @@ public sealed class SuggestAiPromptCommandHandler(IAiJsonClient ai)
     /// (Disabled, SpendCapReached, ProviderFailed, BadAnswer).</returns>
     public async Task<Result<AiPromptSuggestionDto>> Handle(SuggestAiPromptCommand command, CancellationToken ct)
     {
-        var definition = AiPrompts.Find(command.Key.Trim());
+        var definition = AiPrompts.FindEditable(command.Key.Trim());
         if (definition is null) return AiErrors.PromptNotFound;
 
         // Everything goes in as JSON values, so the wording being edited can't act as instructions

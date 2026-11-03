@@ -81,6 +81,9 @@ public sealed class PhloemDbContext(DbContextOptions<PhloemDbContext> options)
     /// <summary>Every AI call (cost, checks, training data later).</summary>
     public DbSet<AiCallLog> AiCallLogs => Set<AiCallLog>();
 
+    /// <summary>Search engine text per website page.</summary>
+    public DbSet<SeoEntry> SeoEntries => Set<SeoEntry>();
+
     /// <summary>Identity's tables first, then every configuration in this assembly.</summary>
     /// <param name="builder">The model builder.</param>
     protected override void OnModelCreating(ModelBuilder builder)

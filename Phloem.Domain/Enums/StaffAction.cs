@@ -68,5 +68,11 @@ public enum StaffAction
     AiPromptReset = 20,
 
     /// <summary>Opened one AI call from the log (it can hold people's text).</summary>
-    AiCallViewed = 21
+    AiCallViewed = 21,
+
+    /// <summary>Changed a page's search engine text (SEO) by hand.</summary>
+    SeoEdited = 22,
+
+    /// <summary>Asked the AI to write a page's search engine text again.</summary>
+    SeoRewritten = 23
 }

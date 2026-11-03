@@ -25,6 +25,7 @@ internal static class AiSetup
         services.AddScoped<IAiJsonClient, AiJsonClient>();
 
         services.AddHostedService<AiCallLogCleanupService>();   // daily: delete AI calls past the keeping period
+        services.AddHostedService<SeoWriterService>();          // every 30 min: SEO text for new / changed pages
         return services;
     }
 }

@@ -98,4 +98,14 @@ public static class CacheTags
     /// switch a route on or off), coming in Shipments Part 2.
     /// </remarks>
     public const string ShipmentRoutes = "shipment-routes";
+
+    /// <summary>
+    /// Search engine text the website reads for each public page, and the sitemap.
+    /// </summary>
+    /// <remarks>
+    /// Cached by: <c>GetPublicSeoQuery</c>, <c>GetSitemapQuery</c>.
+    /// Cleared by: <c>SaveSeoPageCommand</c>, <c>WriteSeoPageCommand</c>, <c>WriteMissingSeoCommand</c>.
+    /// New shops reach the sitemap within its cache time (60 minutes).
+    /// </remarks>
+    public const string Seo = "seo";
 }

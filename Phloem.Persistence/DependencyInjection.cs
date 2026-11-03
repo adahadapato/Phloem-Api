@@ -158,6 +158,7 @@ public static class DependencyInjection
         // 5g. AI
         services.AddScoped<IAiPromptVersionRepository, AiPromptVersionRepository>();
         services.AddScoped<IAiCallLogRepository, AiCallLogRepository>();
+        services.AddScoped<ISeoEntryRepository, SeoEntryRepository>();
 
         return services;
     }

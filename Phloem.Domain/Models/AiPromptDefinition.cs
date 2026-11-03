@@ -13,6 +13,8 @@ namespace Phloem.Domain.Models;
 /// <param name="DefaultPrompt">Phloem's wording, used until staff save their own (and after "Reset").</param>
 /// <param name="MaxOutputTokens">Longest answer allowed (keeps cost predictable).</param>
 /// <param name="SampleAnswer">A correct JSON answer: what the Fake provider returns, and a guide for editors.</param>
+/// <param name="ShowOnPromptsPage">False for helper prompts staff don't need to see (e.g. the one behind "Ask AI to
+/// improve this prompt"); they keep their default wording.</param>
 public sealed record AiPromptDefinition(
     string Key,
     string Name,
@@ -21,4 +23,5 @@ public sealed record AiPromptDefinition(
     IReadOnlyList<string> RequiredFields,
     string DefaultPrompt,
     int MaxOutputTokens,
-    string SampleAnswer);
+    string SampleAnswer,
+    bool ShowOnPromptsPage = true);

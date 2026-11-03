@@ -17,6 +17,7 @@ using Phloem.Presentation.Endpoints.Users;
 using Phloem.Presentation.Endpoints.Staff;
 using Phloem.Presentation.Endpoints.Ai;
 using Phloem.Presentation.Endpoints.Approvals;
+using Phloem.Presentation.Endpoints.Seo;
 
 namespace Phloem.Presentation.Extensions;
 
@@ -49,15 +50,19 @@ public static class EndpointExtensions
         api.MapStaffEndpoints();             //                         /api/admin/staff + /api/admin/audit
         api.MapApprovalEndpoints();          //                         /api/admin/approvals (two-person rule)
         api.MapAiEndpoints();                //                         /api/admin/ai (prompts, spend, call log)
+        api.MapSeoEndpoints();               // /api/seo              + /api/admin/seo
         api.MapLegalEndpoints();             // /api/legal            + /api/admin/legal
         api.MapParcelItemRuleEndpoints();    // /api/parcel-rules     + /api/admin/parcel-rules
         api.MapContactEndpoints();           // /api/contact          + /api/admin/contact-messages
         api.MapDeliveryEndpoints();          // /api/deliveries       + /api/staff/couriers
 
-        // 2. Private documents through signed links, e.g. /private-files/…?expires=…&sig=… (not in Swagger)
+        // 2. Search engines and chat apps: /sitemap.xml, /share/shops/{id} (not in Swagger)
+        app.MapSitemapAndShareLinks();
+
+        // 3. Private documents through signed links, e.g. /private-files/…?expires=…&sig=… (not in Swagger)
         app.MapPrivateFiles();
 
-        // 3. Health (not in Swagger)
+        // 4. Health (not in Swagger)
         app.MapGet("/health",
                 () => Results.Ok(
                     new
