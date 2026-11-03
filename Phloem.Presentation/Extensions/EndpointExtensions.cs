@@ -18,6 +18,7 @@ using Phloem.Presentation.Endpoints.Staff;
 using Phloem.Presentation.Endpoints.Ai;
 using Phloem.Presentation.Endpoints.Approvals;
 using Phloem.Presentation.Endpoints.Seo;
+using Phloem.Presentation.Endpoints.Moderation;
 
 namespace Phloem.Presentation.Extensions;
 
@@ -51,6 +52,7 @@ public static class EndpointExtensions
         api.MapApprovalEndpoints();          //                         /api/admin/approvals (two-person rule)
         api.MapAiEndpoints();                //                         /api/admin/ai (prompts, spend, call log)
         api.MapSeoEndpoints();               // /api/seo              + /api/admin/seo
+        api.MapModerationEndpoints();        //                         /api/admin/moderation
         api.MapLegalEndpoints();             // /api/legal            + /api/admin/legal
         api.MapParcelItemRuleEndpoints();    // /api/parcel-rules     + /api/admin/parcel-rules
         api.MapContactEndpoints();           // /api/contact          + /api/admin/contact-messages

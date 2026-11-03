@@ -1,4 +1,5 @@
-﻿using Phloem.Domain.Entities;
+﻿using Phloem.Application.Features.Moderation.Dtos;
+using Phloem.Domain.Entities;
 using Phloem.Domain.Enums;
 
 namespace Phloem.Application.Features.DishCatalogs.Dtos;
@@ -14,14 +15,17 @@ public sealed record AdminDishSuggestionDto(
     CatalogGroup Group,
     string SuggestedBy,
     string? ShopName,
-    DateTime SuggestedAt)
+    DateTime SuggestedAt,
+    ModerationAdviceDto? AiAdvice = null)
 {
-    public static AdminDishSuggestionDto From(DishCatalog item, string suggestedBy, string? shopName) => new(
+    public static AdminDishSuggestionDto From(DishCatalog item, string suggestedBy, string? shopName,
+                                              ModerationAdviceDto? aiAdvice = null) => new(
         item.Id,
         item.Name,
         item.Category,
         item.Group,
         suggestedBy,
         shopName,
-        item.CreatedAt);
+        item.CreatedAt,
+        aiAdvice);
 }

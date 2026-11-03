@@ -84,6 +84,9 @@ public sealed class PhloemDbContext(DbContextOptions<PhloemDbContext> options)
     /// <summary>Search engine text per website page.</summary>
     public DbSet<SeoEntry> SeoEntries => Set<SeoEntry>();
 
+    /// <summary>Checks of people's text (dishes, shop names, dish name suggestions, Contact messages).</summary>
+    public DbSet<ModerationCheck> ModerationChecks => Set<ModerationCheck>();
+
     /// <summary>Identity's tables first, then every configuration in this assembly.</summary>
     /// <param name="builder">The model builder.</param>
     protected override void OnModelCreating(ModelBuilder builder)

@@ -74,5 +74,11 @@ public enum StaffAction
     SeoEdited = 22,
 
     /// <summary>Asked the AI to write a page's search engine text again.</summary>
-    SeoRewritten = 23
+    SeoRewritten = 23,
+
+    /// <summary>Approved text in the Moderation queue (a dish becomes visible).</summary>
+    ContentApproved = 24,
+
+    /// <summary>Rejected text in the Moderation queue (the seller sees the reason).</summary>
+    ContentRejected = 25
 }

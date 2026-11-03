@@ -1,3 +1,4 @@
+using Phloem.Application.Features.Moderation.Dtos;
 using Phloem.Domain.Entities;
 using Phloem.Domain.Enums;
 using Phloem.Domain.Interfaces;
@@ -10,13 +11,16 @@ public sealed record AdminShopDetailsDto(
     string? LogoUrl,
     string? CoverPhotoUrl,
     IReadOnlyList<AdminShopDocumentDto> Documents,
-    IReadOnlyList<VendorDocumentType> MissingDocuments)
+    IReadOnlyList<VendorDocumentType> MissingDocuments,
+    ModerationAdviceDto? NameCheck = null)
 {
     /// <summary>Builds the review screen for one shop.</summary>
-    public static AdminShopDetailsDto From(Vendor v, string ownerName, IFileStorage storage, DateTime utcNow) => new(
+    public static AdminShopDetailsDto From(Vendor v, string ownerName, IFileStorage storage, DateTime utcNow,
+                                           ModerationAdviceDto? nameCheck = null) => new(
         AdminShopDto.From(v, ownerName, storage),
         v.Logo is null ? null : storage.GetPublicUrl(v.Logo.Path),
         v.CoverPhoto is null ? null : storage.GetPublicUrl(v.CoverPhoto.Path),
         v.Documents.OrderBy(d => d.Type).Select(d => AdminShopDocumentDto.From(d, utcNow)).ToList(),
-        v.MissingDocuments(utcNow));
+        v.MissingDocuments(utcNow),
+        nameCheck);
 }

@@ -15,7 +15,10 @@ internal sealed class ContactMessageRepository(PhloemDbContext context)
                                                           CancellationToken cancellationToken = default)
     {
         var query = Set.AsNoTracking();
-        if (status is not null) query = query.Where(m => m.Status == status);
+        // "All" means the inbox: everything except spam (spam has its own tab)
+        query = status is not null
+            ? query.Where(m => m.Status == status)
+            : query.Where(m => m.Status != ContactMessageStatus.Spam);
         return ToPagedAsync(query.OrderByDescending(m => m.CreatedAt), page, cancellationToken);
     }
 

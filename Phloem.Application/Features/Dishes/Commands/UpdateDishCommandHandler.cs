@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using Phloem.Application.Features.Moderation.Common;
+using MediatR;
 using Phloem.Domain.Interfaces;
 using Phloem.Domain.Shared.Errors;
 using Phloem.Domain.Shared.Results;
@@ -10,7 +11,8 @@ public sealed class UpdateDishCommandHandler(
     IVendorRepository vendors,
     IDishCatalogRepository catalog,
     IDishRepository dishes,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    ModerationQueue moderation)
     : IRequestHandler<UpdateDishCommand, Result>
 {
     public async Task<Result> Handle(UpdateDishCommand command, CancellationToken ct)
@@ -27,8 +29,10 @@ public sealed class UpdateDishCommandHandler(
         var name = await catalog.GetByIdAsync(command.DishCatalogId, ct);
         if (name is null) return DishCatalogErrors.NotFound;
 
+        var textBefore = dish.ModerationText;
         var updated = dish.Update(name, command.Detail, command.Price, command.Description);
         if (updated.IsFailure) return updated;
+        if (dish.ModerationText != textBefore) await moderation.DishAsync(dish, ct);   // new wording: checked again
 
         dish.SetAvailability(command.IsAvailable);
 

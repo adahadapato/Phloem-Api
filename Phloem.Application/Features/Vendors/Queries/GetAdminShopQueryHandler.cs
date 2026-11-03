@@ -1,3 +1,5 @@
+using Phloem.Domain.Enums;
+using Phloem.Application.Features.Moderation.Dtos;
 using MediatR;
 using Phloem.Application.Features.Vendors.Dtos;
 using Phloem.Domain.Interfaces;
@@ -11,6 +13,7 @@ public sealed class GetAdminShopQueryHandler(
     IVendorRepository vendors,
     IUserProfileRepository profiles,
     IFileStorage storage,
+    IModerationCheckRepository checks,
     TimeProvider time)
     : IRequestHandler<GetAdminShopQuery, Result<AdminShopDetailsDto>>
 {
@@ -24,7 +27,9 @@ public sealed class GetAdminShopQueryHandler(
         if (vendor is null || !currentUser.CoversCountry(vendor.Country)) return VendorErrors.NotFound;
 
         var owners = await profiles.GetFullNamesAsync([vendor.OwnerId], ct);
+        var nameCheck = (await checks.GetLatestAsync(ModerationKind.ShopName, [vendor.Id], ct)).GetValueOrDefault(vendor.Id);
         return AdminShopDetailsDto.From(vendor, owners.GetValueOrDefault(vendor.OwnerId, UnknownUser), storage,
-                                        time.GetUtcNow().UtcDateTime);
+                                        time.GetUtcNow().UtcDateTime,
+                                        nameCheck is null ? null : ModerationAdviceDto.From(nameCheck));
     }
 }

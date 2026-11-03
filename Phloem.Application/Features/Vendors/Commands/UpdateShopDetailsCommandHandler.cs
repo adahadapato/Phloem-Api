@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using Phloem.Application.Features.Moderation.Common;
+using MediatR;
 using Phloem.Domain.Interfaces;
 using Phloem.Domain.Shared.Errors;
 using Phloem.Domain.Shared.Results;
@@ -11,7 +12,8 @@ public sealed class UpdateShopDetailsCommandHandler(
     ICurrentUser currentUser,
     IVendorRepository vendors,
     IAccountService accounts,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    ModerationQueue moderation)
     : IRequestHandler<UpdateShopDetailsCommand, Result>
 {
     /// <exception cref="InvalidOperationException">Called without a signed-in user (endpoint misconfigured).</exception>
@@ -38,9 +40,11 @@ public sealed class UpdateShopDetailsCommandHandler(
             if (string.IsNullOrWhiteSpace(phone)) phone = contact.Value.PhoneNumber;
         }
 
+        var nameBefore = vendor.Name;
         var updated = vendor.UpdateDetails(command.ShopName, EmailAddress.Create(email),
                                            PhoneNumber.CreateOptional(phone));
         if (updated.IsFailure) return updated;
+        if (vendor.Name != nameBefore) await moderation.ShopNameAsync(vendor, ct);
 
         await unitOfWork.SaveChangesAsync(ct);
         return Result.Success();

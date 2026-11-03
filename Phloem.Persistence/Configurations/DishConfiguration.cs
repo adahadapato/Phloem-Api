@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Phloem.Domain.Entities;
+using Phloem.Domain.Enums;
 
 namespace Phloem.Persistence.Configurations;
 
@@ -47,6 +48,10 @@ public sealed class DishConfiguration : EntityConfiguration<Dish>
         builder.Property(d => d.Currency).IsRequired();
         builder.Property(d => d.Country).IsRequired();
         builder.Property(d => d.NeedsPriceUpdate).IsRequired();
+
+        // ---------- Text check (moderation): dishes from before checks began count as approved ----------
+        builder.Property(d => d.ReviewStatus).IsRequired().HasDefaultValue(ContentReviewStatus.Approved);
+        builder.Property(d => d.ReviewNote).HasMaxLength(Dish.ReviewNoteMaxLength);
 
         // ---------- Availability & reputation ----------
         builder.Property(d => d.IsAvailable).IsRequired();

@@ -560,6 +560,18 @@ public static class AppSettings
         public const string JobModels = "Ai:JobModels";
     }
 
+    // ==================== Moderation ====================
+
+    /// <summary>Checking people's text (dishes, shop names, dish name suggestions, Contact messages).</summary>
+    public static class Moderation
+    {
+        /// <summary>The whole section.</summary>
+        public const string Section = "Moderation";
+
+        /// <summary>True = every dish and shop name goes to a person, whatever the AI says. Default false.</summary>
+        public const string HoldAll = "Moderation:HoldAll";
+    }
+
     // ==================== Payments ====================
 
     /// <summary>Taking payment for orders (and later shipments).</summary>

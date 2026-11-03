@@ -37,6 +37,7 @@ internal sealed class DishRepository(PhloemDbContext context)
             .Include(d => d.Vendor)
             .Where(d => d.IsAvailable
                      && !d.NeedsPriceUpdate
+                     && d.ReviewStatus == ContentReviewStatus.Approved
                      && d.Vendor.Status == VendorStatus.Approved
                      && !d.Vendor.IsOwnerSuspended);
 
@@ -121,6 +122,7 @@ internal sealed class DishRepository(PhloemDbContext context)
                  .Where(d => d.Country == country
                           && d.IsAvailable
                           && !d.NeedsPriceUpdate
+                          && d.ReviewStatus == ContentReviewStatus.Approved
                           && d.Vendor.Status == VendorStatus.Approved
                           && !d.Vendor.IsOwnerSuspended)
                  .OrderByDescending(d => d.Rating).ThenByDescending(d => d.RatingCount).ThenBy(d => d.Name)
@@ -139,6 +141,7 @@ internal sealed class DishRepository(PhloemDbContext context)
         var query = Set.AsNoTracking()
             .Where(d => d.IsAvailable
                      && !d.NeedsPriceUpdate
+                     && d.ReviewStatus == ContentReviewStatus.Approved
                      && d.Vendor.Status == VendorStatus.Approved
                      && !d.Vendor.IsOwnerSuspended
                      && d.Name.Contains(term));

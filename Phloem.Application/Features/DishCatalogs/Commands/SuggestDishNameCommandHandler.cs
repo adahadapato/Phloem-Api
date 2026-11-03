@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using Phloem.Application.Features.Moderation.Common;
+using MediatR;
 using Phloem.Domain.Entities;
 using Phloem.Domain.Interfaces;
 using Phloem.Domain.Shared.Errors;
@@ -9,7 +10,8 @@ namespace Phloem.Application.Features.DishCatalogs.Commands;
 public sealed class SuggestDishNameCommandHandler(
     ICurrentUser currentUser,
     IDishCatalogRepository catalog,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    ModerationQueue moderation)
     : IRequestHandler<SuggestDishNameCommand, Result<Guid>>
 {
     public async Task<Result<Guid>> Handle(SuggestDishNameCommand command, CancellationToken ct)
@@ -23,6 +25,7 @@ public sealed class SuggestDishNameCommandHandler(
         var suggestion = DishCatalog.Suggest(command.Name, command.Category, command.Group, userId);
 
         catalog.Add(suggestion);
+        moderation.DishName(suggestion);   // the AI's advice for staff
         await unitOfWork.SaveChangesAsync(ct);
 
         return suggestion.Id;

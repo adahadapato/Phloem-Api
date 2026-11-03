@@ -159,6 +159,7 @@ public static class DependencyInjection
         services.AddScoped<IAiPromptVersionRepository, AiPromptVersionRepository>();
         services.AddScoped<IAiCallLogRepository, AiCallLogRepository>();
         services.AddScoped<ISeoEntryRepository, SeoEntryRepository>();
+        services.AddScoped<IModerationCheckRepository, ModerationCheckRepository>();
 
         return services;
     }

@@ -47,11 +47,14 @@ public sealed record ContactMessageDto(
     string? StaffNote,
     bool FromSignedInUser,
     DateTime SentAt,
-    DateTime? HandledAt)
+    DateTime? HandledAt,
+    bool? IsUrgent = null,
+    string? AiSummary = null)
 {
-    public static ContactMessageDto From(ContactMessage m) =>
+    public static ContactMessageDto From(ContactMessage m, ModerationCheck? sorting = null) =>
         new(m.Id, m.Name, m.Email, m.Topic, m.Reference, m.Message, m.Status, m.StaffNote, m.UserId is not null,
-            m.CreatedAt, m.HandledAtUtc);
+            m.CreatedAt, m.HandledAtUtc, sorting?.IsUrgent,
+            sorting?.IsSpam is null ? null : sorting.AiReason);
 }
 
 /// <summary><c>GET /api/admin/contact-messages</c>: one page of the inbox, plus how many there are of each status.</summary>
@@ -63,4 +66,5 @@ public sealed record ContactInboxDto(
     PagedResult<ContactMessageDto> Messages,
     int NewCount,
     int RepliedCount,
-    int ClosedCount);
+    int ClosedCount,
+    int SpamCount = 0);

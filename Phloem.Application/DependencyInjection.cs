@@ -4,6 +4,7 @@ using Phloem.Application.Features.Deliveries.Common;
 using Phloem.Application.Features.Orders.Common;
 using Phloem.Application.Features.Ai.Common;
 using Phloem.Application.Features.Seo.Common;
+using Phloem.Application.Features.Moderation.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Phloem.Application.Common.Behaviors;
 using Phloem.Application.Common.Behaviours;
@@ -47,6 +48,8 @@ namespace Phloem.Application
             services.AddScoped<AiPromptSaving>();
             services.AddScoped<SeoWriter>();
             services.AddScoped<SeoPageLookup>();
+            services.AddScoped<ModerationQueue>();
+            services.AddScoped<ModerationRunner>();
             services.AddScoped<DeliveryEmails>();
 
             // 2d. Two-person approval: what's being applied, the approval emails, blocking a shop

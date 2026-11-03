@@ -10,5 +10,8 @@ public enum ContactMessageStatus
     Replied = 2,
 
     /// <summary>Done: nothing more to do.</summary>
-    Closed = 3
+    Closed = 3,
+
+    /// <summary>Marked as spam (by the AI or a person); kept out of the inbox, can be moved back.</summary>
+    Spam = 4
 }

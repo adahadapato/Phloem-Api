@@ -19,7 +19,8 @@ public sealed record GetContactMessagesQuery(
 /// <summary>Handles <see cref="GetContactMessagesQuery"/>.</summary>
 /// <remarks>The inbox shows people's messages, so every opening is written to the staff audit log.</remarks>
 public sealed class GetContactMessagesQueryHandler(IContactMessageRepository messages, ICurrentUser currentUser,
-                                                   IStaffAuditRepository audit, IUnitOfWork unitOfWork)
+                                                   IStaffAuditRepository audit, IUnitOfWork unitOfWork,
+                                                   IModerationCheckRepository checks)
     : IRequestHandler<GetContactMessagesQuery, Result<ContactInboxDto>>
 {
     public async Task<Result<ContactInboxDto>> Handle(GetContactMessagesQuery query, CancellationToken ct)
@@ -35,11 +36,13 @@ public sealed class GetContactMessagesQueryHandler(IContactMessageRepository mes
             await unitOfWork.SaveChangesAsync(ct);
         }
 
-        var items = paged.Items.Select(ContactMessageDto.From).ToList();
+        var sorting = await checks.GetLatestAsync(ModerationKind.ContactMessage, paged.Items.Select(m => m.Id).ToList(), ct);
+        var items = paged.Items.Select(m => ContactMessageDto.From(m, sorting.GetValueOrDefault(m.Id))).ToList();
         return new ContactInboxDto(
             new PagedResult<ContactMessageDto>(items, paged.TotalCount, paged.Page, paged.PageSize),
             counts.GetValueOrDefault(ContactMessageStatus.New),
             counts.GetValueOrDefault(ContactMessageStatus.Replied),
-            counts.GetValueOrDefault(ContactMessageStatus.Closed));
+            counts.GetValueOrDefault(ContactMessageStatus.Closed),
+            counts.GetValueOrDefault(ContactMessageStatus.Spam));
     }
 }

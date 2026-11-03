@@ -65,6 +65,23 @@ public class Dish : Entity<Guid>
     /// </summary>
     public bool NeedsPriceUpdate { get; private set; }
 
+    // ---------- Text check (moderation) ----------
+
+    /// <summary>Longest reason shown to the seller when the text isn't allowed.</summary>
+    public const int ReviewNoteMaxLength = 300;
+
+    /// <summary>
+    /// Whether the name and description passed the check. New or changed text starts as
+    /// <see cref="ContentReviewStatus.Checking"/>: buyers only see <see cref="ContentReviewStatus.Approved"/> dishes.
+    /// </summary>
+    public ContentReviewStatus ReviewStatus { get; private set; } = ContentReviewStatus.Approved;
+
+    /// <summary>Why the text isn't allowed (shown to the seller), when <see cref="ContentReviewStatus.Rejected"/>.</summary>
+    public string? ReviewNote { get; private set; }
+
+    /// <summary>The text that is checked: the full name and the description.</summary>
+    public string ModerationText => string.IsNullOrWhiteSpace(Description) ? Name : $"{Name}\n{Description}";
+
     // ---------- Reputation ----------
     public decimal Rating { get; private set; }
     public int RatingCount { get; private set; }
@@ -76,7 +93,9 @@ public class Dish : Entity<Guid>
     public DishPhoto? PrimaryPhoto => _photos.FirstOrDefault(p => p.IsPrimary);
 
     /// <summary>Can a buyer order it right now?</summary>
-    public bool CanBeOrdered => !IsDeleted && IsAvailable && !NeedsPriceUpdate && Vendor is { IsVisibleToBuyers: true };
+    public bool CanBeOrdered => !IsDeleted && IsAvailable && !NeedsPriceUpdate
+                                && ReviewStatus == ContentReviewStatus.Approved
+                                && Vendor is { IsVisibleToBuyers: true };
 
     // =====================================================================
     // Behaviour
@@ -96,7 +115,9 @@ public class Dish : Entity<Guid>
         var priceCheck = CheckPrice(dishCatalog, vendor.Country, price);
         if (priceCheck.IsFailure) return priceCheck.Error;
 
-        return new Dish(Guid.CreateVersion7(), vendor, dishCatalog, detail, price, description);
+        var dish = new Dish(Guid.CreateVersion7(), vendor, dishCatalog, detail, price, description);
+        dish.ReviewStatus = ContentReviewStatus.Checking;   // hidden until the text is checked
+        return dish;
     }
 
     /// <summary>Edit dish page. A valid price here also clears NeedsPriceUpdate.</summary>
@@ -111,9 +132,37 @@ public class Dish : Entity<Guid>
         var priceCheck = CheckPrice(dishCatalog, Country, price);
         if (priceCheck.IsFailure) return priceCheck;
 
+        var textBefore = ModerationText;
         Apply(dishCatalog, detail, price, description);
         NeedsPriceUpdate = false;
+
+        // New wording is checked again before buyers see it (a price-only change isn't)
+        if (ModerationText != textBefore)
+        {
+            ReviewStatus = ContentReviewStatus.Checking;
+            ReviewNote = null;
+        }
         return Result.Success();
+    }
+
+    /// <summary>The check found nothing wrong (or a person approved it): buyers can see it.</summary>
+    public void ApproveText()
+    {
+        ReviewStatus = ContentReviewStatus.Approved;
+        ReviewNote = null;
+    }
+
+    /// <summary>The AI flagged it or couldn't check it: hidden until a person decides.</summary>
+    public void SendTextToStaff() => ReviewStatus = ContentReviewStatus.WithStaff;
+
+    /// <summary>A person decided the text isn't allowed: hidden, and the seller sees why.</summary>
+    /// <param name="reason">Shown to the seller (cut to <see cref="ReviewNoteMaxLength"/>).</param>
+    public void RejectText(string reason)
+    {
+        if (string.IsNullOrWhiteSpace(reason)) throw new ArgumentException("A reason is required.", nameof(reason));
+        var clean = reason.Trim();
+        ReviewStatus = ContentReviewStatus.Rejected;
+        ReviewNote = clean.Length <= ReviewNoteMaxLength ? clean : clean[..ReviewNoteMaxLength];
     }
 
     /// <summary>

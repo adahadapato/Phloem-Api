@@ -25,7 +25,9 @@ public sealed record MyDishDto(
     bool IsAvailable,
     decimal Rating,
     int RatingCount,
-    IReadOnlyList<DishPhotoDto> Photos)
+    IReadOnlyList<DishPhotoDto> Photos,
+    ContentReviewStatus ReviewStatus = ContentReviewStatus.Approved,
+    string? ReviewNote = null)
 {
     public static MyDishDto From(Dish d, IFileStorage storage)
     {
@@ -47,6 +49,8 @@ public sealed record MyDishDto(
             d.IsAvailable,
             d.Rating,
             d.RatingCount,
-            d.Photos.OrderBy(p => p.DisplayOrder).Select(p => DishPhotoDto.From(p, storage)).ToList());
+            d.Photos.OrderBy(p => p.DisplayOrder).Select(p => DishPhotoDto.From(p, storage)).ToList(),
+            d.ReviewStatus,
+            d.ReviewNote);
     }
 }

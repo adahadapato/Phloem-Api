@@ -121,4 +121,14 @@ public class ContactMessage : Entity<Guid>
         HandledAtUtc = utcNow;
         HandledByUserId = staffUserId;
     }
+
+    /// <summary>The AI thinks it's spam: moved to the Spam tab (only while nobody has handled it yet). Staff can move
+    /// it back with <see cref="SetStatus"/>.</summary>
+    /// <returns>True when it was moved.</returns>
+    public bool MarkSpamByAi()
+    {
+        if (Status != ContactMessageStatus.New || HandledByUserId is not null) return false;
+        Status = ContactMessageStatus.Spam;
+        return true;
+    }
 }

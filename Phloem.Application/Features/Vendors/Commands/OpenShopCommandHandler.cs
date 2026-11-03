@@ -1,4 +1,5 @@
-﻿using Phloem.Domain.Enums;
+﻿using Phloem.Application.Features.Moderation.Common;
+using Phloem.Domain.Enums;
 using Phloem.Application.Common.Terms;
 using MediatR;
 using Phloem.Domain.Entities;
@@ -21,6 +22,7 @@ public sealed class OpenShopCommandHandler(
     IVendorRepository vendors,
     IAccountService accounts,
     IUnitOfWork unitOfWork,
+    ModerationQueue moderation,
     TimeProvider time,
     TermsGate terms)
     : IRequestHandler<OpenShopCommand, Result<Guid>>
@@ -63,6 +65,7 @@ public sealed class OpenShopCommandHandler(
         if (opened.IsFailure) return opened.Error;
 
         vendors.Add(opened.Value);
+        await moderation.ShopNameAsync(opened.Value, ct);
 
         // Proof of "I agree to the Seller terms" (the Terms version published now), saved with the shop
         await terms.RecordAsync(userId, LegalDocumentType.Terms, AcceptanceContext.OpenShop, null, ct);

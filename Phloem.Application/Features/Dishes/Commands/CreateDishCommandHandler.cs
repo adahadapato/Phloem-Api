@@ -1,4 +1,5 @@
-﻿using Phloem.Application.Common.Terms;
+﻿using Phloem.Application.Features.Moderation.Common;
+using Phloem.Application.Common.Terms;
 using MediatR;
 using Phloem.Domain.Entities;
 using Phloem.Domain.Interfaces;
@@ -13,6 +14,7 @@ public sealed class CreateDishCommandHandler(
     IDishCatalogRepository catalog,
     IDishRepository dishes,
     IUnitOfWork unitOfWork,
+    ModerationQueue moderation,
     TermsGate terms)
     : IRequestHandler<CreateDishCommand, Result<Guid>>
 {
@@ -39,6 +41,7 @@ public sealed class CreateDishCommandHandler(
         dish.SetAvailability(command.IsAvailable);
 
         dishes.Add(dish);
+        await moderation.DishAsync(dish, ct);   // hidden until the text is checked
         await unitOfWork.SaveChangesAsync(ct);
 
         return dish.Id;

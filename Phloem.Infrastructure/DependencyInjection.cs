@@ -4,6 +4,7 @@ using Phloem.Application;
 using Phloem.Infrastructure.Services.Accounts;
 using Phloem.Infrastructure.Services.Approvals;
 using Phloem.Infrastructure.Settings.Ai;
+using Phloem.Infrastructure.Settings.Moderation;
 using Phloem.Infrastructure.Settings.Application;
 using Phloem.Infrastructure.Settings.Approvals;
 using Phloem.Infrastructure.Settings.Contact;
@@ -27,6 +28,7 @@ namespace Phloem.Infrastructure
             services.AddContact(configuration);   // Contact us details (GET /api/contact)
             services.AddApprovals(configuration); // two-person approval: how long changes may wait
             services.AddAi(configuration);        // AI model, prompts, call log (off until there's a key)
+            services.AddModeration(configuration); // AI checks of dishes, shop names, dish names, Contact messages
             services.AddStorage(configuration);
             services.AddImages(configuration);                     
             services.AddPhloemIdentity(configuration);  

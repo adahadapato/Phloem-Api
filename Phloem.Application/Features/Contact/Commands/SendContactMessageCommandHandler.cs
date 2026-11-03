@@ -1,3 +1,4 @@
+using Phloem.Application.Features.Moderation.Common;
 using System.Net;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -12,6 +13,7 @@ namespace Phloem.Application.Features.Contact.Commands;
 public sealed class SendContactMessageCommandHandler(
     IContactMessageRepository messages,
     IUnitOfWork unitOfWork,
+    ModerationQueue moderation,
     ICurrentUser currentUser,
     IEmailSender email,
     IContactDetailsProvider contact,
@@ -33,6 +35,7 @@ public sealed class SendContactMessageCommandHandler(
         var message = ContactMessage.Create(command.Name, command.Email, command.Topic, command.Reference,
                                             command.Message, currentUser.UserId);
         messages.Add(message);
+        moderation.Contact(message);   // spam, urgent, summary
         await unitOfWork.SaveChangesAsync(ct);
         logger.LogInformation("Contact us: new {Topic} message {Id}.", message.Topic, message.Id);
 
