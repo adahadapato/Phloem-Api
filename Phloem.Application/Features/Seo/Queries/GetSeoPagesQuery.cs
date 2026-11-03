@@ -9,12 +9,12 @@ namespace Phloem.Application.Features.Seo.Queries;
 /// <summary>Admin → SEO: the pages, with filters. Not cached.</summary>
 /// <param name="Kind">Fixed pages or shops; null = both.</param>
 /// <param name="Status">Only pages in this state; null = all.</param>
-/// <param name="ChangedOnly">Only AI-written pages whose page changed since.</param>
+/// <param name="ChangedOnly">Only AI-written pages whose page changed since (optional; missing = false).</param>
 /// <param name="Search">Part of the page or shop name.</param>
 /// <param name="Country">Only shops in this country.</param>
 /// <param name="Page">1-based page.</param>
 /// <param name="PageSize">Rows per page.</param>
-public sealed record GetSeoPagesQuery(SeoPageKind? Kind, SeoPageStatus? Status, bool ChangedOnly, string? Search,
+public sealed record GetSeoPagesQuery(SeoPageKind? Kind, SeoPageStatus? Status, bool? ChangedOnly, string? Search,
                                       Country? Country, int Page = 1, int PageSize = 20)
     : IRequest<Result<PagedResult<SeoPageRowDto>>>;
 
@@ -30,7 +30,7 @@ public sealed class GetSeoPagesQueryHandler(SeoPageLookup lookup)
 
         if (query.Kind is { } kind) rows = rows.Where(r => r.Kind == kind);
         if (query.Status is { } status) rows = rows.Where(r => r.Status == status);
-        if (query.ChangedOnly) rows = rows.Where(r => r.PageChanged);
+        if (query.ChangedOnly == true) rows = rows.Where(r => r.PageChanged);
         if (query.Country is { } country) rows = rows.Where(r => r.Country == country);
         if (!string.IsNullOrWhiteSpace(query.Search))
         {

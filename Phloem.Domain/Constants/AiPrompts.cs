@@ -55,7 +55,7 @@ public static class AiPrompts
             Answer with one JSON object only, no other text:
             {"prompt": "<the improved prompt>", "summary": "<one or two sentences: what you changed and why>"}
             """,
-            2000,
+            8000,
             """{"prompt":"(Sample) A clearer version of the prompt would appear here.","summary":"Sample answer from the test AI: shortened the sentences and kept every required field."}""",
             ShowOnPromptsPage: false),
 
@@ -99,7 +99,7 @@ public static class AiPrompts
             - No keyword stuffing, no capital letters for emphasis, no emojis.
             - Return JSON only, without markdown fences.
             """,
-            1200,
+            4000,
             """{"seoTitle":"(Sample) Mama's Kitchen: Ghanaian home cooking | Phloem","metaDescription":"(Sample from the test AI) Order jollof rice, waakye and kelewele from Mama's Kitchen, a home cook in Ghana. Fresh food delivered through Phloem.","keywords":["jollof rice delivery","Ghanaian food","home cooked food Ghana"],"improvements":["Add a photo to every dish","Add a short description to each dish"],"seoScore":72,"scoreExplanation":"Sample answer: clear shop name and dishes, but few photos and descriptions."}""")
     ];
 

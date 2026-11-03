@@ -68,12 +68,25 @@ internal sealed class AiJsonClient(
             new(ChatRole.User, request.Input)
         ];
 
+        int firstTryInput = 0, firstTryOutput = 0;   // a cut-off first try still costs money
         var watch = Stopwatch.StartNew();
         ChatResponse? response = null;
         string? failure = null;
         try
         {
             response = await model.Client.GetResponseAsync(messages, chatOptions, cancellationToken);
+
+            // Cut off because it ran out of room (newer models also spend room thinking): try once with double
+            if (response.FinishReason == ChatFinishReason.Length && chatOptions.MaxOutputTokens is { } room)
+            {
+                logger.LogInformation("AI answer for {PromptKey} was cut off at {Tokens} tokens; trying again with more room.",
+                                      definition.Key, room);
+                var first = response;
+                chatOptions.MaxOutputTokens = Math.Min(room * 2, 16_000);
+                response = await model.Client.GetResponseAsync(messages, chatOptions, cancellationToken);
+                firstTryInput = (int)(first.Usage?.InputTokenCount ?? 0);
+                firstTryOutput = (int)(first.Usage?.OutputTokenCount ?? 0);
+            }
         }
         catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
         {
@@ -85,8 +98,8 @@ internal sealed class AiJsonClient(
 
         // 3. Check the answer
         var reply = response?.Text;
-        var inputTokens = (int)(response?.Usage?.InputTokenCount ?? 0);
-        var outputTokens = (int)(response?.Usage?.OutputTokenCount ?? 0);
+        var inputTokens = (int)(response?.Usage?.InputTokenCount ?? 0) + firstTryInput;
+        var outputTokens = (int)(response?.Usage?.OutputTokenCount ?? 0) + firstTryOutput;
         var cost = o.Provider == AiProvider.Fake ? 0m : o.CostOf(inputTokens, outputTokens);
 
         AiCallOutcome outcome;
@@ -101,7 +114,9 @@ internal sealed class AiJsonClient(
         else if (AiAnswerParser.ReadObject(reply) is not { } parsed)
         {
             outcome = AiCallOutcome.BadAnswer;
-            failure = "The answer wasn't a JSON object.";
+            failure = response?.FinishReason == ChatFinishReason.Length
+                ? $"The answer was cut off (too long for {chatOptions.MaxOutputTokens} tokens)."
+                : "The answer wasn't a JSON object.";
             error = AiErrors.BadAnswer;
         }
         else if (AiAnswerParser.MissingFields(parsed, definition.RequiredFields) is { Count: > 0 } missing)
